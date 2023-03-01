@@ -1,5 +1,5 @@
 import streamlit as st
-from .utils import snippet
+from .utils import snippet, MPSOLVERS
 
 title = "Tip #4: If-Then"
 
@@ -24,21 +24,21 @@ def run():
 
     Using AMPL MP-based or Constraint Programing drivers, we can minimize the total production cost of $n$ products with the following objective function:
 
-    ```
+    ```python
     minimize TotalCost:
         sum {i in 1..n} (u[i]*x[i] + if x[i]>0 then w[i]);
     ```
 
     For older MIP drivers, a linearized model is needed. It can be constructed using auxiliary binary variables and connecting constraints as follows:
 
-    ```
+    ```python
     var z{1..n} binary;
 
     minimize TotalCost:
         sum {i in 1..n} (w[i]*z[i] + u[u]*x[i]);
 
     s.t. ConnectBinaries {i in 1..n}:
-        x[i] <= M*z[i];     ## Use a big-M constraint to enforce z[i]=0 ==> x[i]=0
+        x[i] <= M*z[i];   # Use a big-M constraint to enforce z[i]=0 ==> x[i] = 0
     ```
     """
     )
@@ -69,9 +69,10 @@ def run():
             sum {i in I} x[i,j] = d[j];
         """,
         """
-        option solver highs; solve;
+        option solver $SOLVER; solve;
         display x;
         """,
+        solvers=MPSOLVERS,
     )
 
     st.markdown("Linearized model:")
@@ -102,9 +103,10 @@ def run():
             sum {j in J} x[i,j] <= z[i] * sum {j in J} d[j];
         """,
         """
-        option solver highs; solve;
+        option solver $SOLVER; solve;
         display x;
         """,
+        solvers=MPSOLVERS,
     )
 
     st.markdown(

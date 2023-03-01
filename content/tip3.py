@@ -1,5 +1,5 @@
 import streamlit as st
-from .utils import snippet
+from .utils import snippet, MPSOLVERS
 
 title = "Tip #3: Alldifferent"
 
@@ -16,19 +16,19 @@ def run():
     st.markdown(
         """
     - Constraint `alldiff` enforces a set of integer variables to take distinct values.
-    ```
+    ```python
     s.t. OneJobPerMachine:
     alldiff {j in JOBS} MachineForJob[j];
     ```
 
     - `alldiff` can be used conditionally:
-    ```
+    ```python
     s.t. VisitOnce {j in GUESTS}:
     IsHost[j] = 0 ==> alldiff {t in TIMES} Visit[j,t];
     ```
 
     - Older MIP drivers need a manual reformulation of `alldiff` with binary variables:
-    ```
+    ```python
     s.t. OneMachinePerJob {j in JOBS}:
     sum {k in MACHINES} Assign[j,k] = 1;
 
@@ -52,9 +52,10 @@ def run():
         s.t. rdiag_attacks: alldiff ({j in 1..n} Row[j]-j);
         """,
         """
-        let n := 8; option solver highs; solve;
+        let n := 8; option solver $SOLVER; solve;
         display {i in 1..n, j in 1..n} if Row[j] == i then 1 else 0;
         """,
+        solvers=MPSOLVERS,
     )
 
     st.markdown("A reformulated model for older MIP drivers:")
@@ -78,9 +79,10 @@ def run():
             sum {i in 1..n, j in 1..n: i-j=k} X[i,j] <= 1;
         """,
         """
-        let n := 8; option solver highs; solve;
+        let n := 8; option solver $SOLVER; solve;
         display X;
         """,
+        solvers=MPSOLVERS,
     )
 
     st.markdown(

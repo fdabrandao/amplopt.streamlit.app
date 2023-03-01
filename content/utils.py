@@ -1,6 +1,8 @@
 import streamlit as st
 from amplpy import AMPL, modules
 
+MPSOLVERS = ["highs", "cbc", "gurobi", "xpress", "copt"]
+
 
 def remove_indentation(block):
     lines = block.strip("\n").split("\n")
@@ -9,7 +11,7 @@ def remove_indentation(block):
     return "\n".join(lines)
 
 
-def snippet(key, model, run, data=""):
+def snippet(key, model, run, data="", solvers=None):
     model = remove_indentation(model)
     run = remove_indentation(run)
     modules.load()
@@ -17,6 +19,11 @@ def snippet(key, model, run, data=""):
     st.markdown(f"```python\n{model}\n```")
     ampl.eval(model)
     ampl.eval(data)
+    if solvers is not None:
+        selected_solver = st.selectbox(
+            "Pick the solver 👇", solvers, key=f"solver_{key}"
+        )
+        run = run.replace("$SOLVER", selected_solver)
     if st.button("Run in AMPL", key=f"btn_{key}"):
         output = ampl.get_output(run)
         with st.expander("In AMPL", expanded=True):

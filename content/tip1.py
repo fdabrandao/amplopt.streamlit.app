@@ -1,5 +1,5 @@
 import streamlit as st
-from .utils import snippet
+from .utils import snippet, MPSOLVERS
 
 title = "Tip #1: Disjunctions"
 
@@ -7,7 +7,7 @@ title = "Tip #1: Disjunctions"
 def run():
     st.markdown(
         """
-    **“Two variables x and y cannot be positive at the same time”**: how to model this constraint? For the new [MP Library-based drivers](https://amplmp.readthedocs.io/en/latest/rst/drivers.html) (e.g., [gurobi](https://ampl.com/products/solvers/solvers-we-sell/gurobi/), [highs](https://ampl.com/products/solvers/open-source-solvers/), [copt](https://ampl.com/products/solvers/solvers-we-sell/copt/)), as well as for Constraint Programming solvers (ilogcp, gecode, jacop), this goes via AMPL logical operators:
+    **“Two variables x and y cannot be positive at the same time”**: how to model this constraint? For the new [MP Library-based drivers](https://amplmp.readthedocs.io/en/latest/rst/drivers.html) (e.g., [gurobi](https://ampl.com/products/solvers/solvers-we-sell/gurobi/), [highs](https://ampl.com/products/solvers/open-source-solvers/), [xpress](https://ampl.com/products/solvers/solvers-we-sell/xpress/), [cbc](https://ampl.com/products/solvers/open-source-solvers/), [copt](https://ampl.com/products/solvers/solvers-we-sell/copt/)), as well as for Constraint Programming solvers (ilogcp, gecode, jacop), this goes via AMPL logical operators:
 
     `x <= 0 or y <= 0`
 
@@ -25,9 +25,10 @@ def run():
         s.t. only_one_positive: x <= 0 or y <= 0;
         """,
         """
-        option solver highs; solve;
+        option solver $SOLVER; solve;
         display x, y;
         """,
+        solvers=MPSOLVERS,
     )
 
     st.markdown("2. With MP, using implication:")
@@ -40,9 +41,10 @@ def run():
         s.t. only_one_positive: x > 0 ==> y <= 0;
         """,
         """
-        option solver highs; solve;
+        option solver $SOLVER; solve;
         display x, y;
         """,
+        solvers=MPSOLVERS,
     )
 
     st.markdown("3. Without MP you would need to linearize the constraint using big-M:")
@@ -57,9 +59,10 @@ def run():
         s.t. big_m_2: y <= (1-b) * 1000;
         """,
         """
-        option solver highs; solve;
+        option solver $SOLVER; solve;
         display x, y;
         """,
+        solvers=MPSOLVERS,
     )
 
     st.markdown(

@@ -1,5 +1,5 @@
 import streamlit as st
-from .utils import snippet
+from .utils import snippet, MPSOLVERS
 
 title = "Tip #2: Equivalence"
 
@@ -33,9 +33,10 @@ def run():
         s.t. exactly_one_positive: x > 0 <==> y <= 0;
         """,
         """
-        option solver highs; solve;
+        option solver $SOVLER; solve;
         display x, y;
         """,
+        solvers=MPSOLVERS,
     )
 
     st.markdown("2. With MP, using DNF to exclude a gap interval:")
@@ -49,9 +50,10 @@ def run():
             (x <= 0 and y >= 3) or (x >= 3 and y <= 0);
         """,
         """
-        option solver highs; solve;
+        option solver $SOLVER; solve;
         display x, y;
         """,
+        solvers=MPSOLVERS,
     )
 
     st.markdown("3. Without MP you would need to linearize the logic using big-M:")
@@ -68,9 +70,10 @@ def run():
         s.t. big_m_2_y: y <= (1-b) * 1000;
         """,
         """
-        option solver highs; solve;
+        option solver $SOLVER; solve;
         display x, y;
         """,
+        solvers=MPSOLVERS,
     )
 
     st.markdown(

@@ -1,5 +1,5 @@
 import streamlit as st
-from .utils import snippet
+from .utils import snippet, MPSOLVERS
 
 title = "Tip #5: Non-contiguous variable domains"
 
@@ -41,19 +41,19 @@ def run():
     Sometimes variable values are restricted to non-contiguous sets.
 
     - Finite domain:
-    ```
+    ```python
     var Buy {FOOD} in {0, 10, 30, 45, 55};
     ```
     - Finite domains as unions of integer sets:
-    ```
+    ```python
     var Buy {FOOD} in 0..4 union 9..13 union 17..20;
     ```
     - A union of a number and an interval (semi-continuous variables):
-    ```
+    ```python
     var Buy {FOOD} in {0} union interval [10, 50];
     ```
     - A union of two intervals:
-    ```
+    ```python
     var Buy {FOOD} in interval[2, 5] union interval[7,10];
     ```
 
@@ -114,15 +114,16 @@ def run():
         model;
         """,
         """
-        option solver highs; solve;
+        option solver $SOLVER; solve;
         display Buy;
         """,
+        solvers=MPSOLVERS,
     )
 
     st.markdown(
         """
-    Running the example above (solving with HiGHS, Gurobi, CBC, and XPRESS) we get the following output:
-    1. With `var Buy {FOOD} in {0, 10, 30, 45, 55};` and HIGHS:"""
+    Run each of the examples above:
+    1. With `var Buy {FOOD} in {0, 10, 30, 45, 55};`:"""
     )
     snippet(
         """example1""",
@@ -144,15 +145,14 @@ def run():
         n_min[i] <= sum {j in FOOD} amt[i,j] * Buy[j] <= n_max[i];
         """,
         """
-        option solver highs; solve;
+        option solver $SOLVER; solve;
         display Buy;
         """,
         data=diet_dat,
+        solvers=MPSOLVERS,
     )
 
-    st.markdown(
-        "2. With `var Buy {FOOD} in 0..4 union 9..13 union 17..20;`, and Gurobi:"
-    )
+    st.markdown("2. With `var Buy {FOOD} in 0..4 union 9..13 union 17..20;`:")
     snippet(
         """example2""",
         """
@@ -173,13 +173,14 @@ def run():
         n_min[i] <= sum {j in FOOD} amt[i,j] * Buy[j] <= n_max[i];
         """,
         """
-        option solver gurobi; solve;
+        option solver $SOLVER; solve;
         display Buy;
         """,
         data=diet_dat,
+        solvers=MPSOLVERS,
     )
 
-    st.markdown("3. With `var Buy {FOOD} in {0} union interval [10, 50];`, and CBC:")
+    st.markdown("3. With `var Buy {FOOD} in {0} union interval [10, 50];`:")
     snippet(
         """example3""",
         """
@@ -200,15 +201,14 @@ def run():
         n_min[i] <= sum {j in FOOD} amt[i,j] * Buy[j] <= n_max[i];
         """,
         """
-        option solver cbc; solve;
+        option solver $SOLVER; solve;
         display Buy;
         """,
         data=diet_dat,
+        solvers=MPSOLVERS,
     )
 
-    st.markdown(
-        "4. With `var Buy {FOOD} in interval[2, 5] union interval[7,10];` and XPRESS:"
-    )
+    st.markdown("4. With `var Buy {FOOD} in interval[2, 5] union interval[7,10];`:")
     snippet(
         """example4""",
         """
@@ -229,10 +229,11 @@ def run():
         n_min[i] <= sum {j in FOOD} amt[i,j] * Buy[j] <= n_max[i];
         """,
         """
-        option solver xpress; solve;
+        option solver $SOLVER; solve;
         display Buy;
         """,
         data=diet_dat,
+        solvers=MPSOLVERS,
     )
     st.markdown(
         """
