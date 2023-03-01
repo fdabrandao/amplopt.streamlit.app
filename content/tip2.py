@@ -33,7 +33,7 @@ def run():
         s.t. exactly_one_positive: x > 0 <==> y <= 0;
         """,
         """
-        option solver $SOVLER; solve;
+        option solver $SOLVER; solve;
         display x, y;
         """,
         solvers=MPSOLVERS,
