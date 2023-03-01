@@ -49,6 +49,8 @@ st.sidebar.markdown(
 - [AMPL Website](https://ampl.com)
 - [AMPL Documentation](https://dev.ampl.com/)
 - [AMPL Model Colaboraty](https://colab.ampl.com/)
+
+[![Hits](https://h.ampl.com/https://ampl-tips.streamlit.app/)](https://github.com/fdabrandao/ampl-tips)
 """
 )
 
