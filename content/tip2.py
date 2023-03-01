@@ -1,4 +1,5 @@
 import streamlit as st
+from .utils import snippet
 
 title = "Tip #2: Equivalence"
 
@@ -19,58 +20,61 @@ def run():
     `(x <= 0 and y >= 3) or (x >= 3 and y <= 0)`
 
     #### Small complete examples:
+    """
+    )
 
-    1. With MP, using the `<==>` operator:
+    st.markdown("1. With MP, using the `<==>` operator:")
+    snippet(
+        """example1""",
+        """
+        var x >= -1000 <= 1000;
+        var y >= -1000 <= 1000;
+        minimize total: 5 * x + 2 * y;
+        s.t. exactly_one_positive: x > 0 <==> y <= 0;
+        """,
+        """
+        option solver highs; solve;
+        display x, y;
+        """,
+    )
 
-    ```python
-    var x >= -1000 <= 1000;
-    var y >= -1000 <= 1000;
-    minimize total: 5 * x + 2 * y;
-    s.t. exactly_one_positive: x > 0 <==> y <= 0;
-    ```
+    st.markdown("2. With MP, using DNF to exclude a gap interval:")
+    snippet(
+        """example2""",
+        """
+        var x >= -1000 <= 1000;
+        var y >= -1000 <= 1000;
+        minimize total: 5 * x + 2 * y;
+        s.t. exactly_one_positive_with_gap:
+            (x <= 0 and y >= 3) or (x >= 3 and y <= 0);
+        """,
+        """
+        option solver highs; solve;
+        display x, y;
+        """,
+    )
 
-    2. With MP, using DNF to exclude a gap interval:
+    st.markdown("3. Without MP you would need to linearize the logic using big-M:")
+    snippet(
+        """example3""",
+        """
+        var x >= -1000 <= 1000;
+        var y >= -1000 <= 1000;
+        var b binary;
+        minimize total: 5 * x + 2 * y;
+        s.t. big_m_1_x: x <= b * 1000;
+        s.t. big_m_1_y: y >= 3 - b * 1003;
+        s.t. big_m_2_x: x >= -1000 + b * 1003;
+        s.t. big_m_2_y: y <= (1-b) * 1000;
+        """,
+        """
+        option solver highs; solve;
+        display x, y;
+        """,
+    )
 
-    ```python
-    var x >= -1000 <= 1000;
-    var y >= -1000 <= 1000;
-    minimize total: 5 * x + 2 * y;
-    s.t. exactly_one_positive_with_gap:
-        (x <= 0 and y >= 3) or (x >= 3 and y <= 0);
-    ```
-
-    3. Without MP you would need to linearize the logic using big-M:
-
-    ```python
-    var x >= -1000 <= 1000;
-    var y >= -1000 <= 1000;
-    var b binary;
-    minimize total: 5 * x + 2 * y;
-    s.t. big_m_1_x: x <= b * 1000;
-    s.t. big_m_1_y: y >= 3 - b * 1003;
-    s.t. big_m_2_x: x >= -1000 + b * 1003;
-    s.t. big_m_2_y: y <= (1-b) * 1000;
-    ```
-
-    Solving the first model with an MP driver produces the following:
-    ```
-    ampl: option solver copt; solve; display x, y, total;
-    x-COPT 5.0.1: optimal solution; objective -4999.9998
-    x = -1000
-    y = 0.0001
-    total = -5000
-    ```
-
-    Solving the 2nd or 3rd model above produces the following:
-    ```
-    ampl: option solver highs; solve; display x, y, total;
-    HiGHS 1.4.0: optimal solution; objective -4994
-    0 branching nodes
-    x = -1000
-    y = 3
-    total = -4994
-    ```
-
+    st.markdown(
+        """
     More examples and documentation are in the [MP Modeling Guide](https://amplmp.readthedocs.io/en/latest/rst/model-guide.html).
     """
     )

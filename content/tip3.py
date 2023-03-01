@@ -1,4 +1,5 @@
 import streamlit as st
+from .utils import snippet
 
 title = "Tip #3: Alldifferent"
 
@@ -16,7 +17,7 @@ def run():
         """
     - Constraint `alldiff` enforces a set of integer variables to take distinct values.
     ```
-    s.t. OneJobPerMachine: 
+    s.t. OneJobPerMachine:
     alldiff {j in JOBS} MachineForJob[j];
     ```
 
@@ -39,45 +40,51 @@ def run():
     ## Back to the N-Queens problem
 
     New MP Library-based, as well as Constraint Programming drivers, accept `alldiff` directly:
-    ```
-    param n integer > 0;             # N queens
-    var Row {1..n} integer >= 1 <= n;
-    s.t. row_attacks: alldiff ({j in 1..n} Row[j]);
-    s.t. diag_attacks: alldiff ({j in 1..n} Row[j]+j);
-    s.t. rdiag_attacks: alldiff ({j in 1..n} Row[j]-j);
-    ```
+    """
+    )
+    snippet(
+        """example1""",
+        """
+        param n integer > 0;             # N queens
+        var Row {1..n} integer >= 1 <= n;
+        s.t. row_attacks: alldiff ({j in 1..n} Row[j]);
+        s.t. diag_attacks: alldiff ({j in 1..n} Row[j]+j);
+        s.t. rdiag_attacks: alldiff ({j in 1..n} Row[j]-j);
+        """,
+        """
+        let n := 8; option solver highs; solve;
+        display {i in 1..n, j in 1..n} if Row[j] == i then 1 else 0;
+        """,
+    )
 
-    A reformulated model for older MIP drivers:
-    ```
-    param n integer > 0;
-    var X{1..n, 1..n} binary; 
-    # X[i,j] is one if there is a queen at (i,j); else zero
+    st.markdown("A reformulated model for older MIP drivers:")
+    snippet(
+        """example2""",
+        """
+        param n integer > 0;
+        var X{1..n, 1..n} binary;
+        # X[i,j] is one if there is a queen at (i,j); else zero
 
-    s.t. column_attacks {j in 1..n}:
-        sum {i in 1..n} X[i,j] = 1;
+        s.t. column_attacks {j in 1..n}:
+            sum {i in 1..n} X[i,j] = 1;
 
-    s.t. row_attacks {i in 1..n}:
-        sum {j in 1..n} X[i,j] = 1;
+        s.t. row_attacks {i in 1..n}:
+            sum {j in 1..n} X[i,j] = 1;
 
-    s.t. diagonal1_attacks {k in 2..2*n}:
-        sum {i in 1..n, j in 1..n: i+j=k} X[i,j] <= 1;
+        s.t. diagonal1_attacks {k in 2..2*n}:
+            sum {i in 1..n, j in 1..n: i+j=k} X[i,j] <= 1;
 
-    s.t. diagonal2_attacks {k in -(n-1)..(n-1)}:
-        sum {i in 1..n, j in 1..n: i-j=k} X[i,j] <= 1;
-    ```
+        s.t. diagonal2_attacks {k in -(n-1)..(n-1)}:
+            sum {i in 1..n, j in 1..n: i-j=k} X[i,j] <= 1;
+        """,
+        """
+        let n := 8; option solver highs; solve;
+        display X;
+        """,
+    )
 
-    Running both models with HiGHS:
-    ```
-    ampl: include nqueens.mod;
-    ampl: let n := 8;
-    ampl: option solver highs;
-    ampl: solve;
-    HiGHS 1.4.0: optimal solution
-    0 simplex iterations
-    1 branching nodes
-    Objective = find a feasible point.
-    ```
-
+    st.markdown(
+        """
     Another problem can be modeled with `alldiff`: [Sudoku. A GUI-based Colab Notebook](https://colab.research.google.com/github/ampl/amplcolab/blob/master/authors/mapgccv/miscellaneous/sudoku.ipynb).
 
     MP Documentation on the `alldiff` operator can be found at [https://amplmp.readthedocs.io/](https://amplmp.readthedocs.io/).

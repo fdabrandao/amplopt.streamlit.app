@@ -1,4 +1,5 @@
 import streamlit as st
+from .utils import snippet
 
 title = "Tip #1: Disjunctions"
 
@@ -11,57 +12,58 @@ def run():
     `x <= 0 or y <= 0`
 
     #### Small complete examples:
+    """
+    )
 
-    1) With MP, using the `or` operator:
+    st.markdown("1. With MP, using the `or` operator:")
+    snippet(
+        """example1""",
+        """
+        var x >= -1000 <= 1000;
+        var y >= -1000 <= 1000;
+        maximize total: 5 * x + 2 * y;
+        s.t. only_one_positive: x <= 0 or y <= 0;
+        """,
+        """
+        option solver highs; solve;
+        display x, y;
+        """,
+    )
 
-    ```python
-    var x >= -1000 <= 1000;
-    var y >= -1000 <= 1000;
-    maximize total: 5 * x + 2 * y;
-    s.t. only_one_positive: x <= 0 or y <= 0;
-    ```
+    st.markdown("2. With MP, using implication:")
+    snippet(
+        """example2""",
+        """
+        var x >= -1000 <= 1000;
+        var y >= -1000 <= 1000;
+        maximize total: 5 * x + 2 * y;
+        s.t. only_one_positive: x > 0 ==> y <= 0;
+        """,
+        """
+        option solver highs; solve;
+        display x, y;
+        """,
+    )
 
-    2) With MP, using implication:
+    st.markdown("3. Without MP you would need to linearize the constraint using big-M:")
+    snippet(
+        """example3""",
+        """
+        var x >= -1000 <= 1000;
+        var y >= -1000 <= 1000;
+        var b binary;
+        maximize total: 5 * x + 2 * y;
+        s.t. big_m_1: x <= b * 1000;
+        s.t. big_m_2: y <= (1-b) * 1000;
+        """,
+        """
+        option solver highs; solve;
+        display x, y;
+        """,
+    )
 
-    ```python
-    var x >= -1000 <= 1000;
-    var y >= -1000 <= 1000;
-    maximize total: 5 * x + 2 * y;
-    s.t. only_one_positive: x > 0 ==> y <= 0;
-    ```
-
-    3) Without MP you would need to linearize the constraint using big-M:
-
-    ```python
-    var x >= -1000 <= 1000;
-    var y >= -1000 <= 1000;
-    var b binary;
-    maximize total: 5 * x + 2 * y;
-    s.t. big_m_1: x <= b * 1000;
-    s.t. big_m_2: y <= (1-b) * 1000;
-    ```
-
-    Solving any of the three models above using our new Gurobi 10 driver produces the following:
-
-    ```ampl
-    ampl: option solver gurobi; solve; display x, y, total;
-    x-Gurobi 10.0.0: optimal solution; objective 5000
-    x = 1000
-    y = 0
-    total = 5000
-    ```
-
-    Solving any of the three models above using our HiGHS driver produces the following:
-
-    ```ampl
-    ampl: option solver highs; solve; display x, y, total;
-    HiGHS 1.2.2: optimal solution; objective 5000
-    1 branching nodes
-    x = 1000
-    y = 0
-    total = 5000
-    ```
-
+    st.markdown(
+        """
     More examples and documentation are in the [MP Modeling Guide](https://amplmp.readthedocs.io/en/latest/rst/model-guide.html).
     """
     )
