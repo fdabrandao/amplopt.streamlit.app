@@ -1,6 +1,6 @@
 # AMPL Modeling Tips on Streamlit
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/fdabrandao/ampl-tips/)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/fdabrandao/amplopt.streamlit.app/)
 
 [AMPL](https://ampl.com) is the most powerful and intuitive tool for developing and deploying
 complex optimization solutions in business & scientific applications.
