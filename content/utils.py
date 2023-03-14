@@ -17,10 +17,9 @@ def snippet(key, model, run, data="", solvers=None):
     run = remove_indentation(run)
     uuid = os.environ.get("AMPLKEY_UUID")
     if uuid is not None:
-        modules.activate(uuid, verbose=True)
+        modules.activate(uuid)
 
     ampl = AMPL()
-    st.write(ampl.get_output("option version;"))
     st.markdown(f"```python\n{model}\n```")
     ampl.eval(model)
     ampl.eval(data)
