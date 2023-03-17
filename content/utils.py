@@ -1,6 +1,6 @@
 import os
 import streamlit as st
-from amplpy import AMPL, modules
+from amplpy import AMPL
 
 MPSOLVERS = ["highs", "cbc", "gurobi", "xpress", "copt"]
 
@@ -15,10 +15,6 @@ def remove_indentation(block):
 def snippet(key, model, run, data="", solvers=None):
     model = remove_indentation(model)
     run = remove_indentation(run)
-    uuid = os.environ.get("AMPLKEY_UUID")
-    if uuid is not None:
-        modules.activate(uuid)
-
     ampl = AMPL()
     st.markdown(f"```python\n{model}\n```")
     ampl.eval(model)

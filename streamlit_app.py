@@ -1,5 +1,12 @@
+import os
 import streamlit as st
 from content import tip1, tip2, tip3, tip4, tip5
+
+uuid = os.environ.get("AMPLKEY_UUID")
+if uuid is not None:
+    from amplpy import modules
+    modules.activate(uuid)
+
 
 tips = [(t.title, t.run) for t in [tip1, tip2, tip3, tip4, tip5]]
 tip_titles = [title for title, _ in tips]
