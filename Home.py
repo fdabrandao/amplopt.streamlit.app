@@ -11,6 +11,11 @@ st.set_page_config(
     page_icon="👋",
 )
 
+# Logo
+_, col2, _ = st.columns((1, 4, 1))
+with col2:
+    st.image("static/images/logo-inline-web-v4.png")
+
 st.write("# Welcome to AMPL on Streamlit! 👋")
 
 st.sidebar.success("Select an app above.")

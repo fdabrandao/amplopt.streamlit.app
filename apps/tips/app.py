@@ -25,7 +25,7 @@ def main():
             tip=tip_titles.index(st.session_state.title) + 1
         )
 
-    # Logo and Navigation
+    # Logo
     _, col2, _ = st.columns((1, 4, 1))
     with col2:
         st.image("static/images/logo-inline-web-v4.png")
