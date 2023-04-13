@@ -38,7 +38,7 @@ diet_dat = """
 def run():
     st.markdown(
         """
-    Sometimes variable values are restricted to non-contiguous sets.
+    **Sometimes variable values are restricted to non-contiguous sets.**
 
     - Finite domain:
     ```python

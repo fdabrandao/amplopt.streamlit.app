@@ -6,5 +6,6 @@ ampl_module_gurobi
 ampl_module_coin
 ampl_module_xpress
 ampl_module_copt
+ampl_module_mosek
 amplpy
 streamlit==1.19.0

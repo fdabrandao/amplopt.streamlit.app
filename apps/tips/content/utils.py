@@ -6,19 +6,25 @@ MPSOLVERS = ["highs", "cbc", "gurobi", "xpress", "copt"]
 
 
 def remove_indentation(block):
+    if not block:
+        return block
     lines = block.strip("\n").split("\n")
     indentation = min((len(s) - len(s.lstrip()) for s in lines if s != ""))
     lines = [s[indentation:] for s in lines]
     return "\n".join(lines)
 
 
-def snippet(key, model, run, data="", solvers=None):
+def snippet(key, model, run, data="", data_code="", solvers=None):
     model = remove_indentation(model)
     run = remove_indentation(run)
+    data_code = remove_indentation(data_code)
     ampl = AMPL()
-    st.markdown(f"```python\n{model}\n```")
     ampl.eval(model)
     ampl.eval(data)
+    st.markdown(f"```python\n{model}\n```")
+    if data_code:
+        st.markdown(f"```python\n{data_code}\n```")
+        exec(data_code, globals(), locals())
     if solvers is not None:
         selected_solver = st.selectbox(
             "Pick the solver 👇", solvers, key=f"solver_{key}"
