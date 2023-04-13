@@ -11,7 +11,7 @@ def run():
     """
     )
 
-    st.image("static/images/SetupCosts.png")
+    st.image("static/apps/tips/SetupCosts.png")
 
     st.markdown(
         r"""
