@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
 from apps import INFO_HEADER, INFO_FOOTER
 
 st.set_page_config(
-    page_title="Home",
+    page_title="AMPL on Streamlit Cloud",
     page_icon="👋",
 )
 
