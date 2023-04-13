@@ -114,3 +114,9 @@ def run():
     Documentation on the expression-valued `if-then-else` operator can be found in the [MP Modeling Guide](https://amplmp.readthedocs.io/en/latest/rst/model-guide.html).
         """
     )
+
+    st.markdown(
+        """
+    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7026940745932546049)] [[On Twitter](https://twitter.com/AMPLopt/status/1621174770761965570)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-4-if-then/354)]
+    """
+    )

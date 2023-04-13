@@ -70,3 +70,9 @@ def run():
     More examples and documentation are in the [MP Modeling Guide](https://amplmp.readthedocs.io/en/latest/rst/model-guide.html).
     """
     )
+
+    st.markdown(
+        """
+    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7004145631782948864)] [[On Twitter](https://twitter.com/AMPLopt/status/1598376843027091460)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-1-disjunctions/166)]
+    """
+    )

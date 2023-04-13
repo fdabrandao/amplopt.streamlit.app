@@ -92,3 +92,9 @@ def run():
     MP Documentation on the `alldiff` operator can be found at [https://amplmp.readthedocs.io/](https://amplmp.readthedocs.io/).
         """
     )
+
+    st.markdown(
+        """
+    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7018659162142216192)] [[On Twitter](https://twitter.com/AMPLopt/status/1612911400799576106)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-3-alldifferent/305)]
+    """
+    )

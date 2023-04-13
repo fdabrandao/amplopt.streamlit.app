@@ -120,3 +120,9 @@ t >= sqrt(sum {j in FOOD} (0.4 * cost[j] * Buy[j])^2); # Second-order cone
 - Documentation on AMPL conic and extended modeling can be found in the [MP Modeling Guide](https://amplmp.readthedocs.io/en/latest/rst/model-guide.html).
         """
     )
+
+    st.markdown(
+        """
+    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7051906116254896128)] [[On Twitter](https://twitter.com/AMPLopt/status/1646140286731444227)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-6-robust-linear-programming-with-ellipsoidal-uncertainty/487)]
+    """
+    )
