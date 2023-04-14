@@ -1,11 +1,15 @@
 --index-url https://pypi.ampl.com
 --extra-index-url https://pypi.org/simple
 ampl_module_base
+ampl_module_coin
 ampl_module_highs
 ampl_module_gurobi
-ampl_module_coin
+ampl_module_cplex
 ampl_module_xpress
 ampl_module_copt
 ampl_module_mosek
 amplpy
-streamlit==1.19.0
+amplpyfinance
+streamlit==1.21.0
+matplotlib==3.7.1
+yfinance==0.2.17

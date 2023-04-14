@@ -17,5 +17,4 @@ INFO_FOOTER = """
 
 Follow us on [Twitter](https://twitter.com/AMPLopt) and [LinkedIn](https://www.linkedin.com/company/ampl) to get the latest updates from the dev team!
 
-[![Hits](https://h.ampl.com/https://amplopt.streamlit.app/)](https://github.com/fdabrandao/amplopt.streamlit.app)
 """
