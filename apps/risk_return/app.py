@@ -15,6 +15,32 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from apps import INFO_HEADER, INFO_FOOTER
 
 
+TICKERS = [
+    "MSFT",
+    "AMZN",
+    "KO",
+    "MA",
+    "COST",
+    "LUV",
+    "XOM",
+    "PFE",
+    "JPM",
+    "UNH",
+    "ACN",
+    "DIS",
+    "GILD",
+    "F",
+    "TSLA",
+]
+
+
+@st.cache_data
+def load_data(tickers, start, end):
+    ohlc = yf.download(tickers, start=start, end=end, period="max")
+    prices = ohlc["Adj Close"].dropna(how="all")
+    return prices
+
+
 def main():
     uuid = os.environ.get("AMPLKEY_UUID")  # Use a free https://ampl.com/ce license
     if uuid is not None:
@@ -26,48 +52,30 @@ def main():
         st.image("static/images/logo-inline-web-v4.png")
 
     # Time horizon:
-    start, end, holdout = "2000-01-02", "2023-04-01", 365
+    start, end, holdout = "2000-01-01", "2022-12-30", 365
 
     st.markdown(
         f"""
-    # Risk return models
+        # Risk Return
 
-    Mean-variance optimization is based on Harry Markowitz’s 1952 paper,
-    The key insight is that by combining assets with different **expected
-    returns** and **volatilities**, one can decide on a mathematically optimal allocation.
-    
-    This method requires expected returns and a risk model (i.e., some way of quantifying asset risk). 
-    The most commonly-used risk model is the covariance matrix.
-    **However, in practice we do not have access to the
-    covariance matrix nor to the expected returns.**
+        **A portfolio that gives maximum return for a given risk, or minimum risk for given return is an efficient portfolio.**
 
-    > **NOTE:** We will be using data from {start} to {end} and we will split it
-    > leaving out the last {holdout} days for performance validation.
-    """
+        Mean-variance optimization is based on Harry Markowitz’s 1952 paper,
+        The key insight is that by combining assets with different **expected
+        returns** and **volatilities**, one can decide on a mathematically optimal allocation.
+
+        This method requires expected returns and a risk model (i.e., some way of quantifying asset risk).
+        The most commonly-used risk model is the covariance matrix.
+        **However, in practice we do not have access to the
+        covariance matrix nor to the expected returns.**
+
+        > **NOTE:** We will be using data from {start} to {end} and we will split it
+        > leaving out the last {holdout} days for performance validation.
+        """
     )
 
-    tickers = [
-        "MSFT",
-        "AMZN",
-        "KO",
-        "MA",
-        "COST",
-        "LUV",
-        "XOM",
-        "PFE",
-        "JPM",
-        "UNH",
-        "ACN",
-        "DIS",
-        "GILD",
-        "F",
-        "TSLA",
-    ]
-    ohlc = yf.download(tickers, start=start, end=end, period="max")
-    prices = ohlc["Adj Close"].dropna(how="all")
-
+    prices = load_data(TICKERS, start, end)
     past_df, future_df = prices.iloc[:-holdout], prices.iloc[-holdout:]
-
     risk_methods, return_methods = models.RISK_METHODS, models.RETURN_METHODS
 
     st.markdown(

@@ -48,6 +48,26 @@ def prepare_data(prices):
     return risk_method, return_method, tickers, mu, S
 
 
+def solve(ampl, risk_free_rate=0.2, skip_mu=False):
+    output = ampl.get_output("solve;")
+    if ampl.get_value("solve_result") == "solved":
+        sigma2 = ampl.get_value("sqrt(sum {i in A, j in A} w[i] * S[i, j] * w[j])")
+        st.write(f"Annual volatility: {sigma2*100:.1f}%")
+        if not skip_mu:
+            mu2 = ampl.get_value("sum {i in A} mu[i] * w[i]")
+            sharpe2 = (mu2 - risk_free_rate) / sigma2
+            st.write(f"Expected annual return: {mu2*100:.1f}%")
+            st.write(f"Sharpe Ratio: {sharpe2:.2f}")
+        weights_df = ampl.var["w"].get_values().to_pandas()
+        fig, _ = plt.subplots()
+        plt.barh(weights_df.index, weights_df.iloc[:, 0])
+        st.pyplot(fig)
+        st.write(weights_df.transpose())
+    else:
+        st.write("Failed to solve. Solver output:")
+    st.write(f"```\n{output}\n```")
+
+
 def min_volatility(prices):
     risk_method, _, tickers, _, S = prepare_data(prices)
     solver = select_solver()
@@ -75,19 +95,7 @@ def min_volatility(prices):
     ampl.set["A"] = tickers
     ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
     ampl.option["solver"] = solver
-    output = ampl.get_output("solve;")
-    if ampl.get_value("solve_result") == "solved":
-        sigma2 = ampl.get_value("sqrt(sum {i in A, j in A} w[i] * S[i, j] * w[j])")
-        st.write(f"Annual volatility: {sigma2*100:.1f}%")
-        weights = np.array([v for _, v in ampl.var["w"].get_values().to_list()])
-        pd.Series(weights).plot.barh()
-        fig, _ = plt.subplots()
-        plt.barh(tickers, weights)
-        st.pyplot(fig)
-        st.write(ampl.var["w"].get_values().to_pandas().transpose())
-    else:
-        st.write("Failed to solve. Solver output:")
-    st.write(f"```\n{output}\n```")
+    solve(ampl, skip_mu=True)
     st.markdown(
         """
         ## The implementation using [amplpy](https://amplpy.readthedocs.org/)
@@ -152,24 +160,7 @@ def efficient_risk(prices):
     ampl.param["target_volatility"] = target_volatility
     ampl.param["market_neutral"] = False
     ampl.option["solver"] = solver
-    output = ampl.get_output("solve;")
-    if ampl.get_value("solve_result") == "solved":
-        sigma2 = ampl.get_value("sqrt(sum {i in A, j in A} w[i] * S[i, j] * w[j])")
-        mu2 = ampl.get_value("sum {i in A} mu[i] * w[i]")
-        risk_free_rate = 0.02
-        sharpe2 = (mu2 - risk_free_rate) / sigma2
-        st.write(f"Expected annual return: {mu2*100:.1f}%")
-        st.write(f"Annual volatility: {sigma2*100:.1f}%")
-        st.write(f"Sharpe Ratio: {sharpe2:.2f}")
-        weights = np.array([v for _, v in ampl.var["w"].get_values().to_list()])
-        pd.Series(weights).plot.barh()
-        fig, _ = plt.subplots()
-        plt.barh(tickers, weights)
-        st.pyplot(fig)
-        st.write(ampl.var["w"].get_values().to_pandas().transpose())
-    else:
-        st.write("Failed to solve. Solver output:")
-    st.write(f"```\n{output}\n```")
+    solve(ampl)
     st.markdown(
         """
         ## The implementation using [amplpy](https://amplpy.readthedocs.org/)
@@ -245,24 +236,7 @@ def efficient_return(prices):
     ampl.param["target_return"] = target_return
     ampl.param["market_neutral"] = False
     ampl.option["solver"] = solver
-    output = ampl.get_output("solve;")
-    if ampl.get_value("solve_result") == "solved":
-        sigma2 = ampl.get_value("sqrt(sum {i in A, j in A} w[i] * S[i, j] * w[j])")
-        mu2 = ampl.get_value("sum {i in A} mu[i] * w[i]")
-        risk_free_rate = 0.02
-        sharpe2 = (mu2 - risk_free_rate) / sigma2
-        st.write(f"Expected annual return: {mu2*100:.1f}%")
-        st.write(f"Annual volatility: {sigma2*100:.1f}%")
-        st.write(f"Sharpe Ratio: {sharpe2:.2f}")
-        weights = np.array([v for _, v in ampl.var["w"].get_values().to_list()])
-        pd.Series(weights).plot.barh()
-        fig, _ = plt.subplots()
-        plt.barh(tickers, weights)
-        st.pyplot(fig)
-        st.write(ampl.var["w"].get_values().to_pandas().transpose())
-    else:
-        st.write("Failed to solve. Solver output:")
-    st.write(f"```\n{output}\n```")
+    solve(ampl)
     st.markdown(
         """
         ## The implementation using [amplpy](https://amplpy.readthedocs.org/)
@@ -338,24 +312,7 @@ def max_sharpe(prices):
     ampl.param["mu"] = mu
     ampl.param["risk_free_rate"] = risk_free_rate
     ampl.option["solver"] = solver
-    output = ampl.get_output("solve;")
-    if ampl.get_value("solve_result") == "solved":
-        sigma2 = ampl.get_value("sqrt(sum {i in A, j in A} w[i] * S[i, j] * w[j])")
-        mu2 = ampl.get_value("sum {i in A} mu[i] * w[i]")
-        risk_free_rate = 0.02
-        sharpe2 = (mu2 - risk_free_rate) / sigma2
-        st.write(f"Expected annual return: {mu2*100:.1f}%")
-        st.write(f"Annual volatility: {sigma2*100:.1f}%")
-        st.write(f"Sharpe Ratio: {sharpe2:.2f}")
-        weights = np.array([v for _, v in ampl.var["w"].get_values().to_list()])
-        pd.Series(weights).plot.barh()
-        fig, _ = plt.subplots()
-        plt.barh(tickers, weights)
-        st.pyplot(fig)
-        st.write(ampl.var["w"].get_values().to_pandas().transpose())
-    else:
-        st.write("Failed to solve. Solver output:")
-    st.write(f"```\n{output}\n```")
+    solve(ampl, risk_free_rate)
     st.markdown(
         """
         ## The implementation using [amplpy](https://amplpy.readthedocs.org/)
