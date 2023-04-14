@@ -10,10 +10,6 @@ from apps import INFO_HEADER, INFO_FOOTER
 
 
 def main():
-    uuid = os.environ.get("AMPLKEY_UUID")  # Use a free https://ampl.com/ce license
-    if uuid is not None:
-        modules.activate(uuid)  # activate your license
-
     # Logo
     _, col2, _ = st.columns((1, 4, 1))
     with col2:

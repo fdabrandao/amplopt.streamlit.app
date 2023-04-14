@@ -11,6 +11,21 @@ st.set_page_config(
     page_icon="👋",
 )
 
+
+@st.cache_data
+def activate_license():
+    from amplpy import modules
+
+    # Activate the license (e.g., a free https://ampl.com/ce license)
+    uuid = os.environ.get("AMPLKEY_UUID", None)
+    if uuid is not None:
+        modules.activate(uuid)
+    return uuid
+
+
+activate_license()
+
+
 # Logo
 _, col2, _ = st.columns((1, 4, 1))
 with col2:
