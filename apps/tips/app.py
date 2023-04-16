@@ -20,9 +20,8 @@ def main():
         )
 
     # Logo
-    _, col2, _ = st.columns((1, 4, 1))
-    with col2:
-        st.image("static/images/logo-inline-web-v4.png")
+    st.image("https://portal.ampl.com/dl/ads/python_ecosystem_badge.png")
+
     st.markdown("# AMPL Modeling Tips")
 
     query_params = st.experimental_get_query_params()

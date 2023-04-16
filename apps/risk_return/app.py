@@ -43,9 +43,7 @@ def load_data(tickers, start, end):
 
 def main():
     # Logo
-    _, col2, _ = st.columns((1, 4, 1))
-    with col2:
-        st.image("static/images/logo-inline-web-v4.png")
+    st.image("https://portal.ampl.com/dl/ads/python_ecosystem_badge.png")
 
     # Time horizon:
     start, end, holdout = "2000-01-01", "2022-12-30", 365

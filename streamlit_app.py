@@ -26,14 +26,13 @@ def activate_license():
 activate_license()
 
 
-# Logo
-_, col2, _ = st.columns((1, 4, 1))
-with col2:
-    st.image("static/images/logo-inline-web-v4.png")
+# Banner
+st.image("https://portal.ampl.com/dl/ads/python_ecosystem_badge.png")
 
 st.write("# Welcome to AMPL on Streamlit! 👋")
 
 st.sidebar.success("Select an app above.")
+
 
 st.markdown(INFO_HEADER)
 
