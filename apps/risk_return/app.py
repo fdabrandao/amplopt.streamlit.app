@@ -45,6 +45,13 @@ def main():
     # Logo
     st.image("https://portal.ampl.com/dl/ads/python_ecosystem_badge.png")
 
+    # Sidebar
+    st.sidebar.header("About")
+    st.sidebar.markdown(INFO_HEADER)
+
+    st.sidebar.header("Resources")
+    st.sidebar.markdown(INFO_FOOTER)
+
     # Time horizon:
     start, end, holdout = "2000-01-01", "2022-12-30", 365
 
@@ -234,10 +241,3 @@ def main():
     #### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/risk_return)]
     """
     )
-
-    # Sidebar
-    st.sidebar.header("About")
-    st.sidebar.markdown(INFO_HEADER)
-
-    st.sidebar.header("Resources")
-    st.sidebar.markdown(INFO_FOOTER)

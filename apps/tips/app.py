@@ -22,6 +22,13 @@ def main():
     # Logo
     st.image("https://portal.ampl.com/dl/ads/python_ecosystem_badge.png")
 
+    # Sidebar
+    st.sidebar.header("About")
+    st.sidebar.markdown(INFO_HEADER)
+
+    st.sidebar.header("Resources")
+    st.sidebar.markdown(INFO_FOOTER)
+
     st.markdown("# AMPL Modeling Tips")
 
     query_params = st.experimental_get_query_params()
@@ -37,13 +44,6 @@ def main():
         "Pick the tip 👇", tip_titles, key="title", on_change=update_params
     )
     tip_index = tip_titles.index(selected_tip)
-
-    # Sidebar
-    st.sidebar.header("About")
-    st.sidebar.markdown(INFO_HEADER)
-
-    st.sidebar.header("Resources")
-    st.sidebar.markdown(INFO_FOOTER)
 
     title, run = tips[tip_index]
     st.markdown(f"## 💡 {title}")
