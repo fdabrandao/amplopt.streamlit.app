@@ -123,6 +123,6 @@ def run():
 
     st.markdown(
         """
-        #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7051906116254896128)] [[On Twitter](https://twitter.com/AMPLopt/status/1646140286731444227)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-6-robust-linear-programming-with-ellipsoidal-uncertainty/487)]
+        #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7051906116254896128)] [[On Twitter](https://twitter.com/AMPLopt/status/1646140286731444227)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-6-robust-linear-programming-with-ellipsoidal-uncertainty/487)] [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)]
         """
     )

@@ -44,3 +44,9 @@ st.markdown(
 )
 
 st.markdown(INFO_FOOTER)
+
+st.markdown(
+    """
+[[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)]
+"""
+)

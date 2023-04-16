@@ -228,8 +228,10 @@ def main():
     # References
 
     - amplpy: https://amplpy.readthedocs.io
-    - amplpyfinance: https://amplpy.readthedocs.io
+    - amplpyfinance: https://amplpyfinance.readthedocs.io
     - PyPortfolioOpt: https://pyportfolioopt.readthedocs.io
+
+    #### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/risk_return)]
     """
     )
 

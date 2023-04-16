@@ -84,6 +84,6 @@ def run():
 
     st.markdown(
         """
-    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7009180143474606080)] [[On Twitter](https://twitter.com/AMPLopt/status/1603408895963275269)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-2-equivalence/268)]
+    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7009180143474606080)] [[On Twitter](https://twitter.com/AMPLopt/status/1603408895963275269)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-2-equivalence/268)] [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)]
     """
     )

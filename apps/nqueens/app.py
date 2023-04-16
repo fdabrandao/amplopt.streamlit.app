@@ -102,6 +102,6 @@ def main():
 
     st.markdown(
         """
-    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7024414805193089024)] [[On Twitter](https://twitter.com/AMPLopt/status/1618648831230451715)]
+    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7024414805193089024)] [[On Twitter](https://twitter.com/AMPLopt/status/1618648831230451715)]  [[Source Code on GitHub](https://github.com/fdabrandao/streamlit-nqueens)]
     """
     )

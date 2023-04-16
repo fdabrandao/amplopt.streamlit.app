@@ -117,6 +117,6 @@ def run():
 
     st.markdown(
         """
-    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7026940745932546049)] [[On Twitter](https://twitter.com/AMPLopt/status/1621174770761965570)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-4-if-then/354)]
+    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7026940745932546049)] [[On Twitter](https://twitter.com/AMPLopt/status/1621174770761965570)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-4-if-then/354)] [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)]
     """
     )

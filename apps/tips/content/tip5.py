@@ -243,6 +243,6 @@ def run():
 
     st.markdown(
         """
-    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7036350030894551040)] [[On Twitter](https://twitter.com/AMPLopt/status/1630585362039939073)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-5-non-contiguous-variable-domains/387)]
+    #### [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7036350030894551040)] [[On Twitter](https://twitter.com/AMPLopt/status/1630585362039939073)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-5-non-contiguous-variable-domains/387)] [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)]
     """
     )
