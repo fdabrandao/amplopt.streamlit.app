@@ -28,7 +28,7 @@ def select_solver():
     return st.selectbox("Pick the solver 👇", solvers, key="solver")
 
 
-def prepare_data(prices):
+def prepare_data(prices, real_mu):
     risk_method = st.selectbox(
         "Pick the risk method 👇",
         RISK_METHODS,
@@ -39,26 +39,33 @@ def prepare_data(prices):
 
     return_method = st.selectbox(
         "Pick the return method 👇",
-        RETURN_METHODS,
+        RETURN_METHODS + ["real returns"],
         index=RETURN_METHODS.index("capm_return"),
         key="models_return_method",
     )
-    mu = expected_returns.return_model(prices, method=return_method)
+    if return_method == "real returns":
+        mu = real_mu
+    else:
+        mu = expected_returns.return_model(prices, method=return_method)
     tickers = list(mu.index)
     return risk_method, return_method, tickers, mu, S
 
 
-def solve(ampl, risk_free_rate=0.2, skip_mu=False):
+def solve(ampl, risk_free_rate=0.2, skip_mu=False, real_mu=None):
     output = ampl.get_output("solve;")
     if ampl.get_value("solve_result") == "solved":
         sigma2 = ampl.get_value("sqrt(sum {i in A, j in A} w[i] * S[i, j] * w[j])")
-        st.write(f"Annual volatility: {sigma2*100:.1f}%")
+        weights_df = ampl.var["w"].get_values().to_pandas()
+        real_return = sum(weights_df["w.val"] * real_mu)
+        kpis = "KPIs:\n"
+        kpis += f"- Annual volatility: {sigma2*100:.1f}%\n"
         if not skip_mu:
             mu2 = ampl.get_value("sum {i in A} mu[i] * w[i]")
             sharpe2 = (mu2 - risk_free_rate) / sigma2
-            st.write(f"Expected annual return: {mu2*100:.1f}%")
-            st.write(f"Sharpe Ratio: {sharpe2:.2f}")
-        weights_df = ampl.var["w"].get_values().to_pandas()
+            kpis += f"- Expected annual return: {mu2*100:.1f}%\n"
+            kpis += f"- Sharpe Ratio: {sharpe2:.2f}\n"
+        kpis += f"- Real return: {real_return*100:.1f}%\n"
+        st.markdown(kpis)
         fig, _ = plt.subplots()
         plt.barh(weights_df.index, weights_df.iloc[:, 0])
         st.pyplot(fig)
@@ -68,8 +75,8 @@ def solve(ampl, risk_free_rate=0.2, skip_mu=False):
     st.write(f"```\n{output}\n```")
 
 
-def min_volatility(prices):
-    risk_method, _, tickers, _, S = prepare_data(prices)
+def min_volatility(prices, real_mu):
+    risk_method, _, tickers, _, S = prepare_data(prices, real_mu)
     solver = select_solver()
     st.markdown(
         f"""
@@ -95,7 +102,7 @@ def min_volatility(prices):
     ampl.set["A"] = tickers
     ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
     ampl.option["solver"] = solver
-    solve(ampl, skip_mu=True)
+    solve(ampl, skip_mu=True, real_mu=real_mu)
     st.markdown(
         """
         ## The implementation using [amplpy](https://amplpy.readthedocs.org/)
@@ -122,8 +129,8 @@ def min_volatility(prices):
     )
 
 
-def efficient_risk(prices):
-    risk_method, return_method, tickers, mu, S = prepare_data(prices)
+def efficient_risk(prices, real_mu):
+    risk_method, return_method, tickers, mu, S = prepare_data(prices, real_mu)
     solver = select_solver()
     st.markdown(
         f"""
@@ -160,7 +167,7 @@ def efficient_risk(prices):
     ampl.param["target_volatility"] = target_volatility
     ampl.param["market_neutral"] = False
     ampl.option["solver"] = solver
-    solve(ampl)
+    solve(ampl, real_mu=real_mu)
     st.markdown(
         """
         ## The implementation using [amplpy](https://amplpy.readthedocs.org/)
@@ -196,8 +203,8 @@ def efficient_risk(prices):
     )
 
 
-def efficient_return(prices):
-    risk_method, return_method, tickers, mu, S = prepare_data(prices)
+def efficient_return(prices, real_mu):
+    risk_method, return_method, tickers, mu, S = prepare_data(prices, real_mu)
     solver = select_solver()
     st.markdown(
         f"""
@@ -236,7 +243,7 @@ def efficient_return(prices):
     ampl.param["target_return"] = target_return
     ampl.param["market_neutral"] = False
     ampl.option["solver"] = solver
-    solve(ampl)
+    solve(ampl, real_mu=real_mu)
     st.markdown(
         """
         ## The implementation using [amplpy](https://amplpy.readthedocs.org/)
@@ -274,8 +281,8 @@ def efficient_return(prices):
     )
 
 
-def max_sharpe(prices):
-    risk_method, return_method, tickers, mu, S = prepare_data(prices)
+def max_sharpe(prices, real_mu):
+    risk_method, return_method, tickers, mu, S = prepare_data(prices, real_mu)
     solver = select_solver()
     st.markdown(
         f"""
@@ -312,7 +319,7 @@ def max_sharpe(prices):
     ampl.param["mu"] = mu
     ampl.param["risk_free_rate"] = risk_free_rate
     ampl.option["solver"] = solver
-    solve(ampl, risk_free_rate)
+    solve(ampl, risk_free_rate, real_mu=real_mu)
     st.markdown(
         """
         ## The implementation using [amplpy](https://amplpy.readthedocs.org/)

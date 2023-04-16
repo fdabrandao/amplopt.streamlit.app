@@ -196,8 +196,8 @@ def main():
 
     fig, ax = plt.subplots()
     ax.set_title("Real returns")
-    realmu = future_df.iloc[-1] - past_df.iloc[-1]
-    realmu.plot.barh(ax=ax)
+    real_mu = (future_df.iloc[-1] - past_df.iloc[-1]) / past_df.iloc[-1]
+    real_mu.plot.barh(ax=ax)
     st.pyplot(fig)
 
     st.markdown(
@@ -218,8 +218,18 @@ def main():
 
     for label, impl in lst:
         if label == model and impl:
-            impl(past_df)
+            impl(past_df, real_mu)
             break
+
+    st.markdown(
+        """
+    # References
+
+    - amplpy: https://amplpy.readthedocs.io
+    - amplpyfinance: https://amplpy.readthedocs.io
+    - PyPortfolioOpt: https://pyportfolioopt.readthedocs.io
+    """
+    )
 
     # Sidebar
     st.sidebar.header("About")
