@@ -237,6 +237,7 @@ def main():
     - amplpy: https://amplpy.readthedocs.io
     - amplpyfinance: https://amplpyfinance.readthedocs.io
     - PyPortfolioOpt: https://pyportfolioopt.readthedocs.io
+    - Cornuejols, G., and Tütüncü, R. (2018). Optimization Methods in Finance (2nd edition). Cambridge University Press.
 
     #### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/risk_return)]
     """
