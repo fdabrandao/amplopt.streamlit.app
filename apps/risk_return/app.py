@@ -63,8 +63,8 @@ def main():
         **However, in practice we do not have access to the
         covariance matrix nor to the expected returns.**
 
-        > **NOTE:** We will be using data from {start} to {end} and we will split it
-        > leaving out the last {holdout} days for performance validation.
+        > **NOTE:** We will be using data from **{start}** to **{end}** and we will split it
+        > leaving out the last **{holdout}** days for performance validation.
         """
     )
 
@@ -199,6 +199,8 @@ def main():
     real_mu = (future_df.iloc[-1] - past_df.iloc[-1]) / past_df.iloc[-1]
     real_mu.plot.barh(ax=ax)
     st.pyplot(fig)
+
+    st.write(f"**Average return: {real_mu.mean()*100:.1f}%**")
 
     st.markdown(
         """

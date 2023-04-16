@@ -57,14 +57,14 @@ def solve(ampl, risk_free_rate=0.2, skip_mu=False, real_mu=None):
         sigma2 = ampl.get_value("sqrt(sum {i in A, j in A} w[i] * S[i, j] * w[j])")
         weights_df = ampl.var["w"].get_values().to_pandas()
         real_return = sum(weights_df["w.val"] * real_mu)
-        kpis = "KPIs:\n"
-        kpis += f"- Annual volatility: {sigma2*100:.1f}%\n"
+        kpis = "**KPIs:**\n"
+        kpis += f"- **Annual volatility: {sigma2*100:.1f}%**\n"
         if not skip_mu:
             mu2 = ampl.get_value("sum {i in A} mu[i] * w[i]")
             sharpe2 = (mu2 - risk_free_rate) / sigma2
-            kpis += f"- Expected annual return: {mu2*100:.1f}%\n"
-            kpis += f"- Sharpe Ratio: {sharpe2:.2f}\n"
-        kpis += f"- Real return: {real_return*100:.1f}%\n"
+            kpis += f"- **Expected annual return: {mu2*100:.1f}%**\n"
+            kpis += f"- **Sharpe Ratio: {sharpe2:.2f}**\n"
+        kpis += f"\n**Real return: {real_return*100:.1f}%**\n"
         st.markdown(kpis)
         fig, _ = plt.subplots()
         plt.barh(weights_df.index, weights_df.iloc[:, 0])
