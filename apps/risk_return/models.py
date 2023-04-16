@@ -141,6 +141,7 @@ def efficient_risk(prices, real_mu):
     """
     )
     target_volatility = st.slider("Target volatility?", 0.05, 1.0, 0.25, step=0.01)
+    market_neutral = st.checkbox("Market neutral?")
     ampl = AMPL()
     ampl.eval(
         r"""
@@ -165,7 +166,8 @@ def efficient_risk(prices, real_mu):
     ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
     ampl.param["mu"] = mu
     ampl.param["target_volatility"] = target_volatility
-    ampl.param["market_neutral"] = False
+    ampl.param["market_neutral"] = market_neutral
+    ampl.param["lb"] = -1 if market_neutral else 0
     ampl.option["solver"] = solver
     solve(ampl, real_mu=real_mu)
     st.markdown(
@@ -195,7 +197,8 @@ def efficient_risk(prices, real_mu):
         ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
         ampl.param["mu"] = mu
         ampl.param["target_volatility"] = target_volatility
-        ampl.param["market_neutral"] = False
+        ampl.param["market_neutral"] = market_neutral
+        ampl.param["lb"] = -1 if market_neutral else 0
         ampl.option["solver"] = solver
         ampl.solve()
         ```
@@ -215,6 +218,7 @@ def efficient_return(prices, real_mu):
     """
     )
     target_return = st.slider("Target return?", 0.01, 0.20, 0.10, step=0.01)
+    market_neutral = st.checkbox("Market neutral?")
     ampl = AMPL()
     ampl.eval(
         r"""
@@ -241,7 +245,8 @@ def efficient_return(prices, real_mu):
     ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
     ampl.param["mu"] = mu
     ampl.param["target_return"] = target_return
-    ampl.param["market_neutral"] = False
+    ampl.param["market_neutral"] = market_neutral
+    ampl.param["lb"] = -1 if market_neutral else 0
     ampl.option["solver"] = solver
     solve(ampl, real_mu=real_mu)
     st.markdown(
@@ -273,7 +278,8 @@ def efficient_return(prices, real_mu):
         ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
         ampl.param["mu"] = mu
         ampl.param["target_return"] = target_return
-        ampl.param["market_neutral"] = False
+        ampl.param["market_neutral"] = market_neutral
+        ampl.param["lb"] = -1 if market_neutral else 0
         ampl.option["solver"] = solver
         ampl.solve()
         ```
