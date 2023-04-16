@@ -12,7 +12,7 @@ you are familiar with.
 INFO_FOOTER = """
 - [AMPL Website](https://ampl.com)
 - [AMPL Documentation](https://dev.ampl.com/)
-- [AMPL Model Colaboraty](https://colab.ampl.com/)
+- [AMPL Model Colaboratory](https://colab.ampl.com/)
 - [AMPL Forum on Discourse](https://discuss.ampl.com/)
 
 Follow us on [Twitter](https://twitter.com/AMPLopt) and [LinkedIn](https://www.linkedin.com/company/ampl) to get the latest updates from the dev team!
