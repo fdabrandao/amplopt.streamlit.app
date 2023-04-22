@@ -44,7 +44,7 @@ ampl = AMPL()
 
 ```bash
 $ python -m venv venv
-$ sournce venv/bin/activate
+$ source venv/bin/activate
 $ python -m install -r requirements.txt --upgrade
 $ streamlit run streamlit_app.py
 ```
