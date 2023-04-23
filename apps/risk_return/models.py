@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 
+
 RISK_METHODS = [
     "sample_cov",
     "semicovariance",
@@ -75,8 +76,83 @@ def solve(ampl, risk_free_rate=0.2, skip_mu=False, real_mu=None):
     st.write(f"```\n{output}\n```")
 
 
+def efficient_frontier(tickers, mu, S, solver, market_neutral=False):
+    inf = float("inf")
+    ampl = AMPL()
+    ampl.eval(
+        r"""
+        param target_return;
+        param target_variance;
+        param market_neutral default 0;
+
+        set A ordered;
+        param S{A, A};
+        param mu{A} default 0;
+
+        param lb default 0;
+        param ub default 1;
+        var w{A} >= lb <= ub;
+
+        minimize portfolio_variance:
+            sum {i in A, j in A} w[i] * S[i, j] * w[j];
+        maximize portfolio_return:
+            sum {i in A} mu[i] * w[i];
+        s.t. target_portfolio_return:
+            sum {i in A} mu[i] * w[i] >= target_return;
+        s.t. target_portfolio_variance:
+            sum {i in A, j in A} w[i] * S[i, j] * w[j] <= target_variance;
+        s.t. portfolio_weights:
+            sum {i in A} w[i] = if market_neutral then 0 else 1;
+        """
+    )
+    ampl.set["A"] = tickers
+    ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
+    ampl.param["mu"] = mu
+    ampl.param["target_return"] = 0
+    ampl.param["target_variance"] = inf
+    ampl.param["market_neutral"] = market_neutral
+    ampl.param["lb"] = -1 if market_neutral else 0
+    ampl.option["solver"] = solver
+
+    ampl.eval("solve portfolio_return;")
+    max_return = ampl.get_value("portfolio_return")
+
+    ampl.eval("solve portfolio_variance;")
+    min_variance = ampl.get_value("portfolio_variance")
+
+    ampl.param["target_variance"] = min_variance
+    ampl.eval("solve portfolio_return;")
+    max_return_with_min_variance = ampl.get_value("portfolio_return")
+    ampl.param["target_variance"] = inf
+
+    ampl.param["target_return"] = max_return
+    ampl.eval("solve portfolio_variance;")
+    min_variance_with_max_return = ampl.get_value("portfolio_variance")
+    ampl.param["target_return"] = 0
+
+    st.markdown(
+        f"""
+    ## Efficient frontier
+    - Min variance: {min_variance*100:.2f}% (max return for min variance: {max_return_with_min_variance*100:.2f}%)
+    - Max return: {max_return*100:.2f}% (min variance for max return: {min_variance_with_max_return*100:.2f}%)
+    """
+    )
+
+    ampl.param["target_variance"] = inf
+    returns, variances = [], []
+    for p in np.linspace(0, 1, 50):
+        target_return = max_return * p
+        ampl.param["target_return"] = target_return
+        ampl.eval("solve portfolio_variance;")
+        min_variance = ampl.get_value("portfolio_variance")
+        returns.append(target_return)
+        variances.append(min_variance)
+    df = pd.DataFrame({"return": returns, "variance": variances})
+    st.line_chart(df.set_index("variance"))
+
+
 def min_volatility(prices, real_mu):
-    risk_method, _, tickers, _, S = prepare_data(prices, real_mu)
+    risk_method, _, tickers, mu, S = prepare_data(prices, real_mu)
     solver = select_solver()
     st.markdown(
         f"""
@@ -127,6 +203,7 @@ def min_volatility(prices, real_mu):
         ```
         """
     )
+    efficient_frontier(tickers, mu, S, solver)
 
 
 def efficient_risk(prices, real_mu):
@@ -204,6 +281,7 @@ def efficient_risk(prices, real_mu):
         ```
         """
     )
+    efficient_frontier(tickers, mu, S, solver, market_neutral)
 
 
 def efficient_return(prices, real_mu):
@@ -235,7 +313,7 @@ def efficient_return(prices, real_mu):
 
         minimize portfolio_variance:
             sum {i in A, j in A} w[i] * S[i, j] * w[j];
-        s.t. portfolio__return:
+        s.t. portfolio_return:
             sum {i in A} mu[i] * w[i] >= target_return;
         s.t. portfolio_weights:
             sum {i in A} w[i] = if market_neutral then 0 else 1;
@@ -269,7 +347,7 @@ def efficient_return(prices, real_mu):
 
             minimize portfolio_variance:
                 sum {i in A, j in A} w[i] * S[i, j] * w[j];
-            s.t. portfolio__return:
+            s.t. portfolio_return:
                 sum {i in A} mu[i] * w[i] >= target_return;
             s.t. portfolio_weights:
                 sum {i in A} w[i] = if market_neutral then 0 else 1;
@@ -285,6 +363,7 @@ def efficient_return(prices, real_mu):
         ```
         """
     )
+    efficient_frontier(tickers, mu, S, solver, market_neutral)
 
 
 def max_sharpe(prices, real_mu):
@@ -359,3 +438,4 @@ def max_sharpe(prices, real_mu):
         ```
         """
     )
+    efficient_frontier(tickers, mu, S, solver)
