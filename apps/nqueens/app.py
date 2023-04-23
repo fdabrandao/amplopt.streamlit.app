@@ -10,16 +10,6 @@ from apps import INFO_HEADER, INFO_FOOTER
 
 
 def main():
-    # Logo
-    st.image("https://portal.ampl.com/dl/ads/python_ecosystem_badge.png")
-
-    # Sidebar
-    st.sidebar.header("About")
-    st.sidebar.markdown(INFO_HEADER)
-
-    st.sidebar.header("Resources")
-    st.sidebar.markdown(INFO_FOOTER)
-
     st.markdown(
         """
     # N-Queens
