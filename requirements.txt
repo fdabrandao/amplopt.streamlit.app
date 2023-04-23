@@ -13,3 +13,4 @@ amplpyfinance
 streamlit==1.21.0
 matplotlib==3.7.1
 yfinance==0.2.17
+altair==4.2.2
