@@ -10,6 +10,8 @@ INFO_FOOTER = """
 - [AMPL Forum on Discourse](https://discuss.ampl.com/)
 
 Follow us on [Twitter](https://twitter.com/AMPLopt) and [LinkedIn](https://www.linkedin.com/company/ampl) to get the latest updates from the dev team!
-
-[![Hits](https://h.ampl.com/https://amplopt.streamlit.app/)](https://amplopt.streamlit.app)
 """
+
+
+def badge(app=""):
+    return f"[![Hits](https://h.ampl.com/https://amplopt.streamlit.app/{app})](https://amplopt.streamlit.app/{app})"

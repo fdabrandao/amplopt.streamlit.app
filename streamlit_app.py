@@ -4,7 +4,7 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
 
-from apps import INFO_HEADER, INFO_FOOTER
+from apps import INFO_HEADER, INFO_FOOTER, badge
 
 st.set_page_config(
     page_title="AMPL on Streamlit Cloud",
@@ -44,6 +44,7 @@ st.markdown(
 )
 
 st.markdown(INFO_FOOTER)
+st.markdown(badge(""))
 
 st.markdown(
     """

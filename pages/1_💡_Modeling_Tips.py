@@ -1,8 +1,11 @@
 import sys
 import os
+import streamlit as st
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from apps import tips
+from apps import tips, badge
 
 tips.main()
+
+st.sidebar.markdown(badge("Modeling_Tips"))
