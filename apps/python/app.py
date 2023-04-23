@@ -137,5 +137,61 @@ def main():
     ```
 
     [[AMPL on Streamlit](http://ampl.com/streamlit)] [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app)]
+
+    ## AMPL on Docker Containers
+
+    AMPL can be easily used on [Docker containers](https://www.docker.com/).
+    On Python containers the setup is the easiest
+    since AMPL and all solvers are now available as [Python Packages](https://dev.ampl.com/ampl/python/modules.html):
+
+    ```bash
+    # Use any image as base image with python installed
+    FROM python:3.9-slim-bullseye
+
+    # Install amplpy and all necessary amplpy.modules:
+    RUN python -m pip install amplpy --no-cache-dir # Install amplpy
+    RUN python -m amplpy.modules install highs gurobi --no-cache-dir # Install modules
+    ```
+    We do not provide a base docker image as we give the user total freedom about which base image to use.
+    In this example, we use the image [`python:3.9-slim-bullseye`](https://hub.docker.com/_/python) as base image.
+
+    You can build and run the container locally as follows:
+    ```bash
+    $ docker build . --tag ampl-container
+    $ docker run --rm -it ampl-container bash
+    root@c240a014dd67:/# python
+    Python 3.9.16 (main, Jan 23 2023, 23:42:27)
+    [GCC 10.2.1 20210110] on linux
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> from amplpy import AMPL, modules
+    >>> modules.activate("<license-uuid>")
+    >>> ampl = AMPL()
+    >>>
+    ```
+
+    This also works with non-root containers:
+    ```bash
+    # Use any image as base image
+    FROM python:3.9-slim-bullseye
+
+    # Install amplpy and all necessary amplpy.modules:
+    RUN python -m pip install amplpy --no-cache-dir # Install amplpy
+    RUN python -m amplpy.modules install highs gurobi --no-cache-dir # Install modules
+
+    # Add non-root user (optional)
+    ARG USERNAME=guest
+    ARG USER_UID=1000
+    ARG USER_GID=$USER_UID
+    RUN groupadd --gid $USER_GID $USERNAME \
+        && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+    # Change to non-root privilege
+    USER ${USERNAME}
+    ```
+
+    ---
+
+    **Contact us at <support@ampl.com> for free deployment support.** You can also any questions you have on our [Discourse Forum](https://discuss.ampl.com).
+
+    ---
     '''
     )
