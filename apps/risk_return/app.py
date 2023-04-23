@@ -176,7 +176,7 @@ def main():
     st.markdown(
         """
     **Methods that give more weight to recent data, such as exponentially-weighted covariance matrix,
-    typically performs better.**
+    typically perform better.**
     """
     )
 
