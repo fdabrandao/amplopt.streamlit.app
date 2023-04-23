@@ -140,8 +140,9 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
     st.markdown(
         f"""
     ## Efficient frontier
-    - Min variance: {min_variance*100:.2f}% (max return for min variance: {max_return_with_min_variance*100:.2f}%)
-    - Max return: {max_return*100:.2f}% (min variance for max return: {min_variance_with_max_return*100:.2f}%)
+    - Solution variance (red): {sol_variance*100:.2f}% (solution return: {sol_return*100:.2f}%)
+    - Min variance (blue): {min_variance*100:.2f}% (max return for min variance: {max_return_with_min_variance*100:.2f}%)
+    - Max return (green): {max_return*100:.2f}% (min variance for max return: {min_variance_with_max_return*100:.2f}%)
     """
     )
 
