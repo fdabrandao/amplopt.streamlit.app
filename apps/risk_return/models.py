@@ -96,9 +96,13 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
         param ub default 1;
         var w{A} >= lb <= ub;
 
-        minimize portfolio_variance:
+        minimize min_portfolio_variance:
             sum {i in A, j in A} w[i] * S[i, j] * w[j];
-        maximize portfolio_return:
+        maximize max_portfolio_return:
+            sum {i in A} mu[i] * w[i];
+        maximize max_portfolio_variance:
+            sum {i in A, j in A} w[i] * S[i, j] * w[j];
+        minimize min_portfolio_return:
             sum {i in A} mu[i] * w[i];
         s.t. target_portfolio_return:
             sum {i in A} mu[i] * w[i] >= target_return;
@@ -117,25 +121,31 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
     ampl.param["lb"] = -1 if market_neutral else 0
     ampl.option["solver"] = solver
 
-    ampl.eval("solve portfolio_return;")
-    max_return = ampl.get_value("portfolio_return")
+    ampl.eval("solve min_portfolio_return;")
+    min_return = ampl.get_value("min_portfolio_return")
 
-    ampl.eval("solve portfolio_variance;")
-    min_variance = ampl.get_value("portfolio_variance")
+    ampl.eval("solve max_portfolio_return;")
+    max_return = ampl.get_value("max_portfolio_return")
+
+    ampl.eval("solve min_portfolio_variance;")
+    min_variance = ampl.get_value("min_portfolio_variance")
+
+    # ampl.eval("solve max_portfolio_variance;")
+    # max_variance = ampl.get_value("max_portfolio_variance")
 
     ampl.param["target_variance"] = min_variance
-    ampl.eval("solve portfolio_return;")
-    max_return_with_min_variance = ampl.get_value("portfolio_return")
+    ampl.eval("solve max_portfolio_return;")
+    max_return_with_min_variance = ampl.get_value("max_portfolio_return")
     ampl.param["target_variance"] = inf
 
     ampl.param["target_return"] = max_return
-    ampl.eval("solve portfolio_variance;")
-    min_variance_with_max_return = ampl.get_value("portfolio_variance")
+    ampl.eval("solve min_portfolio_variance;")
+    min_variance_with_max_return = ampl.get_value("min_portfolio_variance")
     ampl.param["target_return"] = 0
 
     ampl.var["w"] = weights
-    sol_return = ampl.get_value("portfolio_return")
-    sol_variance = ampl.get_value("portfolio_variance")
+    sol_return = ampl.get_value("max_portfolio_return")
+    sol_variance = ampl.get_value("min_portfolio_variance")
 
     st.markdown(
         f"""
@@ -147,15 +157,31 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
     )
 
     ampl.param["target_variance"] = inf
-    returns, variances = [], []
-    for p in np.linspace(0, 1, 25):
-        target_return = max_return * p
+    max_returns, variances = [], []
+    for r in np.linspace(max_return_with_min_variance, max_return, 25):
+        target_return = r
         ampl.param["target_return"] = target_return
-        ampl.eval("solve portfolio_variance;")
-        returns.append(target_return)
-        variances.append(ampl.get_value("portfolio_variance"))
-    df = pd.DataFrame({"Return": returns, "Variance": variances})
-    line_chart = alt.Chart(df).mark_line().encode(x="Variance", y="Return")
+        ampl.eval("solve min_portfolio_variance;")
+        max_returns.append(target_return)
+        variances.append(ampl.get_value("min_portfolio_variance"))
+
+    df = pd.DataFrame({"Return": max_returns, "Variance": variances})
+    line_chart_1 = alt.Chart(df).mark_line().encode(x="Variance", y="Return")
+
+    ampl.param["target_return"] = 0
+    min_returns = []
+    for v in variances:
+        ampl.param["target_variance"] = v
+        ampl.eval("solve min_portfolio_return;")
+        min_returns.append(round(ampl.get_value("min_portfolio_return"), 5))
+
+    index = min_returns.index(min(min_returns))
+    if index < len(min_returns) - 1:
+        variances = variances[: index + 1]
+        min_returns = min_returns[: index + 1]
+
+    df = pd.DataFrame({"Return": min_returns, "Variance": variances})
+    line_chart_2 = alt.Chart(df).mark_line().encode(x="Variance", y="Return")
 
     def create_point_chart(var, ret, color):
         return (
@@ -171,7 +197,9 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
         min_variance_with_max_return, max_return, "green"
     )
     point_chart_3 = create_point_chart(sol_variance, sol_return, "red")
-    combined_chart = line_chart + point_chart_1 + point_chart_2 + point_chart_3
+    combined_chart = (
+        line_chart_1 + line_chart_2 + point_chart_1 + point_chart_2 + point_chart_3
+    )
     st.altair_chart(combined_chart, use_container_width=True)
 
 
