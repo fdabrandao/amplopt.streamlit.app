@@ -2,9 +2,11 @@ import os
 import sys
 import streamlit as st
 import numpy as np
+import pandas as pd
 from amplpy import AMPL, modules
 import matplotlib.pyplot as plt
 import yfinance as yf
+import datetime
 from pypfopt import expected_returns, risk_models
 from . import models
 
@@ -52,9 +54,6 @@ def main():
     st.sidebar.header("Resources")
     st.sidebar.markdown(INFO_FOOTER)
 
-    # Time horizon:
-    start, end, holdout = "2000-01-01", "2022-12-30", 365
-
     st.markdown(
         f"""
         # Risk Return
@@ -69,14 +68,54 @@ def main():
         The most commonly-used risk model is the covariance matrix.
         **However, in practice we do not have access to the
         covariance matrix nor to the expected returns.**
-
-        > **NOTE:** We will be using data from **{start}** to **{end}** and we will split it
-        > leaving out the last **{holdout}** days for performance validation.
         """
     )
 
-    prices = load_data(TICKERS, start, end)
-    past_df, future_df = prices.iloc[:-holdout], prices.iloc[-holdout:]
+    # Training data starts at
+    min_date = datetime.date(2000, 1, 1)
+    max_date = datetime.datetime.today() - datetime.timedelta(days=3 * 365)
+    start_date = st.date_input(
+        "Pick a start date 👇",
+        min_date,
+        min_value=min_date,
+        max_value=max_date,
+    )
+
+    # Training data ends at
+    min_date = start_date + datetime.timedelta(days=365)
+    max_date = datetime.datetime.today() - datetime.timedelta(days=31)
+    end_date = st.date_input(
+        "Pick an end date 👇",
+        datetime.datetime.today() - datetime.timedelta(days=365),
+        min_value=min_date,
+        max_value=max_date,
+    )
+
+    # Evaluation date
+    min_date = end_date + datetime.timedelta(days=365)
+    max_date = datetime.datetime.today().date()
+    min_date = min(min_date, max_date)
+    evaluation_date = st.date_input(
+        "Pick an evaluation date 👇",
+        max_date,
+        min_value=min_date,
+        max_value=max_date,
+    )
+
+    st.markdown(
+        f"""
+        **NOTE:** We will be using data from **{start_date}** to **{end_date}** and
+        evaluate performance on **{evaluation_date}**.
+        """
+    )
+
+    # Load data and split it
+    prices = load_data(TICKERS, start_date, evaluation_date)
+    past_df, future_df = (
+        prices.loc[prices.index <= pd.to_datetime(end_date)],
+        prices.loc[prices.index > pd.to_datetime(end_date)],
+    )
+
     risk_methods, return_methods = models.RISK_METHODS, models.RETURN_METHODS
 
     st.markdown(
