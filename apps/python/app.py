@@ -13,6 +13,15 @@ def main():
         '''
     [[Model Colaboratory](http://colab.ampl.com)] [[AMPL on Streamlit](http://ampl.com/streamlit)] [[AMPL Community Edition](https://ampl.com/ce)]
 
+    # Use AMPL from 🐍 easily on
+
+    - [Local machines](#on-local-machines)
+    - [Google Colab](#on-google-colab)
+    - [Streamlit Cloud](#on-streamlit-cloud)
+    - [Docker Containers](#on-docker-containers)
+
+    ## On local machines
+
     [AMPL and all solvers are now available as python packages](https://dev.ampl.com/ampl/python/index.htmlmodules.html#amplpy-modules) for **Windows, Linux (X86_64, aarch64, ppc64le), and macOS**. For instance, to install AMPL with HiGHS, CBC and Gurobi, you just need the following:
 
     ```bash
@@ -128,7 +137,7 @@ def main():
 
     [[AMPL on Streamlit](http://ampl.com/streamlit)] [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app)]
 
-    ## AMPL on Docker Containers
+    ## On Docker Containers
 
     AMPL can be easily used on [Docker containers](https://www.docker.com/).
     On Python containers the setup is the easiest
