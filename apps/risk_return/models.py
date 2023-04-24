@@ -166,7 +166,7 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
         variances.append(ampl.get_value("min_portfolio_variance"))
 
     df = pd.DataFrame({"Return": max_returns, "Variance": variances})
-    line_chart_1 = alt.Chart(df).mark_line().encode(x="Variance", y="Return")
+    combined_chart = alt.Chart(df).mark_line().encode(x="Variance", y="Return")
 
     ampl.param["target_return"] = 0
     min_returns = []
@@ -181,24 +181,37 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
         min_returns = min_returns[: index + 1]
 
     df = pd.DataFrame({"Return": min_returns, "Variance": variances})
-    line_chart_2 = alt.Chart(df).mark_line().encode(x="Variance", y="Return")
+    combined_chart += alt.Chart(df).mark_line().encode(x="Variance", y="Return")
 
-    def create_point_chart(var, ret, color):
-        return (
+    def create_point_chart(var, ret, color, label="", dx=7, dy=0):
+        point = (
             alt.Chart(pd.DataFrame({"Variance": [var], "Return": [ret]}))
             .mark_point(size=100, color=color)
             .encode(x="Variance", y="Return")
         )
+        if label == "":
+            return point
+        text = point.mark_text(align="left", baseline="middle", dx=dx, dy=dy).encode(
+            text=alt.value(label)
+        )
+        return point + text
 
-    point_chart_1 = create_point_chart(
-        min_variance, max_return_with_min_variance, "blue"
+    for ticker in tickers:
+        ampl.var["w"] = {t: 1 if t == ticker else 0 for t in tickers}
+        stock_return = ampl.get_value("max_portfolio_return")
+        stock_variance = ampl.get_value("min_portfolio_variance")
+        combined_chart += create_point_chart(
+            stock_return, stock_variance, "black", label=ticker
+        )
+
+    combined_chart += create_point_chart(
+        min_variance, max_return_with_min_variance, "blue", label="min variance"
     )
-    point_chart_2 = create_point_chart(
-        min_variance_with_max_return, max_return, "green"
+    combined_chart += create_point_chart(
+        min_variance_with_max_return, max_return, "green", label="max return"
     )
-    point_chart_3 = create_point_chart(sol_variance, sol_return, "red")
-    combined_chart = (
-        line_chart_1 + line_chart_2 + point_chart_1 + point_chart_2 + point_chart_3
+    combined_chart += create_point_chart(
+        sol_variance, sol_return, "red", label="solution", dy=-7
     )
     st.altair_chart(combined_chart, use_container_width=True)
 
