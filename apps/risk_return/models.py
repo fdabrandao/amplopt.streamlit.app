@@ -149,45 +149,45 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
 
     st.markdown(
         f"""
-    ## Efficient frontier
-    - Solution variance (red): {sol_variance*100:.2f}% (solution return: {sol_return*100:.2f}%)
-    - Min variance (blue): {min_variance*100:.2f}% (max return for min variance: {max_return_with_min_variance*100:.2f}%)
-    - Max return (green): {max_return*100:.2f}% (min variance for max return: {min_variance_with_max_return*100:.2f}%)
+    ## Efficient Frontier
+    - Solution (red): variance: {sol_variance*100:.2f}%, return: {sol_return*100:.2f}%
+    - Min Risk (blue): {(min_variance**0.5)*100:.2f}% (max return for min risk: {max_return_with_min_variance*100:.2f}%)
+    - Max Return (green): {max_return*100:.2f}% (min risk for max return: {(min_variance_with_max_return**0.5)*100:.2f}%)
     """
     )
 
     ampl.param["target_variance"] = inf
-    max_returns, variances = [], []
+    max_returns, risks = [], []
     for r in np.linspace(max_return_with_min_variance, max_return, 25):
         target_return = r
         ampl.param["target_return"] = target_return
         ampl.eval("solve min_portfolio_variance;")
         max_returns.append(target_return)
-        variances.append(ampl.get_value("min_portfolio_variance"))
+        risks.append(ampl.get_value("min_portfolio_variance") ** 0.5)
 
-    df = pd.DataFrame({"Return": max_returns, "Variance": variances})
-    combined_chart = alt.Chart(df).mark_line().encode(x="Variance", y="Return")
+    df = pd.DataFrame({"Return": max_returns, "Risk": risks})
+    combined_chart = alt.Chart(df).mark_line().encode(x="Risk", y="Return")
 
     ampl.param["target_return"] = 0
     min_returns = []
-    for v in variances:
-        ampl.param["target_variance"] = v
+    for sd in risks:
+        ampl.param["target_variance"] = sd**2
         ampl.eval("solve min_portfolio_return;")
         min_returns.append(round(ampl.get_value("min_portfolio_return"), 5))
 
     index = min_returns.index(min(min_returns))
     if index < len(min_returns) - 1:
-        variances = variances[: index + 1]
+        risks = risks[: index + 1]
         min_returns = min_returns[: index + 1]
 
-    df = pd.DataFrame({"Return": min_returns, "Variance": variances})
-    combined_chart += alt.Chart(df).mark_line().encode(x="Variance", y="Return")
+    df = pd.DataFrame({"Return": min_returns, "Risk": risks})
+    combined_chart += alt.Chart(df).mark_line().encode(x="Risk", y="Return")
 
     def create_point_chart(var, ret, color, label="", dx=7, dy=0):
         point = (
-            alt.Chart(pd.DataFrame({"Variance": [var], "Return": [ret]}))
+            alt.Chart(pd.DataFrame({"Risk": [var], "Return": [ret]}))
             .mark_point(size=100, color=color)
-            .encode(x="Variance", y="Return")
+            .encode(x="Risk", y="Return")
         )
         if label == "":
             return point
@@ -199,19 +199,27 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
     for ticker in tickers:
         ampl.var["w"] = {t: 1 if t == ticker else 0 for t in tickers}
         stock_return = ampl.get_value("max_portfolio_return")
-        stock_variance = ampl.get_value("min_portfolio_variance")
+        stock_risk = ampl.get_value("min_portfolio_variance") ** 0.5
         combined_chart += create_point_chart(
-            stock_variance, stock_return, "black", label=ticker, dy=7
+            stock_risk, stock_return, "black", label=ticker, dy=7
         )
 
     combined_chart += create_point_chart(
-        min_variance, max_return_with_min_variance, "blue", label="min variance", dy=-7
+        min_variance**0.5,
+        max_return_with_min_variance,
+        "blue",
+        label="Min Risk",
+        dy=-7,
     )
     combined_chart += create_point_chart(
-        min_variance_with_max_return, max_return, "green", label="max return", dy=-7
+        min_variance_with_max_return**0.5,
+        max_return,
+        "green",
+        label="Max Return",
+        dy=-7,
     )
     combined_chart += create_point_chart(
-        sol_variance, sol_return, "red", label="solution", dy=7
+        sol_variance**0.5, sol_return, "red", label="Solution", dy=7
     )
     st.altair_chart(combined_chart, use_container_width=True)
 
