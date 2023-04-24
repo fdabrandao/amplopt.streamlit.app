@@ -201,17 +201,17 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
         stock_return = ampl.get_value("max_portfolio_return")
         stock_variance = ampl.get_value("min_portfolio_variance")
         combined_chart += create_point_chart(
-            stock_return, stock_variance, "black", label=ticker
+            stock_variance, stock_return, "black", label=ticker, dy=7
         )
 
     combined_chart += create_point_chart(
-        min_variance, max_return_with_min_variance, "blue", label="min variance"
+        min_variance, max_return_with_min_variance, "blue", label="min variance", dy=-7
     )
     combined_chart += create_point_chart(
-        min_variance_with_max_return, max_return, "green", label="max return"
+        min_variance_with_max_return, max_return, "green", label="max return", dy=-7
     )
     combined_chart += create_point_chart(
-        sol_variance, sol_return, "red", label="solution", dy=-7
+        sol_variance, sol_return, "red", label="solution", dy=7
     )
     st.altair_chart(combined_chart, use_container_width=True)
 
