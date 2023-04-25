@@ -186,15 +186,17 @@ def efficient_frontier(
     df = pd.DataFrame({"Return": min_returns, "Risk": risks})
     combined_chart += alt.Chart(df).mark_line().encode(x="Risk", y="Return")
 
-    def create_point_chart(var, ret, color, label="", dx=7, dy=0):
+    def create_point_chart(
+        var, ret, color, label="", size=100, dx=7, dy=0, align="left"
+    ):
         point = (
             alt.Chart(pd.DataFrame({"Risk": [var], "Return": [ret]}))
-            .mark_point(size=100, color=color)
+            .mark_point(size=size, color=color)
             .encode(x="Risk", y="Return")
         )
         if label == "":
             return point
-        text = point.mark_text(align="left", baseline="middle", dx=dx, dy=dy).encode(
+        text = point.mark_text(align=align, baseline="middle", dx=dx, dy=dy).encode(
             text=alt.value(label)
         )
         return point + text
@@ -209,7 +211,7 @@ def efficient_frontier(
 
     # Solution point
     combined_chart += create_point_chart(
-        sol_variance**0.5, sol_return, "red", label="Solution", dy=7
+        sol_variance**0.5, sol_return, "red", label="Solution", size=50, dy=7
     )
     # Min Risk point
     combined_chart += create_point_chart(
@@ -234,7 +236,24 @@ def efficient_frontier(
     ms_return = ampl.get_value("max_portfolio_return")
     ms_risk = ampl.get_value("min_portfolio_variance") ** 0.5
     combined_chart += create_point_chart(
-        ms_risk, ms_return, "pink", label="Max Sharpe", dy=-7
+        ms_risk, ms_return, "pink", label="Max Sharpe", dy=0, dx=-7, align="right"
+    )
+    # Max Sharpe line
+    # Create an Altair chart and add a line
+    combined_chart += (
+        alt.Chart(
+            pd.DataFrame(
+                [
+                    {"Risk": 0, "Return": risk_free_rate},
+                    {
+                        "Risk": ms_risk * 1.5,
+                        "Return": risk_free_rate + (ms_return - risk_free_rate) * 1.5,
+                    },
+                ]
+            )
+        )
+        .mark_line(color="pink")
+        .encode(x="Risk", y="Return")
     )
 
     st.altair_chart(combined_chart, use_container_width=True)
