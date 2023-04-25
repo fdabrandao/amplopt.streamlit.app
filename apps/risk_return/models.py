@@ -54,7 +54,7 @@ def prepare_data(prices, real_mu):
     return risk_method, return_method, tickers, mu, S
 
 
-def solve(ampl, risk_free_rate=0.2, skip_mu=False, real_mu=None):
+def solve(ampl, risk_free_rate=0.02, skip_mu=False, real_mu=None):
     output = ampl.get_output("solve;")
     weights_df = None
     if ampl.get_value("solve_result") == "solved":
@@ -80,7 +80,9 @@ def solve(ampl, risk_free_rate=0.2, skip_mu=False, real_mu=None):
     return weights_df
 
 
-def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
+def efficient_frontier(
+    tickers, mu, S, solver, weights, market_neutral=False, risk_free_rate=0.02
+):
     inf = float("inf")
     ampl = AMPL()
     ampl.eval(
@@ -205,6 +207,11 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
             stock_risk, stock_return, "black", label=ticker, dy=7
         )
 
+    # Solution point
+    combined_chart += create_point_chart(
+        sol_variance**0.5, sol_return, "red", label="Solution", dy=7
+    )
+    # Min Risk point
     combined_chart += create_point_chart(
         min_variance**0.5,
         max_return_with_min_variance,
@@ -212,6 +219,7 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
         label="Min Risk",
         dy=-7,
     )
+    # Max Return point
     combined_chart += create_point_chart(
         min_variance_with_max_return**0.5,
         max_return,
@@ -219,9 +227,16 @@ def efficient_frontier(tickers, mu, S, solver, weights, market_neutral=False):
         label="Max Return",
         dy=-7,
     )
+    # Max Sharpe point
+    ms = max_sharpe(tickers, S, mu, risk_free_rate, solver)
+    ms.solve()
+    ampl.var["w"] = ms.var["w"].get_values()
+    ms_return = ampl.get_value("max_portfolio_return")
+    ms_risk = ampl.get_value("min_portfolio_variance") ** 0.5
     combined_chart += create_point_chart(
-        sol_variance**0.5, sol_return, "red", label="Solution", dy=7
+        ms_risk, ms_return, "pink", label="Max Sharpe", dy=-7
     )
+
     st.altair_chart(combined_chart, use_container_width=True)
 
 
@@ -421,4 +436,6 @@ def run_max_sharpe(prices, real_mu):
     )
     st.markdown("## The implementation using [amplpy](https://amplpy.readthedocs.org/)")
     st.markdown(f"```python\n{inspect.getsource(max_sharpe)}\n```")
-    efficient_frontier(tickers, mu, S, solver, weights_df)
+    efficient_frontier(
+        tickers, mu, S, solver, weights_df, risk_free_rate=risk_free_rate
+    )
