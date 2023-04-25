@@ -247,10 +247,13 @@ def main():
     )
 
     lst = [
-        ("Minimize volatility", models.min_volatility),
-        ("Maximize return for a target risk", models.efficient_risk),
-        ("Minimizing volatility for a given target return", models.efficient_return),
-        ("Maximize the Sharpe Ratio", models.max_sharpe),
+        ("Minimize volatility", models.run_min_volatility),
+        ("Maximize return for a target risk", models.run_efficient_risk),
+        (
+            "Minimizing volatility for a given target return",
+            models.run_efficient_return,
+        ),
+        ("Maximize the Sharpe Ratio", models.run_max_sharpe),
     ]
     model = st.selectbox("Pick the model 👇", [m[0] for m in lst], key="model")
 
