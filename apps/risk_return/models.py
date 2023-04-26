@@ -70,7 +70,7 @@ def solve(ampl, risk_free_rate=0.02, skip_mu=False, real_mu=None):
             kpis += f"- **Expected annual return: {mu2*100:.1f}%**\n"
             kpis += f"- **Sharpe Ratio: {sharpe2:.2f}**\n"
         emoji = "📈" if real_return >= 0 else "📉"
-        kpis += f"\n**>> {emoji} Real return on evaluation date: {real_return*100:.1f}% <<**\n"
+        kpis += f"\n**>> {emoji} Real return on evaluation date: {real_return*100:.1f}% {emoji} <<**\n"
         st.markdown(kpis)
     else:
         st.write("Failed to solve. Solver output:")
