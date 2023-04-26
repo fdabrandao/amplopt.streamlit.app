@@ -153,7 +153,7 @@ def efficient_frontier(
     st.markdown(
         f"""
     ## Efficient Frontier
-    - Solution (red): variance: {sol_variance*100:.2f}%, return: {sol_return*100:.2f}%
+    - Solution (red): {(sol_variance**0.5)*100:.2f}% expected risk, {sol_return*100:.2f}% expected return
     - Min Risk (blue): {(min_variance**0.5)*100:.2f}% (max return for min risk: {max_return_with_min_variance*100:.2f}%)
     - Max Return (green): {max_return*100:.2f}% (min risk for max return: {(min_variance_with_max_return**0.5)*100:.2f}%)
     """
