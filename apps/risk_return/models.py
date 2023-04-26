@@ -61,6 +61,7 @@ def solve(ampl, risk_free_rate=0.02, skip_mu=False, real_mu=None):
         sigma2 = ampl.get_value("sqrt(sum {i in A, j in A} w[i] * S[i, j] * w[j])")
         weights_df = ampl.var["w"].get_values().to_pandas()
         real_return = sum(weights_df["w.val"] * real_mu)
+        st.write(f"```\n{output}\n```")
         kpis = "**KPIs:**\n"
         kpis += f"- **Annual volatility: {sigma2*100:.1f}%**\n"
         if not skip_mu:
@@ -68,16 +69,22 @@ def solve(ampl, risk_free_rate=0.02, skip_mu=False, real_mu=None):
             sharpe2 = (mu2 - risk_free_rate) / sigma2
             kpis += f"- **Expected annual return: {mu2*100:.1f}%**\n"
             kpis += f"- **Sharpe Ratio: {sharpe2:.2f}**\n"
-        kpis += f"\n**Real return: {real_return*100:.1f}%**\n"
+        emoji = "📈" if real_return >= 0 else "📉"
+        kpis += f"\n**>> {emoji} Real return on evaluation date: {real_return*100:.1f}% <<**\n"
         st.markdown(kpis)
-        fig, _ = plt.subplots()
-        plt.barh(weights_df.index, weights_df.iloc[:, 0])
-        st.pyplot(fig)
-        st.write(weights_df.transpose())
     else:
         st.write("Failed to solve. Solver output:")
-    st.write(f"```\n{output}\n```")
+        st.write(f"```\n{output}\n```")
+        return None
     return weights_df
+
+
+def plot_solution(weights):
+    st.markdown("#### Solution")
+    fig, _ = plt.subplots()
+    plt.barh(weights.index, weights.iloc[:, 0])
+    st.pyplot(fig)
+    st.write(weights.transpose())
 
 
 def efficient_frontier(
@@ -149,15 +156,6 @@ def efficient_frontier(
     ampl.var["w"] = weights
     sol_return = ampl.get_value("max_portfolio_return")
     sol_variance = ampl.get_value("min_portfolio_variance")
-
-    st.markdown(
-        f"""
-    ## Efficient Frontier
-    - Solution (red): {(sol_variance**0.5)*100:.2f}% expected risk, {sol_return*100:.2f}% expected return
-    - Min Risk (blue): {(min_variance**0.5)*100:.2f}% (max return for min risk: {max_return_with_min_variance*100:.2f}%)
-    - Max Return (green): {max_return*100:.2f}% (min risk for max return: {(min_variance_with_max_return**0.5)*100:.2f}%)
-    """
-    )
 
     ampl.param["target_variance"] = inf
     max_returns, risks = [], []
@@ -258,6 +256,14 @@ def efficient_frontier(
 
     st.altair_chart(combined_chart, use_container_width=True)
 
+    st.markdown(
+        f"""
+    - Solution (red): {(sol_variance**0.5)*100:.2f}% expected risk ({sol_variance*100:.2f}% variance), {sol_return*100:.2f}% expected return
+    - Min Risk (blue): {(min_variance**0.5)*100:.2f}% (max return for min risk: {max_return_with_min_variance*100:.2f}%)
+    - Max Return (green): {max_return*100:.2f}% (min risk for max return: {(min_variance_with_max_return**0.5)*100:.2f}%)
+    """
+    )
+
 
 def min_volatility(tickers, S, solver):
     ampl = AMPL()
@@ -293,9 +299,11 @@ def run_min_volatility(prices, real_mu):
     weights_df = solve(
         min_volatility(tickers, S, solver), skip_mu=True, real_mu=real_mu
     )
+    if weights_df is not None:
+        efficient_frontier(tickers, mu, S, solver, weights_df)
+        plot_solution(weights_df)
     st.markdown("## The implementation using [amplpy](https://amplpy.readthedocs.org/)")
     st.markdown(f"```python\n{inspect.getsource(min_volatility)}\n```")
-    efficient_frontier(tickers, mu, S, solver, weights_df)
 
 
 def efficient_risk(tickers, S, mu, target_volatility, market_neutral, solver):
@@ -346,9 +354,11 @@ def run_efficient_risk(prices, real_mu):
         efficient_risk(tickers, S, mu, target_volatility, market_neutral, solver),
         real_mu=real_mu,
     )
+    if weights_df is not None:
+        efficient_frontier(tickers, mu, S, solver, weights_df, market_neutral)
+        plot_solution(weights_df)
     st.markdown("## The implementation using [amplpy](https://amplpy.readthedocs.org/)")
     st.markdown(f"```python\n{inspect.getsource(efficient_risk)}\n```")
-    efficient_frontier(tickers, mu, S, solver, weights_df, market_neutral)
 
 
 def efficient_return(tickers, S, mu, target_return, market_neutral, solver):
@@ -401,9 +411,11 @@ def run_efficient_return(prices, real_mu):
         efficient_return(tickers, S, mu, target_return, market_neutral, solver),
         real_mu=real_mu,
     )
+    if weights_df is not None:
+        efficient_frontier(tickers, mu, S, solver, weights_df, market_neutral)
+        plot_solution(weights_df)
     st.markdown("## The implementation using [amplpy](https://amplpy.readthedocs.org/)")
     st.markdown(f"```python\n{inspect.getsource(efficient_return)}\n```")
-    efficient_frontier(tickers, mu, S, solver, weights_df, market_neutral)
 
 
 def max_sharpe(tickers, S, mu, risk_free_rate, solver):
@@ -453,8 +465,10 @@ def run_max_sharpe(prices, real_mu):
         risk_free_rate,
         real_mu=real_mu,
     )
+    if weights_df is not None:
+        efficient_frontier(
+            tickers, mu, S, solver, weights_df, risk_free_rate=risk_free_rate
+        )
+        plot_solution(weights_df)
     st.markdown("## The implementation using [amplpy](https://amplpy.readthedocs.org/)")
     st.markdown(f"```python\n{inspect.getsource(max_sharpe)}\n```")
-    efficient_frontier(
-        tickers, mu, S, solver, weights_df, risk_free_rate=risk_free_rate
-    )
