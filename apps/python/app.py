@@ -11,7 +11,8 @@ from apps import INFO_HEADER, INFO_FOOTER
 def main():
     st.markdown(
         '''
-    [[Model Colaboratory](http://colab.ampl.com)] [[AMPL on Streamlit](http://ampl.com/streamlit)] [[AMPL Community Edition](https://ampl.com/ce)]
+
+    [[dev.ampl.com](http://dev.ampl.com)] [[Model Colaboratory](http://colab.ampl.com)] [[AMPL on Streamlit](http://ampl.com/streamlit)] [[AMPL Community Edition](https://ampl.com/ce)]
 
     # Use AMPL from 🐍 easily on
 
@@ -19,10 +20,11 @@ def main():
     - [Google Colab](#on-google-colab)
     - [Streamlit Cloud](#on-streamlit-cloud)
     - [Docker Containers](#on-docker-containers)
+    - [Continuous Integration (CI/CD) systems](#on-continuous-integration-ci-cd-systems)
 
     ## On local machines
 
-    [AMPL and all solvers are now available as python packages](https://dev.ampl.com/ampl/python/index.htmlmodules.html#amplpy-modules) for **Windows, Linux (X86_64, aarch64, ppc64le), and macOS**. For instance, to install AMPL with HiGHS, CBC and Gurobi, you just need the following:
+    [AMPL and all solvers are now available as python packages](https://dev.ampl.com/ampl/python/modules.html#amplpy-modules) for **Windows, Linux (X86_64, aarch64, ppc64le), and macOS**. For instance, to install AMPL with HiGHS, CBC and Gurobi, you just need the following:
 
     ```bash
     # Install Python API for AMPL
@@ -84,7 +86,7 @@ def main():
 
     You can also install AMPL on [Google Colab](https://dev.ampl.com/ampl/python/colab.html) ([where it is free by default](https://colab.ampl.com/getting-started.html#ampl-is-free-on-colab)) as follows:
 
-    ```
+    ```python
     # Install dependencies
     !pip install -q amplpy
     # Google Colab & Kaggle integration
@@ -118,7 +120,7 @@ def main():
         
     -   [📈 Risk Return (Prescriptive Analytics example)](http://ampl.com/streamlit/Risk_Return)
 
-    Since AMPL and all Solvers are now available as [Python Packages](http://127.0.0.1:8000/ampl/python/modules.html). To use them in [streamlit](https://streamlit.io) you just need to list the modules in the [requirements.txt](https://github.com/fdabrandao/amplopt.streamlit.app/blob/master/requirements.txt) file as follows:
+    Since AMPL and all Solvers are now available as [Python Packages](http://dev.ampl.com/ampl/python/modules.html). To use them in [streamlit](https://streamlit.io) you just need to list the modules in the [requirements.txt](https://github.com/fdabrandao/amplopt.streamlit.app/blob/master/requirements.txt) file as follows:
 
     ```
     --index-url https://pypi.ampl.com # AMPL's Python Package Index
@@ -186,9 +188,96 @@ def main():
     USER ${USERNAME}
     ```
 
+    ## On Continuous Integration (CI/CD) systems
+
+    AMPL can be easily used in [Continuous Integration/Continuous Delivery (CI/CD)](https://en.wikipedia.org/wiki/CI/CD) platforms in order to test your optimization applications before deploying to production.
+
+    Since AMPL and all solvers are now available as Python Packages. It is only necessary to have a step which installs [amplpy](https://amplpy.readthedocs.io) and the modules needed by your application:
+
+    ```bash
+    python -m pip install amplpy
+    python -m amplpy.modules install <solver1> <solver2> # install the solvers you need
+    python -m amplpy.activate <license-uuid> # activate your license
+    ```
+
+    Below, we have examples for two popular CI/CD platforms: [GitHub Actions](https://github.com/features/actions) and [Azure Pipelines](https://azure.microsoft.com/en-us/products/devops/pipelines). The setup is very similar for others.
+
+    ### GitHub Actions
+
+    [Example configuration for GitHub Actions](https://github.com/ampl/amplpyfinance/blob/master/.github/workflows/test.yaml) used in the example project [amplpyfinance](https://github.com/ampl/amplpyfinance).
+
+    File `".github/workflows/test.yaml"`:
+    ```yaml
+    name: Test
+    run-name: ${{ github.actor }} is building "${{ github.ref_name }}"
+    on: [push]
+
+    jobs:
+    Test:
+        runs-on: ubuntu-latest
+        strategy:
+        matrix:
+            python-version: ["3.10"]
+
+        steps:
+        - uses: actions/checkout@v3
+        - name: Set up Python ${{ matrix.python-version }}
+            uses: actions/setup-python@v4
+            with:
+            python-version: ${{ matrix.python-version }}
+        - name: Install dependencies
+            run: |
+            set -ex
+            python -m pip install -r requirements.txt
+            python -m pip install amplpy
+            python -m amplpy.modules install <solver1> <solver2>
+            python -m amplpy.activate <license-uuid>
+        - name: Install package
+            run: |
+            python -m pip install .
+        - name: Test package
+            run: |
+            python -m <package-name>.tests
+    ```
+
+    ### Azure Pipelines
+
+    [Example configuration for Azure Pipelines](https://github.com/ampl/amplpyfinance/blob/master/azure-pipelines.yml) used in the example project [amplpyfinance](https://github.com/ampl/amplpyfinance).
+
+    File `"azure-pipelines.yml"`:
+    ```yaml
+    jobs:
+    - job: Test
+    pool: {vmImage: 'ubuntu-latest'}
+    strategy:
+        matrix:
+        Python 3.10:
+            PYTHON_VERSION: 3.10
+    steps:
+        - task: UsePythonVersion@0
+        inputs:
+            versionSpec: $(PYTHON_VERSION)
+        - bash: python --version
+        displayName: Check python version
+        - bash: |
+            set -ex
+            python -m pip install -r requirements.txt
+            python -m pip install amplpy
+            python -m amplpy.modules install <solver1> <solver2>
+            python -m amplpy.activate <license-uuid>
+        displayName: Install dependencies
+        - bash: |
+            python -m pip install .
+        displayName: Install package
+        - bash: |
+            python -m <package-name>.tests
+        displayName: Test package
+    ```
+
+
     ---
 
-    **Contact us at <support@ampl.com> for free deployment support.** You can also any questions you have on our [Discourse Forum](https://discuss.ampl.com).
+    **Contact us at <support@ampl.com> for free deployment support.** You can also ask any questions you may have on our [Support Forum](https://discuss.ampl.com).
 
     ---
     '''
