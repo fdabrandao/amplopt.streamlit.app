@@ -6,10 +6,9 @@ complex optimization solutions in business & scientific applications.
 """
 
 INFO_FOOTER = """
-- [AMPL Website](https://ampl.com)
-- [AMPL Documentation](https://dev.ampl.com/)
-- [AMPL Model Colaboratory](https://colab.ampl.com/)
-- [AMPL Forum on Discourse](https://discuss.ampl.com/)
+- [Documentation](https://dev.ampl.com/)
+- [Support Forum](https://discuss.ampl.com/)
+- [Model Colaboratory](https://colab.ampl.com/)
 
 Follow us on [Twitter](https://twitter.com/AMPLopt) and [LinkedIn](https://www.linkedin.com/company/ampl) to get the latest updates from the dev team!
 """
