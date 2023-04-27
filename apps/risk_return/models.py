@@ -1,4 +1,3 @@
-from amplpy import AMPL
 from pypfopt import expected_returns, risk_models
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -70,7 +69,9 @@ def solve(ampl, risk_free_rate=0.02, skip_mu=False, real_mu=None):
             kpis += f"- **Expected annual return: {mu2*100:.1f}%**\n"
             kpis += f"- **Sharpe Ratio: {sharpe2:.2f}**\n"
         emoji = "📈" if real_return >= 0 else "📉"
-        kpis += f"\n**>> {emoji} Real return on evaluation date: {real_return*100:.1f}% {emoji} <<**\n"
+        kpis += (
+            f"\n**>> Real return on evaluation date: {real_return*100:.1f}% {emoji}**\n"
+        )
         st.markdown(kpis)
     else:
         st.write("Failed to solve. Solver output:")
@@ -90,6 +91,8 @@ def plot_solution(weights):
 def efficient_frontier(
     tickers, mu, S, solver, weights, market_neutral=False, risk_free_rate=0.02
 ):
+    from amplpy import AMPL
+
     inf = float("inf")
     ampl = AMPL()
     ampl.eval(
@@ -266,6 +269,8 @@ def efficient_frontier(
 
 
 def min_volatility(tickers, S, solver):
+    from amplpy import AMPL
+
     ampl = AMPL()
     ampl.eval(
         r"""
@@ -303,10 +308,12 @@ def run_min_volatility(prices, real_mu):
         efficient_frontier(tickers, mu, S, solver, weights_df)
         plot_solution(weights_df)
     st.markdown("## The implementation using [amplpy](https://amplpy.readthedocs.org/)")
-    st.markdown(f"```python\n{inspect.getsource(min_volatility)}\n```")
+    st.code(inspect.getsource(min_volatility), language="python", line_numbers=True)
 
 
 def efficient_risk(tickers, S, mu, target_volatility, market_neutral, solver):
+    from amplpy import AMPL
+
     ampl = AMPL()
     ampl.eval(
         r"""
@@ -358,10 +365,12 @@ def run_efficient_risk(prices, real_mu):
         efficient_frontier(tickers, mu, S, solver, weights_df, market_neutral)
         plot_solution(weights_df)
     st.markdown("## The implementation using [amplpy](https://amplpy.readthedocs.org/)")
-    st.markdown(f"```python\n{inspect.getsource(efficient_risk)}\n```")
+    st.code(inspect.getsource(min_volatility), language="python", line_numbers=True)
 
 
 def efficient_return(tickers, S, mu, target_return, market_neutral, solver):
+    from amplpy import AMPL
+
     ampl = AMPL()
     ampl.eval(
         r"""
@@ -415,10 +424,12 @@ def run_efficient_return(prices, real_mu):
         efficient_frontier(tickers, mu, S, solver, weights_df, market_neutral)
         plot_solution(weights_df)
     st.markdown("## The implementation using [amplpy](https://amplpy.readthedocs.org/)")
-    st.markdown(f"```python\n{inspect.getsource(efficient_return)}\n```")
+    st.code(inspect.getsource(min_volatility), language="python", line_numbers=True)
 
 
 def max_sharpe(tickers, S, mu, risk_free_rate, solver):
+    from amplpy import AMPL
+
     ampl = AMPL()
     ampl.eval(
         r"""
@@ -471,4 +482,4 @@ def run_max_sharpe(prices, real_mu):
         )
         plot_solution(weights_df)
     st.markdown("## The implementation using [amplpy](https://amplpy.readthedocs.org/)")
-    st.markdown(f"```python\n{inspect.getsource(max_sharpe)}\n```")
+    st.code(inspect.getsource(min_volatility), language="python", line_numbers=True)
