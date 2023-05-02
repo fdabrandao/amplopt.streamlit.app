@@ -283,7 +283,7 @@ def min_volatility(tickers, S, solver):
             sum {i in A, j in A} w[i] * S[i, j] * w[j];
         s.t. portfolio_weights:
             sum {i in A} w[i] = 1;
-    """
+        """
     )
     ampl.set["A"] = tickers
     ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
@@ -332,7 +332,7 @@ def efficient_risk(tickers, S, mu, target_volatility, market_neutral, solver):
             sum {i in A, j in A} w[i] * S[i, j] * w[j] <= target_volatility^2;
         s.t. portfolio_weights:
             sum {i in A} w[i] = if market_neutral then 0 else 1;
-    """
+        """
     )
     ampl.set["A"] = tickers
     ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
