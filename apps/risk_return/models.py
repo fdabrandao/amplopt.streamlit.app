@@ -126,7 +126,7 @@ def efficient_frontier(
         """
     )
     ampl.set["A"] = tickers
-    ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
+    ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers)
     ampl.param["mu"] = mu
     ampl.param["target_return"] = 0
     ampl.param["target_variance"] = inf
@@ -286,7 +286,7 @@ def min_volatility(tickers, S, solver):
         """
     )
     ampl.set["A"] = tickers
-    ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
+    ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers)
     ampl.option["solver"] = solver
     return ampl
 
@@ -335,7 +335,7 @@ def efficient_risk(tickers, S, mu, target_volatility, market_neutral, solver):
         """
     )
     ampl.set["A"] = tickers
-    ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
+    ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers)
     ampl.param["mu"] = mu
     ampl.param["target_volatility"] = target_volatility
     ampl.param["market_neutral"] = market_neutral
@@ -394,7 +394,7 @@ def efficient_return(tickers, S, mu, target_return, market_neutral, solver):
         """
     )
     ampl.set["A"] = tickers
-    ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
+    ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers)
     ampl.param["mu"] = mu
     ampl.param["target_return"] = target_return
     ampl.param["market_neutral"] = market_neutral
@@ -452,7 +452,7 @@ def max_sharpe(tickers, S, mu, risk_free_rate, solver):
         """
     )
     ampl.set["A"] = tickers
-    ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers).unstack()
+    ampl.param["S"] = pd.DataFrame(S, index=tickers, columns=tickers)
     ampl.param["mu"] = mu
     ampl.param["risk_free_rate"] = risk_free_rate
     ampl.option["solver"] = solver
