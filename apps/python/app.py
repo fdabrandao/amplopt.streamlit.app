@@ -5,15 +5,9 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 
-from apps import INFO_HEADER, INFO_FOOTER
-
-
 def main():
     st.markdown(
         '''
-
-    [[dev.ampl.com](http://dev.ampl.com)] [[Model Colaboratory](http://colab.ampl.com)] [[AMPL on Streamlit](http://ampl.com/streamlit)] [[AMPL Community Edition](https://ampl.com/ce)]
-
     # Use AMPL from 🐍 easily on
 
     - [Local machines](#on-local-machines)

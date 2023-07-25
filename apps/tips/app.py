@@ -7,9 +7,6 @@ from .content import tip1, tip2, tip3, tip4, tip5, tip6
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 
-from apps import INFO_HEADER, INFO_FOOTER
-
-
 def main():
     tips = [(t.title, t.run) for t in [tip1, tip2, tip3, tip4, tip5, tip6]]
     tip_titles = [title for title, _ in tips]

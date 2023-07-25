@@ -4,7 +4,7 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
 
-from apps import INFO_HEADER, INFO_FOOTER, badge
+from apps import badge, python
 
 st.set_page_config(
     page_title="AMPL on Streamlit Cloud",
@@ -33,19 +33,29 @@ st.write("# Welcome to AMPL on Streamlit! 👋")
 
 st.sidebar.success("Select an app above.")
 
-
-st.markdown(INFO_HEADER)
-
 st.markdown(
     """
-**👈 Select a demo from the sidebar** to see some examples
-    of what you can do with AMPL on Streamlit!
-"""
+[AMPL](https://ampl.com) is the most powerful and intuitive tool for developing and deploying
+complex optimization solutions in business & scientific applications.
+            
+**👈 Select a demo from the sidebar** to see some examples of what you can do with AMPL on Streamlit!"""
 )
 
-st.markdown(INFO_FOOTER)
-st.markdown(badge(""))
+links = {}
+for fname in os.listdir("pages"):
+    if fname.endswith(".py"):
+        fname = fname[:-3]
+        page_number = int(fname[: fname.find("_")])
+        fname = fname[fname.find("_") + 1 :]
+        url = fname[fname.find("_") + 1 :]
+        label = fname.replace("_", " ")
+        links[page_number] = f"[{label}]({url})"
+for page_number in sorted(links):
+    st.markdown(links[page_number])
 
+python.main()
+
+st.markdown(badge(""))
 st.markdown(
     """
 [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)]
