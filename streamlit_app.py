@@ -38,7 +38,7 @@ st.markdown(
 [AMPL](https://ampl.com) is the most powerful and intuitive tool for developing and deploying
 complex optimization solutions in business & scientific applications.
             
-**👈 Select a demo from the sidebar** to see some examples of what you can do with AMPL on Streamlit!"""
+**👈 Select an app from the sidebar** to see some examples of what you can do with AMPL on Streamlit!"""
 )
 
 links = {}
@@ -49,7 +49,7 @@ for fname in os.listdir("pages"):
         fname = fname[fname.find("_") + 1 :]
         url = fname[fname.find("_") + 1 :]
         label = fname.replace("_", " ")
-        links[page_number] = f"[{label}]({url})"
+        links[page_number] = f"- [{label}]({url})"
 for page_number in sorted(links):
     st.markdown(links[page_number])
 

@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 def main():
     st.markdown(
         '''
-    # Use AMPL from 🐍 easily on
+    # Use AMPL from 🐍 easily on:
 
     - [Local machines](#on-local-machines)
     - [Google Colab](#on-google-colab)
