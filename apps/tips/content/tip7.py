@@ -55,7 +55,7 @@ def logistic_regression_conic(label, data, lambd, solver):
 def run():
     st.markdown(
         r"""
-        #### 1. Convex optimization model for logistic regression
+        ## 1.1. Convex optimization model for logistic regression
 
         Define the logistic function $$ S(x)=\frac{1}{1+e^{-x}}.$$
 
@@ -110,7 +110,7 @@ def run():
 
     st.markdown(
         r"""
-        #### 2. Conic optimization model for logistic regression
+        ## 1.2. Conic optimization model for logistic regression
 
         For a conic solver such as Mosek, we need to reformulate the problem.
 

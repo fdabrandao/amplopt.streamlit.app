@@ -186,7 +186,7 @@ def load_larger_dataset():
     return Dataset(train_df, train_df_lifted, test_df, test_df_lifted)
 
 
-def plot_regression(dataset, lambd, theta, ax):
+def plot_regression(dataset, lambd, theta, ax, title=None):
     x, y, c = dataset["Feature1"], dataset["Feature2"], dataset["Label"]
     ax.scatter(x, y, c=c, label="Good", alpha=0.3)
     x0, y0, x1, y1 = min(x), min(y), max(x), max(y)
@@ -201,7 +201,9 @@ def plot_regression(dataset, lambd, theta, ax):
     theta_by_X1Y1 = theta.T @ X1Y1lft.T
     Z = (theta_by_X1Y1.values > 0).astype(int).reshape(500, 500)
     ax.contour(X, Y, Z)
-    ax.set_title(f"lambda = {lambd}")
+    if title is None:
+        title = f"lambda = {lambd}"
+    ax.set_title(title)
 
 
 class ModelEvaluator:
@@ -212,11 +214,12 @@ class ModelEvaluator:
             dataset.train_df["Label"], dataset.train_df_lifted, model
         )
 
-    def run(self, solver: str, lambda_values: List[float] = [0, 0.1, 1, 10]):
+    def test(self, solver: str):
         st.markdown(f"## {self.model} with {solver.upper()}:")
         ds = self.dataset
         theta = {}
         tm = {}
+        lambda_values = [0, 0.1, 1, 10]
         for lambd in lambda_values:
             # Optimize
             theta[lambd], tm[lambd] = self.classifier.optimize(solver, lambd)
@@ -235,7 +238,7 @@ class ModelEvaluator:
 
             st.markdown(
                 f"- lambda={lambd:5.2f}:\n"
-                f"\t- Solving time: {tm[lambd]:.2f} seconds\n"
+                f"\t- Solving time: {tm[lambd]:.2f} seconds.\n"
                 f"\t- Accuracy on training data: {train_accuracy:5.2f}.\n"
                 f"\t- Accuracy on testing data: {test_accuracy:5.2f}.\n"
             )
@@ -252,12 +255,43 @@ class ModelEvaluator:
             plot_regression(ds.test_df, lambd, theta[lambd], axis)
         st.pyplot(plt)
 
+    def test_lambda(self, solver: str, lambd: float):
+        st.markdown(f"## {self.model} with {solver.upper()}:")
+        ds = self.dataset
+        theta = {}
+        tm = {}
+        # Optimize
+        theta[lambd], tm[lambd] = self.classifier.optimize(solver, lambd)
+
+        # Training accuracy
+        ds.train_df["pred"] = ds.train_df_lifted.dot(theta[lambd]) >= 0
+        train_accuracy = sum(ds.train_df["Label"] == ds.train_df["pred"]) / len(
+            ds.train_df
+        )
+
+        # Testing accuracy
+        ds.test_df["pred"] = ds.test_df_lifted.dot(theta[lambd]) >= 0
+        test_accuracy = sum(ds.test_df["Label"] == ds.test_df["pred"]) / len(ds.test_df)
+
+        st.markdown(
+            f"- lambda={lambd:.2f}:\n"
+            f"\t- Solving time: {tm[lambd]:.2f} seconds.\n"
+            f"\t- Accuracy on training data: {train_accuracy:.2f}.\n"
+            f"\t- Accuracy on testing data: {test_accuracy:.2f}.\n"
+        )
+
+        st.markdown("### Visual classification of the data:")
+        fig, ax = plt.subplots(1, 2, figsize=(9, 3.5))
+        plot_regression(ds.train_df, lambd, theta[lambd], ax[0], "Training set")
+        plot_regression(ds.test_df, lambd, theta[lambd], ax[1], "Testing set")
+        st.pyplot(plt)
+
 
 @st.cache_data
 def classify_small_dataset():
     st.markdown(
         """
-    ## Small dataset:
+    ## 2. Small dataset
 
     In the first part, we will implement regularized logistic regression to predict
     whether microchips from a fabrication plant pass quality assurance (QA). During QA,
@@ -272,16 +306,16 @@ def classify_small_dataset():
     """
     )
     dataset = load_small_dataset()
-    ModelEvaluator(dataset, "logistic_regression.mod").run("ipopt")
-    ModelEvaluator(dataset, "logistic_regression_conic.mod").run("ipopt")
-    ModelEvaluator(dataset, "logistic_regression_conic.mod").run("mosek")
+    ModelEvaluator(dataset, "logistic_regression.mod").test("ipopt")
+    ModelEvaluator(dataset, "logistic_regression_conic.mod").test("ipopt")
+    ModelEvaluator(dataset, "logistic_regression_conic.mod").test("mosek")
 
 
 @st.cache_data
 def classify_larger_dataset():
     st.markdown(
         """
-    ## Larger dataset:
+    ## 3. Larger dataset
 
     The setcond data set contains data from a collection of known genuine and
     known counterfeit banknote specimens. The data includes four continuous
@@ -295,11 +329,28 @@ def classify_larger_dataset():
     """
     )
     dataset = load_larger_dataset()
-    ModelEvaluator(dataset, "logistic_regression.mod").run("ipopt")
-    ModelEvaluator(dataset, "logistic_regression_conic.mod").run("ipopt")
-    ModelEvaluator(dataset, "logistic_regression_conic.mod").run("mosek")
+    ModelEvaluator(dataset, "logistic_regression.mod").test("ipopt")
+    ModelEvaluator(dataset, "logistic_regression_conic.mod").test("ipopt")
+    ModelEvaluator(dataset, "logistic_regression_conic.mod").test("mosek")
 
 
 def run_experiments():
     classify_small_dataset()
     classify_larger_dataset()
+
+    st.markdown("# 4. Run custom experiments!")
+
+    datasets = ["Small dataset", "Larger dataset"]
+    if st.selectbox("Pick the dataset 👇", datasets, key="dataset") == datasets[0]:
+        dataset = load_small_dataset()
+    else:
+        dataset = load_larger_dataset()
+
+    models = ["logistic_regression_conic.mod", "logistic_regression.mod"]
+    model = st.selectbox("Pick the model 👇", models, key="model")
+
+    solvers = ["mosek", "ipopt"] if "conic" in model else ["ipopt"]
+    solver = st.selectbox("Pick the solver 👇", solvers, key="solver")
+
+    lambd = st.slider("Lambda?", 0.0, 10.0, 1.0, step=0.01)
+    ModelEvaluator(dataset, model).test_lambda(solver, lambd)
