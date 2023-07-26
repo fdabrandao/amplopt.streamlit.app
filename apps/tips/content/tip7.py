@@ -1,6 +1,6 @@
 import streamlit as st
 from .tip7_utils import LOGISTIC_REGRESSION_MOD, LOGISTIC_REGRESSION_CONIC_MOD
-from .tip7_utils import run_small_dataset
+from .tip7_utils import run_experiments
 import inspect
 
 title = "Tip #7: Logistic Regression"
@@ -159,10 +159,21 @@ def run():
         line_numbers=True,
     )
 
-    run_small_dataset()
+    run_experiments()
 
     st.markdown(
         """
-        #### [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)]
+    # References:
+    1. Small data set example:
+        - https://docs.mosek.com/modeling-cookbook/expo.html#logistic-regression,
+        - https://docs.mosek.com/latest/pythonapi/case-studies-logistic.html#.
+    2. Large data set:
+        - Lohweg, Volker. (2013). banknote authentication. UCI Machine Learning Repository. https://doi.org/10.24432/C55P57.
+    """
+    )
+
+    st.markdown(
+        """
+        #### [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)] [[Google Colab Notebook](https://colab.ampl.com/notebooks.html#logistic-regression-with-amplpy)]
         """
     )
