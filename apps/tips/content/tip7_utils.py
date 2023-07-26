@@ -198,12 +198,7 @@ def plot_regression(qa, lambd, theta, ax):
     Y1 = np.reshape(Y, (500 * 500))
     X1Y1lft = lift_to_degree(X1, Y1, DEGREE_LIFT, DEGREE_STEP)
     theta_by_X1Y1 = theta.T @ X1Y1lft.T
-    # Fails on Colab with Python 3.10:
-    # theta_by_XY = np.reshape(theta_by_X1Y1, (500, 500))
-    Z = np.zeros_like(X)
-    for i in range(500):
-        for j in range(500):
-            Z[i, j] = 1 if -theta_by_X1Y1.iloc[0, i * 500 + j] > 0 else 0
+    Z = (theta_by_X1Y1.values > 0).astype(int).reshape(500, 500)
     cp = ax.contour(X, Y, Z)
     ax.set_title(f"lambda = {lambd}")
 
