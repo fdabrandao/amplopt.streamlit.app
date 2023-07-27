@@ -33,5 +33,5 @@ def main():
     tip_index = tip_titles.index(selected_tip)
 
     title, run = tips[tip_index]
-    st.markdown(f"## 💡 {title}")
+    st.markdown(f"### 💡 {title}")
     run()

@@ -14,7 +14,7 @@ MAX_SAMPLE_SIZE = int((500 - 28) / 7)
 DEGREE_LIFT = 6
 DEGREE_STEP = 1
 
-title = "Tip #7: Logistic Regression"
+title = "Tip #7: Logistic Regression with Exponential Cones"
 
 LOGISTIC_REGRESSION_MOD = """
 set POINTS;
@@ -22,16 +22,16 @@ set DIMS;                  # Dimensionality of x
 
 param y{POINTS} binary;    # Points' classes
 param x{POINTS, DIMS};
-param lambd;               # Regularization parameter
+param lambda;              # Regularization parameter
 
 var theta{DIMS};           # Regression parameter vector
 var hTheta{i in POINTS}
     = 1 / (1 + exp( - sum{d in DIMS} theta[d]*x[i, d] ));
 
-minimize Logit:            # General nonlinear formulation
+minimize LogisticReg:      # General nonlinear formulation
     - sum {i in POINTS: y[i] >0.5} log( hTheta[i] )
     - sum {i in POINTS: y[i]<=0.5} log( 1.0 - hTheta[i] )
-    + lambd * sqrt( sum {d in DIMS} theta[d]^2 );
+    + lambda * sqrt( sum {d in DIMS} theta[d]^2 );
 """
 
 
@@ -41,7 +41,7 @@ set DIMS;                  # Dimensionality of x
 
 param y{POINTS} binary;    # Points' classes
 param x{POINTS, DIMS};
-param lambd;               # Regularization parameter
+param lambda;              # Regularization parameter
 
 var theta{DIMS};           # Regression parameter vector
 var t{POINTS};
@@ -49,23 +49,21 @@ var u{POINTS};
 var v{POINTS};
 var r >= 0;
 
-minimize LogitConic:
-    sum {i in POINTS} t[i] + lambd * r;
+minimize LogisticRegConic:
+    sum {i in POINTS} t[i] + lambda * r;
 
 s.t. Softplus1{i in POINTS}:  # reformulation of softplus
     u[i] + v[i] <= 1;
 s.t. Softplus2{i in POINTS}:
     u[i] >= exp(
-        (if y[i]>0.5 then     # y[i]==1
-            -sum {d in DIMS} theta[d] * x[i, d]
-        else
-            sum {d in DIMS} theta[d] * x[i, d]
-        ) - t[i]
+        (if y[i]>0.5 then -1 else 1)
+        * (sum {d in DIMS} theta[d] * x[i, d])
+        - t[i]
     );
 s.t. Softplus3{i in POINTS}:
     v[i] >= exp(-t[i]);
 
-s.t. Norm_Theta:              # Quadratic cone for regularizer
+s.t. NormTheta:              # Quadratic cone for regularizer
     r^2 >= sum {d in DIMS} theta[d]^2;
 """
 
@@ -82,7 +80,7 @@ def logistic_regression(label, data, lambd, solver):
     ampl.set["DIMS"] = data.columns
     ampl.param["x"] = data
     ampl.param["y"] = label
-    ampl.param["lambd"] = lambd
+    ampl.param["lambda"] = lambd
 
     # solve
     ampl.option["solver"] = solver
@@ -105,7 +103,7 @@ def logistic_regression_conic(label, data, lambd, solver):
     ampl.set["DIMS"] = data.columns
     ampl.param["x"] = data
     ampl.param["y"] = label
-    ampl.param["lambd"] = lambd
+    ampl.param["lambda"] = lambd
 
     # solve
     ampl.option["solver"] = solver
@@ -119,53 +117,95 @@ def logistic_regression_conic(label, data, lambd, solver):
 def header():
     st.markdown(
         r"""
-        ## 1.1. Convex optimization model for logistic regression
-
-        Define the logistic function $$ S(x)=\frac{1}{1+e^{-x}}.$$
-
-        Next, given an observation $x\in\mathbf{R}^d$ and weights $\theta\in\mathbf{R}^d$ we set $$ h_\theta(x)=S(\theta^Tx)=\frac{1}{1+e^{-\theta^Tx}}.$$
-
-        The weights vector $\theta$ is part of the setup of the classifier. The expression
-        $h_\theta(x)$ is interpreted as the probability that $x$ belongs to class 1.
-        When asked to classify $x$ the returned answer is
+        Given a sequence of training examples $x_i \in \mathbf{R}^m$, each labelled with its class $y_i\in \{0,1\}$ and we seek to find the weights $\theta \in \mathbf{R}^m$ which maximize the function:
 
         $$
-        \begin{split}x\mapsto \begin{cases}\begin{array}{ll}1, & h_\theta(x)\geq 1/2, \\ 0, & h_\theta(x) < 1/2.\end{array}\end{cases}\end{split}
+        \sum_{i:y_i=1} \log(S(\theta^Tx_i))+\sum_{i:y_i=0}\log(1-S(\theta^Tx_i))
         $$
 
-        When training a logistic regression algorithm we are given a sequence of training examples $x_i$, each labelled with its class $y_i\in \{0,1\}$ and we seek to find the weights
-        $\theta$ which maximize the likelihood function $\textstyle \prod_i h_\theta(x_i)^{y_i}(1-h_\theta(x_i))^{1-y_i}$.
-        Of course every single $y_i$ equals 0 or 1, so just one factor appears in the product for each training data point:
+        where $S$ is the logistic function $S(x) = \frac{1}{1+e^{-x}}$ that estimates the probability of a binary classifier to be 0 or 1.
 
-        $$\hspace{5em} \max_\theta \textstyle \prod_{i:y_i=1} h_\theta(x_i) \prod_{i:y_i=0} (1-h_\theta(x_i)).$$
-
-        By taking logarithms we obtain a sum that is easier to optimize:
-
-        $$\hspace{5em} \max_\theta \sum_{i:y_i=1} \log(h_\theta(x_i))+\sum_{i:y_i=0}\log(1-h_\theta(x_i)). $$
-
-        Note that by negating we obtain the logarithmic loss function:
-
-        $$\hspace{5em} J(\theta) = -\sum_{i:y_i=1} \log(h_\theta(x_i))-\sum_{i:y_i=0}\log(1-h_\theta(x_i)). $$
-
-        The training problem with regularization (a standard technique to prevent overfitting) is now equivalent to
-
-        $$\hspace{5em} \min_\theta J(\theta) + \lambda\|\theta\|_2. $$
-
-
-        This formulation can be solved with a general nonlinear solver, such as Ipopt.
+        **This function can be efficiently optimized using exponential cones with [MOSEK](https://ampl.com/products/solvers/solvers-we-sell/mosek/)!**
         """
     )
 
-    st.markdown("Convex optimization model for Logistic Regression:")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image("static/apps/tips/LogisticRegression.png")
+    with col2:
+        st.image("static/apps/tips/Sigmoid.png")
 
-    st.markdown('Model file "**logistic_regression.mod**":')
+    st.markdown(
+        r"""
+        ## 1.1. Convex optimization model for logistic regression
+
+        Define the logistic function
+        $$
+        S(x)=\frac{1}{1+e^{-x}}.
+        $$
+
+        Next, given an observation $x\in\mathbf{R}^d$ and weights $\theta\in\mathbf{R}^d$ we set
+        $$
+        h_\theta(x)=S(\theta^Tx)=\frac{1}{1+e^{-\theta^Tx}}.
+        $$
+
+        The weights vector $\theta$ is part of the setup of the classifier. The expression
+
+        $h_\theta(x)$ is interpreted as the probability that $x$ belongs to class 1.
+
+        When asked to classify $x$ the returned answer is
+
+        $$
+        x\mapsto \begin{cases}\begin{array}{ll}1, & h_\theta(x)\geq 1/2, \\ 0, & h_\theta(x) < 1/2.\end{array}\end{cases}
+        $$
+
+        When training a logistic regression algorithm we are given a sequence of training examples $x_i$, 
+        each labelled with its class $y_i\in \{0,1\}$ and we seek to find the weights $\theta$ which 
+        maximize the likelihood function $\textstyle \prod_i h_\theta(x_i)^{y_i}(1-h_\theta(x_i))^{1-y_i}$.
+
+        Of course every single $y_i$ equals 0 or 1, so just one factor appears in the product for each training data point:
+
+        $$
+        \max_\theta \textstyle \prod_{i:y_i=1} h_\theta(x_i) \prod_{i:y_i=0} (1-h_\theta(x_i)).
+        $$
+
+        By taking logarithms we obtain a sum that is easier to optimize:
+
+        $$
+        \max_\theta \sum_{i:y_i=1} \log(h_\theta(x_i))+\sum_{i:y_i=0}\log(1-h_\theta(x_i)).
+        $$
+
+        Note that by negating we obtain the logarithmic loss function:
+
+        $$
+        J(\theta) = -\sum_{i:y_i=1} \log(h_\theta(x_i))-\sum_{i:y_i=0}\log(1-h_\theta(x_i)).
+        $$
+
+        The training problem with regularization (a standard technique to prevent overfitting) is now equivalent to
+
+        $$
+        \min_\theta J(\theta) + \lambda\|\theta\|_2.
+        $$
+
+        This formulation can be solved with a general nonlinear solver, such as [IPOPT](https://ampl.com/products/solvers/open-source-solvers/).
+        """
+    )
+
+    st.markdown(
+        """
+        ### Convex optimization model for Logistic Regression
+
+        Model file "**logistic_regression.mod**":
+        """
+    )
+
     st.code(
         LOGISTIC_REGRESSION_MOD,
         language="python",
         line_numbers=True,
     )
 
-    st.markdown("Using from Python with amplpy:")
+    st.markdown("Using from Python with [amplpy](https://amplpy.readthedocs.io):")
 
     st.code(
         inspect.getsource(logistic_regression),
@@ -177,7 +217,7 @@ def header():
         r"""
         ## 1.2. Conic optimization model for logistic regression
 
-        For a conic solver such as Mosek, we need to reformulate the problem.
+        For a conic solver such as [MOSEK](https://ampl.com/products/solvers/solvers-we-sell/mosek/), we need to reformulate the problem.
 
         The objective function can equivalently be phrased as
 
@@ -208,16 +248,21 @@ def header():
     """
     )
 
-    st.markdown("Conic optimization model for Logistic Regression:")
+    st.markdown(
+        """
+        ### Conic optimization model for Logistic Regression
 
-    st.markdown('Model file "**logistic_regression_conic.mod**":')
+        Model file "**logistic_regression_conic.mod**":
+        """
+    )
+
     st.code(
         LOGISTIC_REGRESSION_CONIC_MOD,
         language="python",
         line_numbers=True,
     )
 
-    st.markdown("Using from Python with amplpy:")
+    st.markdown("Using from Python with [amplpy](https://amplpy.readthedocs.io):")
 
     st.code(
         inspect.getsource(logistic_regression_conic),
@@ -246,7 +291,7 @@ class LogisticRegression:
 
     def optimize(self, solver, lambd):
         ampl = self.ampl
-        ampl.param["lambd"] = lambd
+        ampl.param["lambda"] = lambd
         # solve
         ampl.option["solver"] = solver  # mosek, ipopt, knitro
         ampl.eval("let{d in DIMS} theta[d] := 0.0001;")  # initial guesses for IPOPT
@@ -491,7 +536,7 @@ def classify_small_dataset():
         """
     Logistic regression is an example of a binary classifier, where the output takes one of the two values 0 or 1 for each data point. We call the two values *classes*.
 
-    **As we see from the plot, a linear separation of the classes is not reasonable. We lift the 2D data into $\mathbf{R}^{28}$ via sums of monomials of degrees up to 6.**
+    **As we see from the plot, a linear separation of the classes is not reasonable. We lift the 2D data into $\mathbf{R}^{28}$ via sums of monomials of degrees up to 6.** [[See Google Colab Notebook for more details](https://colab.ampl.com/notebooks.html#logistic-regression-with-amplpy)]
     """
     )
     ModelEvaluator(dataset, "logistic_regression.mod").test("ipopt")
@@ -522,7 +567,7 @@ def classify_larger_dataset():
         """
     **From the 4 features we select 2 ("variance" and "skewness") to be able to
     visualize the results. Similar to the small example, we lift the 2D data into
-    $\mathbf{R}^{28}$ via sums of monomials of degrees up to 6.**
+    $\mathbf{R}^{28}$ via sums of monomials of degrees up to 6.** [[See Google Colab Notebook for more details](https://colab.ampl.com/notebooks.html#logistic-regression-with-amplpy)]
     """
     )
     ModelEvaluator(dataset, "logistic_regression.mod").test("ipopt")
@@ -546,6 +591,8 @@ def experiments():
     models = ["logistic_regression_conic.mod", "logistic_regression.mod"]
     model = st.selectbox("Pick the model 👇", models, key="model")
 
+    evaluator = ModelEvaluator(dataset, model)
+
     solvers = ["mosek", "ipopt"] if "conic" in model else ["ipopt"]
     solver = st.selectbox("Pick the solver 👇", solvers, key="solver")
 
@@ -556,7 +603,7 @@ def experiments():
         1.0,
         step=0.01,
     )
-    ModelEvaluator(dataset, model).test_lambda(solver, lambd)
+    evaluator.test_lambda(solver, lambd)
 
 
 def footer():
@@ -573,7 +620,7 @@ def footer():
 
     st.markdown(
         """
-        #### [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)] [[Google Colab Notebook](https://colab.ampl.com/notebooks.html#logistic-regression-with-amplpy)]
+        #### [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)] [[Google Colab Notebook](https://colab.ampl.com/notebooks.html#logistic-regression-with-amplpy)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-7-logistic-regression-with-exponential-cones/657)]
         """
     )
 
