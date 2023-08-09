@@ -620,7 +620,7 @@ def footer():
 
     st.markdown(
         """
-        #### [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)] [[Google Colab Notebook](https://colab.ampl.com/notebooks.html#logistic-regression-with-amplpy)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-7-logistic-regression-with-exponential-cones/657)]
+        #### [[Google Colab Notebook](https://colab.ampl.com/notebooks.html#logistic-regression-with-amplpy)] [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7092187981612023808)] [[On Twitter](https://twitter.com/AMPLopt/status/1686424007422234624)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-7-logistic-regression-with-exponential-cones/657)] [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)]
         """
     )
 
