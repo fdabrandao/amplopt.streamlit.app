@@ -56,9 +56,9 @@ def prepare_data(prices, real_mu):
 def solve(ampl, risk_free_rate=0.02, skip_mu=False, real_mu=None):
     output = ampl.get_output("solve;")
     weights_df = None
-    if ampl.get_value("solve_result") == "solved":
+    if ampl.solve_result == "solved":
         sigma2 = ampl.get_value("sqrt(sum {i in A, j in A} w[i] * S[i, j] * w[j])")
-        weights_df = ampl.var["w"].get_values().to_pandas()
+        weights_df = ampl.var["w"].to_pandas()
         real_return = sum(weights_df["w.val"] * real_mu)
         st.write(f"```\n{output}\n```")
         kpis = "**KPIs:**\n"
@@ -134,25 +134,25 @@ def efficient_frontier(
     ampl.param["lb"] = -1 if market_neutral else 0
     ampl.option["solver"] = solver
 
-    # ampl.eval("solve min_portfolio_return;")
+    # ampl.solve("min_portfolio_return")
     # min_return = ampl.get_value("min_portfolio_return")
 
-    ampl.eval("solve max_portfolio_return;")
+    ampl.solve("max_portfolio_return")
     max_return = ampl.get_value("max_portfolio_return")
 
-    ampl.eval("solve min_portfolio_variance;")
+    ampl.solve("min_portfolio_variance")
     min_variance = ampl.get_value("min_portfolio_variance")
 
-    # ampl.eval("solve max_portfolio_variance;")
+    # ampl.solve("max_portfolio_variance")
     # max_variance = ampl.get_value("max_portfolio_variance")
 
     ampl.param["target_variance"] = min_variance
-    ampl.eval("solve max_portfolio_return;")
+    ampl.solve("max_portfolio_return")
     max_return_with_min_variance = ampl.get_value("max_portfolio_return")
     ampl.param["target_variance"] = inf
 
     ampl.param["target_return"] = max_return
-    ampl.eval("solve min_portfolio_variance;")
+    ampl.solve("min_portfolio_variance")
     min_variance_with_max_return = ampl.get_value("min_portfolio_variance")
     ampl.param["target_return"] = 0
 
@@ -165,7 +165,7 @@ def efficient_frontier(
     for r in np.linspace(max_return_with_min_variance, max_return, 25):
         target_return = r
         ampl.param["target_return"] = target_return
-        ampl.eval("solve min_portfolio_variance;")
+        ampl.solve("min_portfolio_variance")
         max_returns.append(target_return)
         risks.append(ampl.get_value("min_portfolio_variance") ** 0.5)
 
@@ -176,7 +176,7 @@ def efficient_frontier(
     min_returns = []
     for sd in risks:
         ampl.param["target_variance"] = sd**2
-        ampl.eval("solve min_portfolio_return;")
+        ampl.solve("min_portfolio_return")
         min_returns.append(round(ampl.get_value("min_portfolio_return"), 5))
 
     index = min_returns.index(min(min_returns))

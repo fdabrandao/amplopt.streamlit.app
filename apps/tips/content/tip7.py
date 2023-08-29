@@ -85,7 +85,7 @@ def logistic_regression(label, data, lambd, solver):
     # solve
     ampl.option["solver"] = solver
     ampl.solve()
-    assert ampl.get_value("solve_result") == "solved"
+    assert ampl.solve_result == "solved"
 
     # return solution
     return ampl.var["theta"].to_pandas()
@@ -108,7 +108,7 @@ def logistic_regression_conic(label, data, lambd, solver):
     # solve
     ampl.option["solver"] = solver
     ampl.solve()
-    assert ampl.get_value("solve_result") == "solved"
+    assert ampl.solve_result == "solved"
 
     # return solution
     return ampl.var["theta"].to_pandas()
@@ -299,7 +299,7 @@ class LogisticRegression:
         solve_output = ampl.get_output("solve;")
         tm = time.perf_counter() - tm
 
-        solve_result = ampl.get_value("solve_result")
+        solve_result = ampl.solve_result
         solve_message = ampl.get_value("solve_message")
         print(solve_message.strip())
         if solve_result != "solved":
