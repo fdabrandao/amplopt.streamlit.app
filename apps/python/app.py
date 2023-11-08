@@ -82,14 +82,13 @@ def main():
 
     ```python
     # Install dependencies
-    !pip install -q amplpy
+    %pip install -q amplpy
     # Google Colab & Kaggle integration
     from amplpy import AMPL, tools
     ampl = tools.ampl_notebook(
         modules=["coin", "highs", "gokestrel"], # modules to install
         license_uuid="default", # license to use
-        g=globals()) # instantiate AMPL object and register magics
-
+    ) # instantiate AMPL object and register magics
     ```
 
     ---
