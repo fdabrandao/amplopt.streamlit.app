@@ -67,11 +67,10 @@ def main():
     ampl.option["solver"] = "gurobi"
     ampl.option["gurobi_options"] = "outlev=1"
     ampl.solve()
-    assert ampl.get_value("solve_result") == "solved"
+    assert ampl.solve_result == "solved"
     sigma = ampl.get_value("sqrt(sum {i in A, j in A} w[i] * S[i, j] * w[j])")
     print(f"Volatility: {sigma*100:.1f}%")
     # ... post-process solution in Python
-
     ```
 
     [[Python API](http://amplpy.readthedocs.io)] [[GitHub](https://github.com/ampl/amplpy)]
