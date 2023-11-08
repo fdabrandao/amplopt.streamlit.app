@@ -84,8 +84,8 @@ def main():
     # Install dependencies
     %pip install -q amplpy
     # Google Colab & Kaggle integration
-    from amplpy import AMPL, tools
-    ampl = tools.ampl_notebook(
+    from amplpy import AMPL, ampl_notebook
+    ampl = ampl_notebook(
         modules=["coin", "highs", "gokestrel"], # modules to install
         license_uuid="default", # license to use
     ) # instantiate AMPL object and register magics
