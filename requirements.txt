@@ -3,12 +3,17 @@
 ampl_module_base
 ampl_module_coin
 ampl_module_highs
+ampl_module_scip
+ampl_module_gcg
 ampl_module_gurobi
 ampl_module_cplex
 ampl_module_xpress
 ampl_module_copt
 ampl_module_mosek
+ampl_module_knitro
+ampl_module_lgo
 ampl_module_minos
+ampl_module_lindoglobal
 ampl_module_octeract
 amplpy
 amplpyfinance
