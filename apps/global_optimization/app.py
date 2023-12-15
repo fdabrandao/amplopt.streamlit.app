@@ -20,11 +20,12 @@ def main():
     ```python
     # Define parameters
     param n;           # Number of ornaments
-    param width;       # Maximum width for placement of ornaments
-    param sine_slope;  # Slope for the sine functions
-    param tree_slope;  # Slope for the tree shape
+    param width;       # Tree width
+    param height;      # Tree height
     param offset;      # Offset for the sine function
     param frequency;   # Frequency for the sine function
+    param sine_slope;  # Slope for the sine functions
+    param tree_slope :=  height / (width/2);  # Slope for the tree shape
 
     # Define a set for the ornaments
     set ORNAMENTS ordered := 1..n;  # Ordered set representing the ornaments
@@ -52,11 +53,12 @@ def main():
         r"""
     # Define parameters
     param n;           # Number of ornaments
-    param width;       # Maximum width for placement of ornaments
-    param sine_slope;  # Slope for the sine functions
-    param tree_slope;  # Slope for the tree shape
+    param width;       # Tree width
+    param height;      # Tree height
     param offset;      # Offset for the sine function
     param frequency;   # Frequency for the sine function
+    param sine_slope;  # Slope for the sine functions
+    param tree_slope :=  height / (width/2);  # Slope for the tree shape
 
     # Define a set for the ornaments
     set ORNAMENTS ordered := 1..n;  # Ordered set representing the ornaments
@@ -90,14 +92,13 @@ def main():
         width = st.slider(
             "Tree width? 👇", 3 * math.pi, 6 * math.pi, 4 * math.pi, step=math.pi
         )
-        tree_slope = st.slider("Tree slope? 👇", 1, 5, 5)
+        height = st.slider("Tree height? 👇", 25, 40, 35)
+        nlevels = st.slider("How many levels? 👇", 2, 10, 5)
         sine_slope = st.slider("Slope for the ornaments? 👇", 0.0, 1.0, 0.7, step=0.1)
         frequency = st.slider(
             "Frequency value for `sin(frequency * x)`? 👇", 1.0, 3.0, 1.0, step=0.5
         )
         per_cycle = st.slider("How many ornaments per cycle? 👇", 1, 3, 2)
-        height = width / 2.0 * tree_slope
-        nlevels = st.slider("How many levels? 👇", 2, 10, 5)
         solvers = [
             "Gurobi 🚀 (Global)",
             "SCIP (Global)",
@@ -120,7 +121,7 @@ def main():
         solver = solver.lower()
 
     ampl.param["width"] = width
-    ampl.param["tree_slope"] = tree_slope
+    ampl.param["height"] = height
     ampl.param["sine_slope"] = sine_slope
     ampl.param["frequency"] = frequency
     ampl.option["solver"] = solver
@@ -145,6 +146,7 @@ def main():
 
     plt.figure(figsize=(5, 5), dpi=80)
     x = np.linspace(0, width, 1000)
+    tree_slope = ampl.param["tree_slope"].value()
     tree_left = tree_slope * x
     tree_right = tree_slope * (width - x)
 
