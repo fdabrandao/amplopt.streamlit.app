@@ -94,8 +94,8 @@ def main():
             width = st.slider("🎄 width? 👇", 10, 20, 15)
         with c2:
             height = st.slider("🎄 height? 👇", 25, 40, 35)
-        nlevels = st.slider("How many levels? 👇", 2, 10, 5)
-        sine_slope = st.slider("Slope for the ornaments? 👇", 0.0, 1.0, 0.7, step=0.1)
+        nlevels = st.slider("How many levels? 👇", 2, 8, 5)
+        sine_slope = st.slider("Slope for the ornaments? 👇", 0.0, 0.9, 0.7, step=0.1)
         frequency = st.slider(
             "Frequency value for `sin(frequency * x)`? 👇", 1.0, 3.0, 1.0, step=0.5
         )
@@ -171,7 +171,7 @@ def main():
 
     solve_info = {}
     for i in range(nlevels):
-        offset = i * height / float(nlevels)
+        offset = i * height / float(nlevels + 1)
         color = ["red", "blue"][i % 2]
 
         sin_line = np.sin(frequency * x) + offset + sine_slope * x
