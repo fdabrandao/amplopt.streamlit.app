@@ -21,7 +21,8 @@ def main():
     # Define parameters
     param n;           # Number of ornaments
     param width;       # Maximum width for placement of ornaments
-    param slope;       # Slope for the tree shape
+    param sine_slope;  # Slope for the sine functions
+    param tree_slope;  # Slope for the tree shape
     param offset;      # Offset for the sine function
     param frequency;   # Frequency for the sine function
 
@@ -30,7 +31,7 @@ def main():
 
     # Variables
     var X{ORNAMENTS} >= 0 <= width;  # X-coordinate of each ornament within the specified width
-    var Y{i in ORNAMENTS} = sin(frequency * X[i]) + offset;  # Y-coordinate using a sine function
+    var Y{i in ORNAMENTS} = sin(frequency * X[i]) + offset + sine_slope * X[i];  # Y-coordinate using a sine function
 
     # Objective function
     maximize MinDistance:  # Objective: Maximize the minimum distance between consecutive ornaments
@@ -41,7 +42,7 @@ def main():
         X[i] >= X[i-1];
 
     s.t. TreeShape{i in ORNAMENTS}:  # Constraints for the shape of the tree
-        Y[i] <= min(slope * X[i], slope * (width - X[i]));
+        Y[i] <= min(tree_slope * X[i], tree_slope * (width - X[i]));
     ```
     """
     )
@@ -52,7 +53,8 @@ def main():
     # Define parameters
     param n;           # Number of ornaments
     param width;       # Maximum width for placement of ornaments
-    param slope;       # Slope for the tree shape
+    param sine_slope;  # Slope for the sine functions
+    param tree_slope;  # Slope for the tree shape
     param offset;      # Offset for the sine function
     param frequency;   # Frequency for the sine function
 
@@ -61,7 +63,7 @@ def main():
 
     # Variables
     var X{ORNAMENTS} >= 0 <= width;  # X-coordinate of each ornament within the specified width
-    var Y{i in ORNAMENTS} = sin(frequency * X[i]) + offset;  # Y-coordinate using a sine function
+    var Y{i in ORNAMENTS} = sin(frequency * X[i]) + offset + sine_slope * X[i];  # Y-coordinate using a sine function
 
     # Objective function
     maximize MinDistance:  # Objective: Maximize the minimum distance between consecutive ornaments
@@ -72,13 +74,13 @@ def main():
         X[i] >= X[i-1];
 
     s.t. TreeShape{i in ORNAMENTS}:  # Constraints for the shape of the tree
-        Y[i] <= min(slope * X[i], slope * (width - X[i]));
+        Y[i] <= min(tree_slope * X[i], tree_slope * (width - X[i]));
 
     # s.t. PositionFirstOrnament:  # Position the first ornament at the correct Y-coordinate based on the slope
-    #     Y[first(ORNAMENTS)] = slope * X[first(ORNAMENTS)];
+    #     Y[first(ORNAMENTS)] = tree_slope * X[first(ORNAMENTS)];
 
     # s.t. PositionLastOrnament:  # Position the last ornament at the correct Y-coordinate based on the slope and width
-    #     Y[last(ORNAMENTS)] = slope * (width - X[last(ORNAMENTS)]);
+    #     Y[last(ORNAMENTS)] = tree_slope * (width - X[last(ORNAMENTS)]);
     """
     )
 
@@ -88,12 +90,13 @@ def main():
         width = st.slider(
             "Tree width? 👇", 3 * math.pi, 6 * math.pi, 4 * math.pi, step=math.pi
         )
-        slope = st.slider("Tree slope? 👇", 1, 5, 5)
+        tree_slope = st.slider("Tree slope? 👇", 1, 5, 5)
+        sine_slope = st.slider("Slope for the ornaments? 👇", 0.0, 1.0, 0.7, step=0.1)
         frequency = st.slider(
             "Frequency value for `sin(frequency * x)`? 👇", 1.0, 3.0, 1.0, step=0.5
         )
         per_cycle = st.slider("How many ornaments per cycle? 👇", 1, 3, 2)
-        height = width / 2.0 * slope
+        height = width / 2.0 * tree_slope
         nlevels = st.slider("How many levels? 👇", 2, 10, 5)
         solvers = [
             "Gurobi 🚀 (Global)",
@@ -117,7 +120,8 @@ def main():
         solver = solver.lower()
 
     ampl.param["width"] = width
-    ampl.param["slope"] = slope
+    ampl.param["tree_slope"] = tree_slope
+    ampl.param["sine_slope"] = sine_slope
     ampl.param["frequency"] = frequency
     ampl.option["solver"] = solver
     ampl.option["gurobi_options"] = "global=1 timelim=10 outlev=1"
@@ -141,20 +145,20 @@ def main():
 
     plt.figure(figsize=(5, 5), dpi=80)
     x = np.linspace(0, width, 1000)
-    tree_left = slope * x
-    tree_right = slope * (width - x)
+    tree_left = tree_slope * x
+    tree_right = tree_slope * (width - x)
 
     x_line1 = np.linspace(0, width / 2, 1000)
-    plt.plot(x_line1, slope * x_line1, color="green", linestyle="--")
+    plt.plot(x_line1, tree_slope * x_line1, color="green", linestyle="--")
     x_line2 = np.linspace(width / 2, width, 1000)
-    plt.plot(x_line2, slope * (width - x_line2), color="green", linestyle="--")
+    plt.plot(x_line2, tree_slope * (width - x_line2), color="green", linestyle="--")
 
     solve_info = {}
     for i in range(nlevels):
         offset = i * height / float(nlevels)
         color = ["red", "blue"][i % 2]
 
-        sin_line = np.sin(frequency * x) + offset
+        sin_line = np.sin(frequency * x) + offset + sine_slope * x
         x_line = x[(sin_line < tree_left) & (sin_line < tree_right)]
         y_line = sin_line[(sin_line < tree_left) & (sin_line < tree_right)]
         plt.plot(x_line, y_line, color=color)
