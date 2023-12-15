@@ -86,13 +86,14 @@ def main():
     """
     )
 
-    col1, col2 = st.columns(2)
+    left, right = st.columns(2)
 
-    with col1:
-        width = st.slider(
-            "Tree width? 👇", 3 * math.pi, 6 * math.pi, 4 * math.pi, step=math.pi
-        )
-        height = st.slider("Tree height? 👇", 25, 40, 35)
+    with left:
+        c1, c2 = st.columns(2)
+        with c1:
+            width = st.slider("🎄 width? 👇", 10, 20, 15)
+        with c2:
+            height = st.slider("🎄 height? 👇", 25, 40, 35)
         nlevels = st.slider("How many levels? 👇", 2, 10, 5)
         sine_slope = st.slider("Slope for the ornaments? 👇", 0.0, 1.0, 0.7, step=0.1)
         frequency = st.slider(
@@ -155,6 +156,19 @@ def main():
     x_line2 = np.linspace(width / 2, width, 1000)
     plt.plot(x_line2, tree_slope * (width - x_line2), color="green", linestyle="--")
 
+    # Calculate the minimum values between the two functions
+    tree_y1 = tree_slope * x
+    tree_y2 = tree_slope * (width - x)
+    tree_y_min = np.minimum(tree_y1, tree_y2)
+    # Filling the area where values are smaller than both lines with green color
+    plt.fill_between(
+        x,
+        tree_y_min,
+        where=(tree_y_min <= tree_y1) & (tree_y_min <= tree_y2),
+        color="green",
+        alpha=0.3,
+    )
+
     solve_info = {}
     for i in range(nlevels):
         offset = i * height / float(nlevels)
@@ -179,11 +193,11 @@ def main():
     # Set aspect ratio to 'equal' for a square grid
     plt.gca().set_aspect("equal", adjustable="box")
 
-    with col1:
-        st.markdown("Results for each level:")
+    with left:
+        st.markdown("Solve results for each level:")
         st.write(pd.DataFrame.from_dict(solve_info, orient="index"))
 
-    with col2:
+    with right:
         st.pyplot(plt)
 
     st.markdown(
