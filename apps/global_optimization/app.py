@@ -99,7 +99,7 @@ def main():
             "Gurobi 🚀 (Global)",
             "SCIP (Global)",
             "LGO (Global)",
-            "LindoGlobal (Global)",
+            # "LindoGlobal (Global)",
             "Octeract (Global)",
             "Knitro",
             # "CONOPT",
