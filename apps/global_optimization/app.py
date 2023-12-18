@@ -12,7 +12,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 
-class ChristmasTree:
+class ChristmasTreeOptimizer:
     def __init__(
         self, width: float, height: float, sine_slope: float, frequency: float
     ):
@@ -59,7 +59,7 @@ class ChristmasTree:
         ampl.param["frequency"] = frequency
         self.ampl = ampl
 
-    def solve(self, n: int, offset: float, solver: str, objective: str):
+    def solve(self, solver: str, objective: str, n: int, offset: float):
         ampl = self.ampl
         ampl.param["n"] = n
         ampl.param["offset"] = offset
@@ -71,6 +71,96 @@ class ChristmasTree:
             "objective_value": ampl.get_value(objective),
             "solver_output": solve_output,
         }
+
+
+def decorate_tree(
+    optimizer: ChristmasTreeOptimizer,
+    solver: str,
+    objective: str,
+    tree_color: str,
+    nlevels: int,
+    per_cycle: int,
+):
+    fig, ax = plt.subplots(figsize=(5, 5), dpi=80)
+    fig.gca().set_aspect("equal", adjustable="box")
+    ax.axhline(0, color="black", linewidth=0.5)
+    ax.axvline(0, color="black", linewidth=0.5)
+    ax.grid(color="gray", linestyle="--", linewidth=0.5)
+
+    ampl = optimizer.ampl
+    width = ampl.get_value("width")
+    height = ampl.get_value("height")
+    tree_slope = ampl.get_value("tree_slope")
+    frequency = ampl.get_value("frequency")
+    sine_slope = ampl.get_value("sine_slope")
+
+    x = np.linspace(0, width, 1000)
+    tree_left = tree_slope * x
+    tree_right = tree_slope * (width - x)
+
+    # Draw the borders of the tree
+    x_line1 = np.linspace(0, width / 2, 1000)
+    ax.plot(x_line1, tree_slope * x_line1, color=tree_color, linestyle="--")
+    x_line2 = np.linspace(width / 2, width, 1000)
+    ax.plot(x_line2, tree_slope * (width - x_line2), color=tree_color, linestyle="--")
+
+    # Calculate the minimum values between the two functions
+    tree_y1 = tree_slope * x
+    tree_y2 = tree_slope * (width - x)
+    tree_y_min = np.minimum(tree_y1, tree_y2)
+    # Filling the area where values are smaller than both lines with green color
+    ax.fill_between(
+        x,
+        tree_y_min,
+        where=(tree_y_min <= tree_y1) & (tree_y_min <= tree_y2),
+        color=tree_color,
+        alpha=0.3,
+    )
+
+    # Plot lines and ornaments
+    solve_info = {}
+    ornament_colors = ["red", "green", "blue", "orange", "purple", "white"]
+    ornament_colors = [color for color in ornament_colors if color != tree_color]
+    ornament_colors = random.sample(ornament_colors, 2)
+    for i in range(nlevels):
+        offset = i * height / float(nlevels + 1)
+        color = ornament_colors[i % len(ornament_colors)]
+
+        # Plot lines
+        sin_line = np.sin(frequency * x) + offset + sine_slope * x
+        x_line = x[(sin_line < tree_left) & (sin_line < tree_right)]
+        y_line = sin_line[(sin_line < tree_left) & (sin_line < tree_right)]
+        if len(x_line) == 0:
+            continue
+        ax.plot(
+            x_line,
+            y_line,
+            color=color,
+            path_effects=[patheffects.withStroke(linewidth=5, foreground="gold")],
+        )
+
+        # Calculate number of ornaments
+        total_length = np.max(x_line) - np.min(x_line)
+        cycles = frequency * total_length / (2 * math.pi)
+        n_ornaments = min(max(2, int(round(per_cycle * cycles))), 10)
+
+        # Solve optimization problem
+        solution, solve_info[i + 1] = optimizer.solve(
+            solver=solver,
+            objective=objective,
+            n=n_ornaments,
+            offset=offset,
+        )
+        # Plot ornaments
+        ax.scatter(
+            solution.X,
+            solution.Y,
+            color=color,
+            edgecolor="gold",
+            zorder=3,
+            s=100,
+        )
+    return fig, ax, solve_info
 
 
 def main():
@@ -171,87 +261,21 @@ def main():
             solver = solver[: solver.find(" ")]
         solver = solver.lower()
 
-    # Create ChristmasTree object to optimize the placement of the ornaments
-    christmas_tree = ChristmasTree(width, height, sine_slope, frequency)
+    # Create ChristmasTreeOptimizer object to optimize the placement of the ornaments
+    optimizer = ChristmasTreeOptimizer(width, height, sine_slope, frequency)
+
     # Set solver options such as timelim
-    christmas_tree.ampl.option["gurobi_options"] = "global=1 timelim=5 outlev=1"
-    christmas_tree.ampl.option["scip_options"] = "timelim=5 outlev=1"
-    christmas_tree.ampl.option["lindoglobal_options"] = "maxtime=5"
-    christmas_tree.ampl.option["knitro_options"] = "maxtime_cpu=5"
-    if christmas_tree.ampl.option[f"{solver}_options"] == "":
-        christmas_tree.ampl.option[f"{solver}_options"] = "timelim=5"
+    optimizer.ampl.option["gurobi_options"] = "global=1 timelim=5 outlev=1"
+    optimizer.ampl.option["scip_options"] = "timelim=5 outlev=1"
+    optimizer.ampl.option["lindoglobal_options"] = "maxtime=5"
+    optimizer.ampl.option["knitro_options"] = "maxtime_cpu=5"
+    if optimizer.ampl.option[f"{solver}_options"] == "":
+        optimizer.ampl.option[f"{solver}_options"] = "timelim=5"
 
-    fig, ax = plt.subplots(figsize=(5, 5), dpi=80)
-    fig.gca().set_aspect("equal", adjustable="box")
-
-    x = np.linspace(0, width, 1000)
-    tree_slope = christmas_tree.ampl.param["tree_slope"].value()
-    tree_left = tree_slope * x
-    tree_right = tree_slope * (width - x)
-
-    # Draw the borders of the tree
-    x_line1 = np.linspace(0, width / 2, 1000)
-    ax.plot(x_line1, tree_slope * x_line1, color=tree_color, linestyle="--")
-    x_line2 = np.linspace(width / 2, width, 1000)
-    ax.plot(x_line2, tree_slope * (width - x_line2), color=tree_color, linestyle="--")
-
-    # Calculate the minimum values between the two functions
-    tree_y1 = tree_slope * x
-    tree_y2 = tree_slope * (width - x)
-    tree_y_min = np.minimum(tree_y1, tree_y2)
-    # Filling the area where values are smaller than both lines with green color
-    ax.fill_between(
-        x,
-        tree_y_min,
-        where=(tree_y_min <= tree_y1) & (tree_y_min <= tree_y2),
-        color=tree_color,
-        alpha=0.3,
+    # Optimize tree decoration
+    fig, _, solve_info = decorate_tree(
+        optimizer, solver, objective, tree_color, nlevels, per_cycle
     )
-
-    # Plot lines and ornaments
-    solve_info = {}
-    ornament_colors = ["red", "green", "blue", "orange", "purple", "white"]
-    ornament_colors = [color for color in ornament_colors if color != tree_color]
-    ornament_colors = random.sample(ornament_colors, 2)
-    for i in range(nlevels):
-        offset = i * height / float(nlevels + 1)
-        color = ornament_colors[i % len(ornament_colors)]
-
-        # Plot lines
-        sin_line = np.sin(frequency * x) + offset + sine_slope * x
-        x_line = x[(sin_line < tree_left) & (sin_line < tree_right)]
-        y_line = sin_line[(sin_line < tree_left) & (sin_line < tree_right)]
-        if len(x_line) == 0:
-            continue
-        ax.plot(
-            x_line,
-            y_line,
-            color=color,
-            path_effects=[patheffects.withStroke(linewidth=5, foreground="gold")],
-        )
-
-        # Calculate number of ornaments
-        total_length = np.max(x_line) - np.min(x_line)
-        cycles = frequency * total_length / (2 * math.pi)
-        n_ornaments = min(max(2, int(round(per_cycle * cycles))), 10)
-
-        # Solve optimization problem
-        solution, solve_info[i + 1] = christmas_tree.solve(
-            n=n_ornaments, offset=offset, solver=solver, objective=objective
-        )
-        # Plot ornaments
-        ax.scatter(
-            solution.X,
-            solution.Y,
-            color=color,
-            edgecolor="gold",
-            zorder=3,
-            s=100,
-        )
-
-    ax.axhline(0, color="black", linewidth=0.5)
-    ax.axvline(0, color="black", linewidth=0.5)
-    ax.grid(color="gray", linestyle="--", linewidth=0.5)
 
     with left:
         st.markdown("Solve results for each level:")
