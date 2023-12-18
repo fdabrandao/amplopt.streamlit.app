@@ -81,11 +81,12 @@ def decorate_tree(
     nlevels: int,
     per_cycle: int,
 ):
-    fig, ax = plt.subplots(figsize=(5, 5), dpi=80)
+    fig, ax = plt.subplots(figsize=(5, 5), dpi=80, facecolor="none")
+    ax.set_facecolor("none")
     fig.gca().set_aspect("equal", adjustable="box")
-    ax.axhline(0, color="black", linewidth=0.5)
-    ax.axvline(0, color="black", linewidth=0.5)
-    ax.grid(color="gray", linestyle="--", linewidth=0.5)
+    # ax.axhline(0, color="black", linewidth=0.5)
+    # ax.axvline(0, color="black", linewidth=0.5)
+    # ax.grid(color="gray", linestyle="--", linewidth=0.5)
 
     ampl = optimizer.ampl
     width = ampl.get_value("width")
@@ -100,9 +101,9 @@ def decorate_tree(
 
     # Draw the borders of the tree
     x_line1 = np.linspace(0, width / 2, 1000)
-    ax.plot(x_line1, tree_slope * x_line1, color=tree_color, linestyle="--")
+    ax.plot(x_line1, tree_slope * x_line1, color=tree_color, linestyle="-")
     x_line2 = np.linspace(width / 2, width, 1000)
-    ax.plot(x_line2, tree_slope * (width - x_line2), color=tree_color, linestyle="--")
+    ax.plot(x_line2, tree_slope * (width - x_line2), color=tree_color, linestyle="-")
 
     # Calculate the minimum values between the two functions
     tree_y1 = tree_slope * x
@@ -165,7 +166,7 @@ def decorate_tree(
 
 def main():
     st.markdown(
-        """
+        r"""
     # 🌎 Global Non-Linear Optimization
 
 
@@ -181,7 +182,10 @@ def main():
     
     Optimize the placement of ornaments on a tree 🎄 so that
     we maximize the minimum Euclidean or Manhattan distance between consecutive
-    ornaments.
+    ornaments. The following AMPL model optimizes the placement of ornaments on 
+    a sinusoidal line in such a way that we maximize the minimum distance
+    between each of them. It can be solved for multiple lines in order to 
+    decorate an entire tree.
 
     ```python
     # Define parameters
@@ -239,11 +243,11 @@ def main():
                 "gold",
             ]
             tree_color = st.selectbox("🎄 color 👇", tree_colors, key="tree_color")
-        with st.expander("Decoration options"):
-            nlevels = st.slider("Number of levels 👇", 2, 8, 5)
-            sine_slope = st.slider("Wave slope 👇", 0.0, 0.9, 0.7, step=0.1)
-            frequency = st.slider("Wave oscillation rate 👇", 1.0, 3.0, 1.0, step=0.5)
-            per_cycle = st.slider("How many ornaments per cycle 👇", 1, 3, 2)
+
+        nlevels = st.slider("Number of waves 👇", 2, 8, 5)
+        sine_slope = st.slider("Wave slope 👇", 0.0, 0.9, 0.7, step=0.1)
+        frequency = st.slider("Wave oscillation rate 👇", 1.0, 3.0, 1.0, step=0.5)
+        per_cycle = st.slider("How many ornaments per cycle 👇", 1, 3, 2)
         solvers = [
             "Gurobi 🚀 (global=1)",
             "SCIP",
