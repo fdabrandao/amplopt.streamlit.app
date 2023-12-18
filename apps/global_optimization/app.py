@@ -3,6 +3,8 @@ from amplpy import AMPL, modules
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import patheffects
+import random
 import math
 import os
 import sys
@@ -10,12 +12,86 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 
+class ChristmasTree:
+    def __init__(
+        self, width: float, height: float, sine_slope: float, frequency: float
+    ):
+        ampl = AMPL()
+        ampl.eval(
+            r"""
+        # Define parameters
+        param n;           # Number of ornaments
+        param width;       # Tree width
+        param height;      # Tree height
+        param offset;      # Offset for the sine function
+        param frequency;   # Frequency for the sine function
+        param sine_slope;  # Slope for the sine functions
+        param tree_slope :=  height / (width/2);  # Slope for the tree shape
+
+        # Define a set for the ornaments
+        set ORNAMENTS ordered := 1..n;  # Ordered set representing the ornaments
+
+        # Variables
+        var X{ORNAMENTS} >= 0 <= width;  # X-coordinate of each ornament within the specified width
+        var Y{i in ORNAMENTS} = sin(frequency * X[i]) + offset + sine_slope * X[i];  # Y-coordinate using a sine function
+
+        # Objective functions
+        maximize MinEuclideanDistance:  # Objective: Maximize the minimum euclidean distance between consecutive ornaments
+            min{i in ORNAMENTS: ord(i) > 1} sqrt((X[i] - X[i-1])^2 + (Y[i] - Y[i-1])^2);
+
+        maximize MinSquaredEuclideanDistance:  # Objective: Maximize the minimum squared euclidean distance between consecutive ornaments
+            min{i in ORNAMENTS: ord(i) > 1} ((X[i] - X[i-1])^2 + (Y[i] - Y[i-1])^2);
+
+        maximize MinManhattanDistance:  # Objective: Maximize the minimum manhattan distance between consecutive ornaments
+            min{i in ORNAMENTS: ord(i) > 1} (abs(X[i] - X[i-1]) + abs(Y[i] - Y[i-1]));
+
+        # Constraints
+        s.t. Order{i in ORNAMENTS: ord(i) > 1}:  # Ensure the ornaments are ordered from left to right
+            X[i] >= X[i-1];
+
+        s.t. TreeShape{i in ORNAMENTS}:  # Constraints for the shape of the tree
+            Y[i] <= min(tree_slope * X[i], tree_slope * (width - X[i]));
+        """
+        )
+        ampl.param["width"] = width
+        ampl.param["height"] = height
+        ampl.param["sine_slope"] = sine_slope
+        ampl.param["frequency"] = frequency
+        self.ampl = ampl
+
+    def solve(self, n: int, offset: float, solver: str, objective: str):
+        ampl = self.ampl
+        ampl.param["n"] = n
+        ampl.param["offset"] = offset
+        ampl.option["solver"] = solver
+        solve_output = ampl.get_output(f"solve {objective};")
+        return ampl.get_data("X, Y").to_pandas(), {
+            "solve_result": ampl.solve_result,
+            "solve_time": ampl.get_value("_solve_elapsed_time"),
+            "objective_value": ampl.get_value(objective),
+            "solver_output": solve_output,
+        }
+
+
 def main():
     st.markdown(
         """
-    # 🌎 Global Optimization Has Arrived!
+    # 🌎 Global Non-Linear Optimization
+
+
+    Global non-linear optimization involves finding the optimal solution for a
+    problem with multiple variables, where the objective function and constraints 
+    are non-linear, and the aim is to discover the global maximum or minimum across 
+    the entire feasible space. Unlike local optimization, which seeks the best 
+    solution within a limited region, global optimization seeks the overall best
+    solution within the entire feasible domain, often requiring extensive exploration 
+    of the solution space. 
+
+    ## Christmas 🎄 Problem
     
-    Christmas 🎄 Problem: Optimize the placement of ornaments on a tree so that they are equidistant!
+    Optimize the placement of ornaments on a tree 🎄 so that
+    we maximize the minimum Euclidean or Manhattan distance between consecutive
+    ornaments.
 
     ```python
     # Define parameters
@@ -34,9 +110,15 @@ def main():
     var X{ORNAMENTS} >= 0 <= width;  # X-coordinate of each ornament within the specified width
     var Y{i in ORNAMENTS} = sin(frequency * X[i]) + offset + sine_slope * X[i];  # Y-coordinate using a sine function
 
-    # Objective function
-    maximize MinDistance:  # Objective: Maximize the minimum distance between consecutive ornaments
+    # Objective functions
+    maximize MinEuclideanDistance:  # Objective: Maximize the minimum euclidean distance between consecutive ornaments
         min{i in ORNAMENTS: ord(i) > 1} sqrt((X[i] - X[i-1])^2 + (Y[i] - Y[i-1])^2);
+
+    maximize MinSquaredEuclideanDistance:  # Objective: Maximize the minimum squared euclidean distance between consecutive ornaments
+        min{i in ORNAMENTS: ord(i) > 1} ((X[i] - X[i-1])^2 + (Y[i] - Y[i-1])^2);
+
+    maximize MinManhattanDistance:  # Objective: Maximize the minimum manhattan distance between consecutive ornaments
+        min{i in ORNAMENTS: ord(i) > 1} (abs(X[i] - X[i-1]) + abs(Y[i] - Y[i-1]));
 
     # Constraints
     s.t. Order{i in ORNAMENTS: ord(i) > 1}:  # Ensure the ornaments are ordered from left to right
@@ -45,44 +127,8 @@ def main():
     s.t. TreeShape{i in ORNAMENTS}:  # Constraints for the shape of the tree
         Y[i] <= min(tree_slope * X[i], tree_slope * (width - X[i]));
     ```
-    """
-    )
 
-    ampl = AMPL()
-    ampl.eval(
-        r"""
-    # Define parameters
-    param n;           # Number of ornaments
-    param width;       # Tree width
-    param height;      # Tree height
-    param offset;      # Offset for the sine function
-    param frequency;   # Frequency for the sine function
-    param sine_slope;  # Slope for the sine functions
-    param tree_slope :=  height / (width/2);  # Slope for the tree shape
-
-    # Define a set for the ornaments
-    set ORNAMENTS ordered := 1..n;  # Ordered set representing the ornaments
-
-    # Variables
-    var X{ORNAMENTS} >= 0 <= width;  # X-coordinate of each ornament within the specified width
-    var Y{i in ORNAMENTS} = sin(frequency * X[i]) + offset + sine_slope * X[i];  # Y-coordinate using a sine function
-
-    # Objective function
-    maximize MinDistance:  # Objective: Maximize the minimum distance between consecutive ornaments
-        min{i in ORNAMENTS: ord(i) > 1} sqrt((X[i] - X[i-1])^2 + (Y[i] - Y[i-1])^2);
-
-    # Constraints
-    s.t. Order{i in ORNAMENTS: ord(i) > 1}:  # Ensure the ornaments are ordered from left to right
-        X[i] >= X[i-1];
-
-    s.t. TreeShape{i in ORNAMENTS}:  # Constraints for the shape of the tree
-        Y[i] <= min(tree_slope * X[i], tree_slope * (width - X[i]));
-
-    # s.t. PositionFirstOrnament:  # Position the first ornament at the correct Y-coordinate based on the slope
-    #     Y[first(ORNAMENTS)] = tree_slope * X[first(ORNAMENTS)];
-
-    # s.t. PositionLastOrnament:  # Position the last ornament at the correct Y-coordinate based on the slope and width
-    #     Y[last(ORNAMENTS)] = tree_slope * (width - X[last(ORNAMENTS)]);
+    ### Optimize your Christmas 🎄!
     """
     )
 
@@ -90,115 +136,129 @@ def main():
 
     with left:
         c1, c2 = st.columns(2)
+        height = 20
         with c1:
-            width = st.slider("🎄 width? 👇", 10, 20, 15)
+            width_height_ration = st.slider(
+                "🎄 width/height 👇", 0.35, 0.65, 0.5, step=0.05
+            )
+            width = height * width_height_ration
         with c2:
-            height = st.slider("🎄 height? 👇", 25, 40, 35)
-        nlevels = st.slider("How many levels? 👇", 2, 8, 5)
-        sine_slope = st.slider("Slope for the ornaments? 👇", 0.0, 0.9, 0.7, step=0.1)
-        frequency = st.slider(
-            "Frequency value for `sin(frequency * x)`? 👇", 1.0, 3.0, 1.0, step=0.5
-        )
-        per_cycle = st.slider("How many ornaments per cycle? 👇", 1, 3, 2)
+            tree_colors = [
+                "green",
+                "silver",
+                "gold",
+            ]
+            tree_color = st.selectbox("🎄 color 👇", tree_colors, key="tree_color")
+        with st.expander("Decoration options"):
+            nlevels = st.slider("Number of levels 👇", 2, 8, 5)
+            sine_slope = st.slider("Wave slope 👇", 0.0, 0.9, 0.7, step=0.1)
+            frequency = st.slider("Wave oscillation rate 👇", 1.0, 3.0, 1.0, step=0.5)
+            per_cycle = st.slider("How many ornaments per cycle 👇", 1, 3, 2)
         solvers = [
-            "Gurobi 🚀 (Global)",
-            "SCIP (Global)",
-            "LGO (Global)",
-            # "LindoGlobal (Global)",
-            "Octeract (Global)",
-            "Knitro",
-            # "CONOPT",
-            # "LOQO",
-            # "MINOS",
-            # "SNOPT",
-            # "BARON",
-            # "IPOPT",
-            # "Couenne",
-            # "Bonmin",
+            "Gurobi 🚀 (global=1)",
+            "SCIP",
+            "LGO",
+            "Knitro (Local)",
         ]
+        objectives = [
+            "MinEuclideanDistance",
+            "MinSquaredEuclideanDistance",
+            "MinManhattanDistance",
+        ]
+        objective = st.selectbox("Pick the objective 👇", objectives, key="objective")
         solver = st.selectbox("Pick the solver 👇", solvers, key="solver")
         if " " in solver:
             solver = solver[: solver.find(" ")]
         solver = solver.lower()
 
-    ampl.param["width"] = width
-    ampl.param["height"] = height
-    ampl.param["sine_slope"] = sine_slope
-    ampl.param["frequency"] = frequency
-    ampl.option["solver"] = solver
-    ampl.option["gurobi_options"] = "global=1 timelim=10 outlev=1"
-    ampl.option["scip_options"] = "timelim=10 outlev=1"
-    ampl.option["lindoglobal_options"] = "maxtime=10"
-    ampl.option["knitro_options"] = "maxtime_cpu=10"
-    if ampl.option[f"{solver}_options"] == "":
-        ampl.option[f"{solver}_options"] = "timelim=10"
+    # Create ChristmasTree object to optimize the placement of the ornaments
+    christmas_tree = ChristmasTree(width, height, sine_slope, frequency)
+    # Set solver options such as timelim
+    christmas_tree.ampl.option["gurobi_options"] = "global=1 timelim=5 outlev=1"
+    christmas_tree.ampl.option["scip_options"] = "timelim=5 outlev=1"
+    christmas_tree.ampl.option["lindoglobal_options"] = "maxtime=5"
+    christmas_tree.ampl.option["knitro_options"] = "maxtime_cpu=5"
+    if christmas_tree.ampl.option[f"{solver}_options"] == "":
+        christmas_tree.ampl.option[f"{solver}_options"] = "timelim=5"
 
-    def solve(n, offset):
-        ampl.param["n"] = n
-        ampl.param["offset"] = offset
-        solve_output = ampl.get_output("solve;")
-        # assert ampl.solve_result == "solved"
-        return ampl.get_data("X, Y").to_pandas(), {
-            "solve_result": ampl.solve_result,
-            "solve_time": ampl.get_value("_solve_time"),
-            "objective_value": ampl.get_value("MinDistance"),
-            "solver_output": solve_output,
-        }
+    fig, ax = plt.subplots(figsize=(5, 5), dpi=80)
+    fig.gca().set_aspect("equal", adjustable="box")
 
-    plt.figure(figsize=(5, 5), dpi=80)
     x = np.linspace(0, width, 1000)
-    tree_slope = ampl.param["tree_slope"].value()
+    tree_slope = christmas_tree.ampl.param["tree_slope"].value()
     tree_left = tree_slope * x
     tree_right = tree_slope * (width - x)
 
+    # Draw the borders of the tree
     x_line1 = np.linspace(0, width / 2, 1000)
-    plt.plot(x_line1, tree_slope * x_line1, color="green", linestyle="--")
+    ax.plot(x_line1, tree_slope * x_line1, color=tree_color, linestyle="--")
     x_line2 = np.linspace(width / 2, width, 1000)
-    plt.plot(x_line2, tree_slope * (width - x_line2), color="green", linestyle="--")
+    ax.plot(x_line2, tree_slope * (width - x_line2), color=tree_color, linestyle="--")
 
     # Calculate the minimum values between the two functions
     tree_y1 = tree_slope * x
     tree_y2 = tree_slope * (width - x)
     tree_y_min = np.minimum(tree_y1, tree_y2)
     # Filling the area where values are smaller than both lines with green color
-    plt.fill_between(
+    ax.fill_between(
         x,
         tree_y_min,
         where=(tree_y_min <= tree_y1) & (tree_y_min <= tree_y2),
-        color="green",
+        color=tree_color,
         alpha=0.3,
     )
 
+    # Plot lines and ornaments
     solve_info = {}
+    ornament_colors = ["red", "green", "blue", "orange", "purple", "white"]
+    ornament_colors = [color for color in ornament_colors if color != tree_color]
+    ornament_colors = random.sample(ornament_colors, 2)
     for i in range(nlevels):
         offset = i * height / float(nlevels + 1)
-        color = ["red", "blue"][i % 2]
+        color = ornament_colors[i % len(ornament_colors)]
 
+        # Plot lines
         sin_line = np.sin(frequency * x) + offset + sine_slope * x
         x_line = x[(sin_line < tree_left) & (sin_line < tree_right)]
         y_line = sin_line[(sin_line < tree_left) & (sin_line < tree_right)]
-        plt.plot(x_line, y_line, color=color)
+        if len(x_line) == 0:
+            continue
+        ax.plot(
+            x_line,
+            y_line,
+            color=color,
+            path_effects=[patheffects.withStroke(linewidth=5, foreground="gold")],
+        )
 
+        # Calculate number of ornaments
         total_length = np.max(x_line) - np.min(x_line)
         cycles = frequency * total_length / (2 * math.pi)
         n_ornaments = min(max(2, int(round(per_cycle * cycles))), 10)
 
-        solution, solve_info[i + 1] = solve(n=n_ornaments, offset=offset)
-        plt.scatter(solution.X, solution.Y, color="green", s=100)
+        # Solve optimization problem
+        solution, solve_info[i + 1] = christmas_tree.solve(
+            n=n_ornaments, offset=offset, solver=solver, objective=objective
+        )
+        # Plot ornaments
+        ax.scatter(
+            solution.X,
+            solution.Y,
+            color=color,
+            edgecolor="gold",
+            zorder=3,
+            s=100,
+        )
 
-    plt.axhline(0, color="black", linewidth=0.5)
-    plt.axvline(0, color="black", linewidth=0.5)
-    plt.grid(color="gray", linestyle="--", linewidth=0.5)
-
-    # Set aspect ratio to 'equal' for a square grid
-    plt.gca().set_aspect("equal", adjustable="box")
+    ax.axhline(0, color="black", linewidth=0.5)
+    ax.axvline(0, color="black", linewidth=0.5)
+    ax.grid(color="gray", linestyle="--", linewidth=0.5)
 
     with left:
         st.markdown("Solve results for each level:")
         st.write(pd.DataFrame.from_dict(solve_info, orient="index"))
 
     with right:
-        st.pyplot(plt)
+        st.pyplot(fig)
 
     st.markdown(
         """
