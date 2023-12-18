@@ -251,11 +251,12 @@ def main():
             "Knitro (Local)",
         ]
         objectives = [
-            "MinEuclideanDistance",
-            "MinSquaredEuclideanDistance",
-            "MinManhattanDistance",
+            "maximize MinEuclideanDistance",
+            "maximize MinSquaredEuclideanDistance",
+            "maximize MinManhattanDistance",
         ]
         objective = st.selectbox("Pick the objective 👇", objectives, key="objective")
+        objective = objective[objective.find(" ") + 1 :]
         solver = st.selectbox("Pick the solver 👇", solvers, key="solver")
         if " " in solver:
             solver = solver[: solver.find(" ")]
