@@ -143,7 +143,9 @@ def decorate_tree(
         # Calculate number of ornaments
         total_length = np.max(x_line) - np.min(x_line)
         cycles = frequency * total_length / (2 * math.pi)
-        n_ornaments = min(max(2, int(round(per_cycle * cycles))), 10)
+        n_ornaments = min(max(3, int(round(per_cycle * cycles))), 10)
+        if i == nlevels - 1:
+            n_ornaments = 2
 
         # Solve optimization problem
         solution, solve_info[i + 1] = optimizer.solve(
@@ -222,7 +224,7 @@ def main():
         Y[i] <= min(tree_slope * X[i], tree_slope * (width - X[i]));
     ```
 
-    ### Optimize your Christmas 🎄!
+    ### Optimize your Christmas 🎄 to Global Optimality!
     """
     )
 
@@ -233,7 +235,7 @@ def main():
         height = 20
         with c1:
             width_height_ration = st.slider(
-                "🎄 width/height 👇", 0.35, 0.65, 0.5, step=0.05
+                "🎄 width/height ratio 👇", 0.35, 0.65, 0.4, step=0.05
             )
             width = height * width_height_ration
         with c2:
