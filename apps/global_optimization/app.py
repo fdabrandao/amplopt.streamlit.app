@@ -101,9 +101,32 @@ def decorate_tree(
 
     # Draw the borders of the tree
     x_line1 = np.linspace(0, width / 2, 1000)
-    ax.plot(x_line1, tree_slope * x_line1, color=tree_color, linestyle="-")
+    ax.plot(
+        x_line1,
+        tree_slope * x_line1,
+        color=tree_color,
+        linestyle="-",
+        path_effects=[patheffects.withStroke(linewidth=3, foreground="white")],
+    )
     x_line2 = np.linspace(width / 2, width, 1000)
-    ax.plot(x_line2, tree_slope * (width - x_line2), color=tree_color, linestyle="-")
+    ax.plot(
+        x_line2,
+        tree_slope * (width - x_line2),
+        color=tree_color,
+        linestyle="-",
+        path_effects=[patheffects.withStroke(linewidth=3, foreground="white")],
+    )
+
+    ax.text(
+        width / 2,
+        height,
+        "★",
+        fontsize=25,
+        ha="center",
+        va="center",
+        color="gold",
+        path_effects=[patheffects.withStroke(linewidth=2, foreground="orange")],
+    )
 
     # Calculate the minimum values between the two functions
     tree_y1 = tree_slope * x
@@ -231,8 +254,8 @@ def main():
     left, right = st.columns(2)
 
     with left:
-        c1, c2 = st.columns(2)
         height = 20
+        c1, c2 = st.columns(2)
         with c1:
             width_height_ration = st.slider(
                 "🎄 width/height ratio 👇", 0.35, 0.65, 0.4, step=0.05
@@ -246,12 +269,20 @@ def main():
             ]
             tree_color = st.selectbox("🎄 color 👇", tree_colors, key="tree_color")
 
-        nlevels = st.slider("Number of waves 👇", 2, 8, 5)
-        sine_slope = st.slider("Wave slope 👇", 0.0, 0.9, 0.7, step=0.1)
-        frequency = st.slider("Wave oscillation rate 👇", 1.0, 3.0, 1.0, step=0.5)
-        per_cycle = st.slider("How many ornaments per cycle 👇", 1, 3, 2)
+        c1, c2 = st.columns(2)
+        with c1:
+            nlevels = st.slider("Number of waves 👇", 2, 8, 5)
+        with c2:
+            sine_slope = st.slider("Wave slope 👇", 0.0, 0.9, 0.7, step=0.1)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            frequency = st.slider("Wave oscillation rate 👇", 1.0, 3.0, 1.0, step=0.5)
+        with c2:
+            per_cycle = st.slider("Max ornaments per cycle 👇", 1, 3, 2)
+
         solvers = [
-            "Gurobi 🚀 (global=1)",
+            "Gurobi 11 🚀 (with global=1)",
             "SCIP",
             "LGO",
             "Knitro (Local)",
@@ -261,12 +292,14 @@ def main():
             "maximize MinSquaredEuclideanDistance",
             "maximize MinManhattanDistance",
         ]
-        objective = st.selectbox("Pick the objective 👇", objectives, key="objective")
-        objective = objective[objective.find(" ") + 1 :]
-        solver = st.selectbox("Pick the solver 👇", solvers, key="solver")
+    
+        solver = st.selectbox("Pick a solver 👇", solvers, key="solver")
         if " " in solver:
             solver = solver[: solver.find(" ")]
         solver = solver.lower()
+
+        objective = st.selectbox("Pick an objective 👇", objectives, key="objective")
+        objective = objective[objective.find(" ") + 1 :]
 
     # Create ChristmasTreeOptimizer object to optimize the placement of the ornaments
     optimizer = ChristmasTreeOptimizer(width, height, sine_slope, frequency)
