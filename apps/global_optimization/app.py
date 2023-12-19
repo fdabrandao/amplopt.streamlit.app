@@ -287,18 +287,17 @@ def main():
             "LGO",
             "Knitro (Local)",
         ]
+        solver = st.selectbox("Solver 👇", solvers, key="solver")
+        if " " in solver:
+            solver = solver[: solver.find(" ")]
+        solver = solver.lower()
+
         objectives = [
             "maximize MinEuclideanDistance",
             "maximize MinSquaredEuclideanDistance",
             "maximize MinManhattanDistance",
         ]
-    
-        solver = st.selectbox("Pick a solver 👇", solvers, key="solver")
-        if " " in solver:
-            solver = solver[: solver.find(" ")]
-        solver = solver.lower()
-
-        objective = st.selectbox("Pick an objective 👇", objectives, key="objective")
+        objective = st.selectbox("Objective 👇", objectives, key="objective")
         objective = objective[objective.find(" ") + 1 :]
 
     # Create ChristmasTreeOptimizer object to optimize the placement of the ornaments
@@ -318,7 +317,7 @@ def main():
     )
 
     with left:
-        st.markdown("Solve results for each level:")
+        st.markdown("Solve results for each wave:")
         st.write(pd.DataFrame.from_dict(solve_info, orient="index"))
 
     with right:
