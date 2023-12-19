@@ -247,7 +247,7 @@ def main():
         Y[i] <= min(tree_slope * X[i], tree_slope * (width - X[i]));
     ```
 
-    ### Optimize your Christmas 🎄 to Global Optimality!
+    ### Optimize your Christmas 🎄 to Global Non-Linear Optimality!
     """
     )
 
