@@ -310,7 +310,7 @@ def main():
     optimizer.ampl.option["scip_options"] = "timelim=5 outlev=1"
     optimizer.ampl.option["lindoglobal_options"] = "maxtime=5"
     optimizer.ampl.option["knitro_options"] = "maxtime_cpu=5"
-    optimizer.ampl.option["octeract_options"] = "SOLVER=cplex MAX_SOLVER_TIME=5"
+    optimizer.ampl.option["octeract_options"] = "LP_SOLVER=cplex MAX_SOLVER_TIME=5"
     if optimizer.ampl.option[f"{solver}_options"] == "":
         optimizer.ampl.option[f"{solver}_options"] = "timelim=5"
 
