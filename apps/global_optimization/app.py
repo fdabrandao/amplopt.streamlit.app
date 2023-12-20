@@ -210,7 +210,19 @@ def main():
     a sinusoidal line in such a way that we maximize the minimum distance
     between each of them. It can be solved for multiple lines in order to 
     decorate an entire tree.
-
+    """
+    )
+    social_media = " ".join(
+        [
+            "[[Colab Notebook](https://colab.research.google.com/github/ampl/colab.ampl.com/blob/master/authors/fdabrandao/global/christmas_tree.ipynb)]",
+            "[[LinkedIn Post](https://www.linkedin.com/feed/update/urn:li:activity:7143238663445950465)]",
+            "[[Twitter Post](https://twitter.com/AMPLopt/status/1737472923349184545)]",
+            "[[Youtube Short](https://www.youtube.com/shorts/QWWanzp8c-0)]",
+        ]
+    )
+    st.markdown(social_media)
+    st.markdown(
+        r"""
     ```python
     # Define parameters
     param n;           # Number of ornaments
@@ -328,6 +340,6 @@ def main():
 
     st.markdown(
         """
-    #### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/global_optimization)] [[Colab Notebook](https://colab.research.google.com/github/ampl/colab.ampl.com/blob/master/authors/fdabrandao/global/christmas_tree.ipynb)]
-    """
+    #### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/global_optimization)] """
+        + social_media
     )
