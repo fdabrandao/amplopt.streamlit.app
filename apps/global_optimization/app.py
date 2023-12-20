@@ -151,7 +151,7 @@ def decorate_tree(
         color = ornament_colors[i % len(ornament_colors)]
 
         # Plot lines
-        sin_line = np.sin(frequency * x) + offset + sine_slope * x
+        sin_line = np.sin(frequency * x) + sine_slope * x + offset
         x_line = x[(sin_line < tree_left) & (sin_line < tree_right)]
         y_line = sin_line[(sin_line < tree_left) & (sin_line < tree_right)]
         if len(x_line) == 0:
@@ -246,6 +246,8 @@ def main():
         Y[i] <= min(tree_slope * X[i], tree_slope * (width - X[i]));
     ```
 
+    Learn more on our [Colab Notebook](https://colab.research.google.com/github/ampl/colab.ampl.com/blob/master/authors/fdabrandao/global/christmas_tree.ipynb).
+
     ### Optimize your Christmas 🎄 to Global Optimality!
     """
     )
@@ -324,6 +326,6 @@ def main():
 
     st.markdown(
         """
-    #### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/global_optimization)]
+    #### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/global_optimization)] [[Colab Notebook](https://colab.research.google.com/github/ampl/colab.ampl.com/blob/master/authors/fdabrandao/global/christmas_tree.ipynb)]
     """
     )
