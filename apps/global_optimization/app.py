@@ -23,17 +23,17 @@ class ChristmasTreeOptimizer:
         param n;           # Number of ornaments
         param width;       # Tree width
         param height;      # Tree height
-        param offset;      # Offset for the sine function
-        param frequency;   # Frequency for the sine function
-        param sine_slope;  # Slope for the sine functions
-        param tree_slope :=  height / (width/2);  # Slope for the tree shape
+        param offset;      # Offset of the sine function
+        param frequency;   # Frequency of the sine function
+        param sine_slope;  # Slope of the sine functions
+        param tree_slope :=  height / (width/2);  # Slope of the tree shape
 
         # Define a set for the ornaments
         set ORNAMENTS ordered := 1..n;  # Ordered set representing the ornaments
 
         # Variables
         var X{ORNAMENTS} >= 0 <= width;  # X-coordinate of each ornament within the specified width
-        var Y{i in ORNAMENTS} = sin(frequency * X[i]) + offset + sine_slope * X[i];  # Y-coordinate using a sine function
+        var Y{i in ORNAMENTS} = sin(frequency * X[i]) + sine_slope * X[i] + offset;  # Y-coordinate using a sine function
 
         # Objective functions
         maximize MinEuclideanDistance:  # Objective: Maximize the minimum euclidean distance between consecutive ornaments
@@ -192,8 +192,7 @@ def decorate_tree(
 def main():
     st.markdown(
         r"""
-    # 🌎 Global Non-Linear Optimization
-
+    # 🎅 Global Non-Linear Optimization
 
     Global non-linear optimization involves finding the optimal solution for a
     problem with multiple variables, where the objective function and constraints 
@@ -217,17 +216,17 @@ def main():
     param n;           # Number of ornaments
     param width;       # Tree width
     param height;      # Tree height
-    param offset;      # Offset for the sine function
-    param frequency;   # Frequency for the sine function
-    param sine_slope;  # Slope for the sine functions
-    param tree_slope :=  height / (width/2);  # Slope for the tree shape
+    param offset;      # Offset of the sine function
+    param frequency;   # Frequency of the sine function
+    param sine_slope;  # Slope of the sine functions
+    param tree_slope :=  height / (width/2);  # Slope of the tree shape
 
     # Define a set for the ornaments
     set ORNAMENTS ordered := 1..n;  # Ordered set representing the ornaments
 
     # Variables
     var X{ORNAMENTS} >= 0 <= width;  # X-coordinate of each ornament within the specified width
-    var Y{i in ORNAMENTS} = sin(frequency * X[i]) + offset + sine_slope * X[i];  # Y-coordinate using a sine function
+    var Y{i in ORNAMENTS} = sin(frequency * X[i]) + sine_slope * X[i] + offset;  # Y-coordinate using a sine function
 
     # Objective functions
     maximize MinEuclideanDistance:  # Objective: Maximize the minimum euclidean distance between consecutive ornaments
@@ -247,7 +246,7 @@ def main():
         Y[i] <= min(tree_slope * X[i], tree_slope * (width - X[i]));
     ```
 
-    ### Optimize your Christmas 🎄 to Global Non-Linear Optimality!
+    ### Optimize your Christmas 🎄 to Global Optimality!
     """
     )
 
