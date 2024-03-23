@@ -204,7 +204,7 @@ class Matcher:
         self.data = None
 
 
-def match_submodel(m: Model, patt: str, fwd: bool, bwd: bool):
+def match_submodel(model: Model, pattern: str, fwd: bool, bwd: bool):
     """
     Match a submodel containg the \a pattern,
     optionally extended by forward/backward
@@ -212,8 +212,8 @@ def match_submodel(m: Model, patt: str, fwd: bool, bwd: bool):
     """
     mv1 = ModelView()
     mv2 = ModelView()
-    mv1.set_data(m.match_orig_model(patt))
-    mv2.set_data(m.match_final_model(patt))
+    mv1.set_data(model.match_orig_model(pattern))
+    mv2.set_data(model.match_final_model(pattern))
     return mv1, mv2
 
 
@@ -260,21 +260,52 @@ def read_explorer_model(uploader):
 
 
 def main():
+    st.header("AMPL MP Reformulation Explorer")
+    st.write(
+        """
+    Documentation: https://mp.ampl.com/modeling-tools.html#reformulation-graph
+             
+    Usage example:
+    - Step 1: Export reformulation graph as follows:
+    ```ampl
+    param n integer > 0; # N-queens
+    var Row {1..n} integer >= 1 <= n;
+    s.t. row_attacks: alldiff ({j in 1..n} Row[j]);
+    s.t. diag_attacks: alldiff ({j in 1..n} Row[j]+j);
+    s.t. rdiag_attacks: alldiff ({j in 1..n} Row[j]-j);
+
+    let n := 5;
+    option solver gurobi;
+    option gurobi_auxfiles rc; # export row/col names
+    option gurobi_options 'writegraph=model.jsonl lim:time=0'; # export graph to model.jsonl 
+    solve;
+    ```
+    - Step 2: Upload the reformulation graph:    
+    """
+    )
+
     # To work with local files in st 1.30.1, see
     # https://discuss.streamlit.io/t/axioserror-request-failed-with-status-code-403/38112/13.
     # The corresponding settings should not be used on a server.
     uploader = st.file_uploader(
-        "Model file (JSONL)",
+        "Model graph file (JSONL)",
         help="Reformulation file obtained by option `writegraph`\n"
         + "(https://mp.ampl.com/modeling-tools.html#reformulation-graph)",
     )
 
-    # You can use a column just like st.sidebar:
+    if uploader is None:
+        st.write(
+            """
+        No file selected. Please upload a reformulation file obtained by option 
+        `writegraph` (https://mp.ampl.com/modeling-tools.html#reformulation-graph)         
+        """
+        )
+        st.stop()
+
     search = st.text_input(
         "Search pattern:",
         help="Pattern to filter the models' lines.\nLeave blank to see complete models.",
     )
-
     fwd = st.checkbox(
         "Add descendants",
         disabled=True,
@@ -316,27 +347,17 @@ def main():
     model_nl = ""
     model_flat = ""
 
-    if uploader is not None:
-        model = read_model(uploader)
-        filename_upl = uploader.name
-        subm1, subm2 = match_selection(model, search, fwd, bwd)
-        bytes1_data = subm1.get_data()
-        bytes2_data = subm2.get_data()
-        with left_column:
-            st.header("NL model", help="NL model lines matching the search pattern")
-            model_nl = write_dict(bytes1_data)
-        with right_column:
-            st.header(
-                "Solver model", help="Solver model lines matching the search pattern"
-            )
-            model_flat = write_dict(bytes2_data)
-    else:
-        st.header("AMPL MP Reformulation Explorer")
-        st.write(
-            "Documentation: https://mp.ampl.com/modeling-tools.html#reformulation-graph"
-        )
-        st.divider()
-        st.write("No file selected.")
+    model = read_model(uploader)
+    filename_upl = uploader.name
+    subm1, subm2 = match_selection(model, search, fwd, bwd)
+    bytes1_data = subm1.get_data()
+    bytes2_data = subm2.get_data()
+    with left_column:
+        st.header("NL model", help="NL model lines matching the search pattern")
+        model_nl = write_dict(bytes1_data)
+    with right_column:
+        st.header("Solver model", help="Solver model lines matching the search pattern")
+        model_flat = write_dict(bytes2_data)
 
     st.download_button(
         "Download NL Model",
