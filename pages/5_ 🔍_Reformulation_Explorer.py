@@ -8,4 +8,4 @@ from apps import reformulation_explorer, common_header, badge
 
 common_header()
 reformulation_explorer.main()
-st.sidebar.markdown(badge("Python_Integration"))
+st.sidebar.markdown(badge("Reformulation_Explorer"))
