@@ -300,7 +300,7 @@ def main():
 
     # Write dictionary of entries
     @st.cache_data
-    def WriteDict(d):
+    def write_dict(d):
         whole = ""
         for k, v in d.items():
             if len(v):
@@ -324,12 +324,12 @@ def main():
         bytes2_data = subm2.get_data()
         with left_column:
             st.header("NL model", help="NL model lines matching the search pattern")
-            model_nl = WriteDict(bytes1_data)
+            model_nl = write_dict(bytes1_data)
         with right_column:
             st.header(
                 "Solver model", help="Solver model lines matching the search pattern"
             )
-            model_flat = WriteDict(bytes2_data)
+            model_flat = write_dict(bytes2_data)
     else:
         st.header("AMPL MP Reformulation Explorer")
         st.write(
