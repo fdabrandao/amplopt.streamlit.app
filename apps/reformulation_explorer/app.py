@@ -98,8 +98,7 @@ class DiGraph:
 
 class Model:
     """
-    An optimization model with conversion
-    graph
+    An optimization model with conversion graph
     """
 
     def __init__(self):
@@ -117,7 +116,7 @@ class Model:
             "SOS2": [],
         }
         self._cons_flat = {}
-        self._cons_Flat_Group = {}
+        self._cons_flat_group = {}
         self._objs_nl = []
         self._objs = []
 
@@ -160,7 +159,7 @@ class Model:
             raise Exception(f"Unknown NL constraint type: {type}")
 
     def update_flat_con_group(self, type, data):
-        self._cons_Flat_Group[type] = data
+        self._cons_flat_group[type] = data
 
     def update_flat_con(self, type, idx, data):
         if type not in self._cons_flat:
