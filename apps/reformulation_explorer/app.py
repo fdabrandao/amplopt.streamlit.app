@@ -107,8 +107,8 @@ class Model:
 
         self._vars = []  ## Pointers to various parts of the graph
         self._dvars = []
-        self._cons_NL_all = []
-        self._cons_NL = {  ## NL + SOS
+        self._cons_nl_all = []
+        self._cons_nl = {  ## NL + SOS
             "All": [],
             "Nonlinear": [],
             "Linear": [],
@@ -136,25 +136,25 @@ class Model:
     def update_nl_con(self, type, idx, data):
         if "nonlin" == type:
             self._update_node_data(
-                self._cons_NL["Nonlinear"],
-                len(self._cons_NL["Nonlinear"]),  ## these just 1x
+                self._cons_nl["Nonlinear"],
+                len(self._cons_nl["Nonlinear"]),  ## these just 1x
                 data,
             )
         elif "lin" == type:
             self._update_node_data(
-                self._cons_NL["Linear"], len(self._cons_NL["Linear"]), data
+                self._cons_nl["Linear"], len(self._cons_nl["Linear"]), data
             )
         elif "logical" == type:
             self._update_node_data(
-                self._cons_NL["Logical"], len(self._cons_NL["Logical"]), data
+                self._cons_nl["Logical"], len(self._cons_nl["Logical"]), data
             )
         elif "_sos1" == type:
             self._update_node_data(
-                self._cons_NL["SOS1"], len(self._cons_NL["SOS1"]), data
+                self._cons_nl["SOS1"], len(self._cons_nl["SOS1"]), data
             )
         elif "_sos2" == type:
             self._update_node_data(
-                self._cons_NL["SOS2"], len(self._cons_NL["SOS2"]), data
+                self._cons_nl["SOS2"], len(self._cons_nl["SOS2"]), data
             )
         else:
             raise Exception(f"Unknown NL constraint type: {type}")
@@ -196,21 +196,21 @@ class Model:
         result["NL Defined Variables"] = self._match_records(self._dvars, keyw)
         result["NL Objectives"] = self._match_records(self._objs_nl, keyw)
         #    result["NL Constraints"] \
-        #      = self._matchRecords(self._cons_NL.get("All"), keyw)
+        #      = self._matchRecords(self._cons_nl.get("All"), keyw)
         result["NL Nonlinear Constraints"] = self._match_records(
-            self._cons_NL.get("Nonlinear"), keyw
+            self._cons_nl.get("Nonlinear"), keyw
         )
         result["NL Linear Constraints"] = self._match_records(
-            self._cons_NL.get("Linear"), keyw
+            self._cons_nl.get("Linear"), keyw
         )
         result["NL Logical Constraints"] = self._match_records(
-            self._cons_NL.get("Logical"), keyw
+            self._cons_nl.get("Logical"), keyw
         )
         result["NL SOS1 Constraints"] = self._match_records(
-            self._cons_NL.get("SOS1"), keyw
+            self._cons_nl.get("SOS1"), keyw
         )
         result["NL SOS2 Constraints"] = self._match_records(
-            self._cons_NL.get("SOS2"), keyw
+            self._cons_nl.get("SOS2"), keyw
         )
         return result
 
@@ -432,14 +432,14 @@ def main():
     st.download_button(
         "Download NL Model",
         f'# NL Model for "{filename_upl}" (search pattern: "{search}")\n{model_nl}',
-        filename_upl + "_NL.mod",
+        f"{filename_upl}_NL.mod",
         help="Download current NL model",
         disabled=("" == model_nl),
     )
     st.download_button(
         "Download Solver Model",
         f'# Solver Model for "{filename_upl}" (search pattern: "{search}")\n{model_flat}',
-        filename_upl + "_solver.mod",
+        f"{filename_upl}_solver.mod",
         help="Download current solver model",
         disabled=("" == model_flat),
     )
