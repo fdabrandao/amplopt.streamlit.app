@@ -5,6 +5,76 @@ import json
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
+FLAT_CON_TYPES = {
+    "_abs": "AbsConstraint",
+    "_acos": "AcosConstraint",
+    "_acosh": "AcoshConstraint",
+    "_alldiff": "AllDiffConstraint",
+    "_and": "AndConstraint",
+    "_asin": "AsinConstraint",
+    "_asinh": "AsinhConstraint",
+    "_atan": "AtanConstraint",
+    "_atanh": "AtanhConstraint",
+    "_compl": "ComplementarityLinear",
+    "_complquad": "ComplementarityQuadratic",
+    "_condlineq": "CondLinConEQ",
+    "_condlinge": "CondLinConGE",
+    "_condlingt": "CondLinConGT",
+    "_condlinle": "CondLinConLE",
+    "_condlinlt": "CondLinConLT",
+    "_condquadeq": "CondQuadConEQ",
+    "_condquadge": "CondQuadConGE",
+    "_condquadgt": "CondQuadConGT",
+    "_condquadle": "CondQuadConLE",
+    "_condquadlt": "CondQuadConLT",
+    "_cos": "CosConstraint",
+    "_cosh": "CoshConstraint",
+    "_count": "CountConstraint",
+    "_div": "DivConstraint",
+    "_expa": "ExpAConstraint",
+    "_exp": "ExpConstraint",
+    "_expcone": "ExponentialConeConstraint",
+    "_geomcone": "GeometricConeConstraint",
+    "_ifthen": "IfThenConstraint",
+    "_impl": "ImplicationConstraint",
+    "_indeq": "IndicatorConstraintLinEQ",
+    "_indge": "IndicatorConstraintLinGE",
+    "_indle": "IndicatorConstraintLinLE",
+    "_indquadeq": "IndicatorConstraintQuadEQ",
+    "_indquadge": "IndicatorConstraintQuadGE",
+    "_indquadle": "IndicatorConstraintQuadLE",
+    "_lineq": "LinConEQ",
+    "_linge": "LinConGE",
+    "_linle": "LinConLE",
+    "_linrange": "LinConRange",
+    "_linfunccon": "LinearFunctionalConstraint",
+    "_loga": "LogAConstraint",
+    "_log": "LogConstraint",
+    "_max": "MaxConstraint",
+    "_min": "MinConstraint",
+    "_not": "NotConstraint",
+    "_numberofconst": "NumberofConstConstraint",
+    "_numberofvar": "NumberofVarConstraint",
+    "_or": "OrConstraint",
+    "_pl": "PLConstraint",
+    "_pow": "PowConstraint",
+    "_powercone": "PowerConeConstraint",
+    "_quadeq": "QuadConEQ",
+    "_quadge": "QuadConGE",
+    "_quadle": "QuadConLE",
+    "_quadrange": "QuadConRange",
+    "_quadcone": "QuadraticConeConstraint",
+    "_quadfunccon": "QuadraticFunctionalConstraint",
+    "_rotatedquadcone": "RotatedQuadraticConeConstraint",
+    "_sos1": "SOS1Constraint",
+    "_sos2": "SOS2Constraint",
+    "_sin": "SinConstraint",
+    "_sinh": "SinhConstraint",
+    "_tan": "TanConstraint",
+    "_tanh": "TanhConstraint",
+    "_uenc": "UnaryEncodingConstraint",
+}
+
 
 class DiGraph:
     """
@@ -46,9 +116,9 @@ class Model:
             "SOS1": [],
             "SOS2": [],
         }
-        self._cons_Flat = {}
+        self._cons_flat = {}
         self._cons_Flat_Group = {}
-        self._objs_NL = []
+        self._objs_nl = []
         self._objs = []
 
     def update_var(self, idx, data):
@@ -58,7 +128,7 @@ class Model:
         self._update_node_data(self._dvars, idx, data)
 
     def update_nl_obj(self, idx, data):
-        self._update_node_data(self._objs_NL, idx, data)
+        self._update_node_data(self._objs_nl, idx, data)
 
     def update_flat_obj(self, idx, data):
         self._update_node_data(self._objs, idx, data)
@@ -87,15 +157,15 @@ class Model:
                 self._cons_NL["SOS2"], len(self._cons_NL["SOS2"]), data
             )
         else:
-            raise Exception("Unknown NL constraint type: " + type)
+            raise Exception(f"Unknown NL constraint type: {type}")
 
     def update_flat_con_group(self, type, data):
         self._cons_Flat_Group[type] = data
 
     def update_flat_con(self, type, idx, data):
-        if type not in self._cons_Flat:
-            self._cons_Flat[type] = []
-        self._update_node_data(self._cons_Flat[type], idx, data)
+        if type not in self._cons_flat:
+            self._cons_flat[type] = []
+        self._update_node_data(self._cons_flat[type], idx, data)
         if (
             0 == data["depth"] and type.startswith("_sos") and "printed" in data
         ):  ## we need the final status
@@ -124,7 +194,7 @@ class Model:
         result = {}
         result["NL Variables"] = self._match_records(self._vars, keyw, "is_from_nl")
         result["NL Defined Variables"] = self._match_records(self._dvars, keyw)
-        result["NL Objectives"] = self._match_records(self._objs_NL, keyw)
+        result["NL Objectives"] = self._match_records(self._objs_nl, keyw)
         #    result["NL Constraints"] \
         #      = self._matchRecords(self._cons_NL.get("All"), keyw)
         result["NL Nonlinear Constraints"] = self._match_records(
@@ -149,15 +219,15 @@ class Model:
         result = {}
         result["Variables"] = self._match_records(self._vars, keyw)
         result["Objectives"] = self._match_records(self._objs, keyw)
-        for ct, cv in sorted(self._cons_Flat.items()):
-            result["Constraints '" + ct + "'"] = self._match_records(
-                self._cons_Flat[ct], keyw
+        for ct, cv in sorted(self._cons_flat.items()):
+            result[f"Constraints '{FLAT_CON_TYPES[ct]}'"] = self._match_records(
+                self._cons_flat[ct], keyw
             )
         return result
 
     # Add records containing keyword
     # @return array of strings
-    def _match_records(self, cnt, keyw, keyNeed1=None):
+    def _match_records(self, cnt, keyw, key_need1=None):
         result = ""
         if cnt is None:
             return result
@@ -170,9 +240,9 @@ class Model:
                 if ";" != pr[-1]:
                     pr = pr + ";"
                 if ("" == keyw or keyw in pr) and (
-                    keyNeed1 == None or (keyNeed1 in i and 1 == i[keyNeed1])
+                    key_need1 == None or (key_need1 in i and 1 == i[key_need1])
                 ):
-                    result = result + "  \n" + pr  ## Markdown: 2x spaces + EOL
+                    result += f"  \n{pr}"  ## Markdown: 2x spaces + EOL
         return result
 
 
