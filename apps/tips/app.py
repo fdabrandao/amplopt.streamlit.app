@@ -12,19 +12,14 @@ def main():
     tip_titles = [title for title, _ in tips]
 
     def update_params():
-        st.experimental_set_query_params(
-            tip=tip_titles.index(st.session_state.title) + 1
-        )
+        st.query_params["tip"] = tip_titles.index(st.session_state.title) + 1
 
     st.markdown("# AMPL Modeling Tips")
 
-    query_params = st.experimental_get_query_params()
-
     tip_index = len(tip_titles) - 1
-    if query_params:
-        if "tip" in query_params and query_params["tip"][0].isnumeric():
-            tip = int(query_params["tip"][0])
-            tip_index = min(max(tip, 1), len(tip_titles)) - 1
+    if "tip" in st.query_params and st.query_params["tip"].isnumeric():
+        tip = int(st.query_params["tip"])
+        tip_index = min(max(tip, 1), len(tip_titles)) - 1
     st.session_state.title = tip_titles[tip_index]
 
     selected_tip = st.selectbox(
