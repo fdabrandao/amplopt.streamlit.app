@@ -442,3 +442,8 @@ def main():
         help="Download current solver model",
         disabled=("" == model_flat),
     )
+
+    st.markdown(
+        """
+    #### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/reformulation_explorer)]"""
+    )
