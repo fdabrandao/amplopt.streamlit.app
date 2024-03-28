@@ -281,6 +281,7 @@ def main():
         t0 = time.time()
         ampl = AMPL()
         ampl.option["solver"] = solver
+        ampl.cd(os.path.dirname(__file__))
         ampl.read("floc_bend.mod")
         ampl.set["FACILITIES"] = data["FACILITIES"]
         ampl.set["CUSTOMERS"] = data["CUSTOMERS"]
