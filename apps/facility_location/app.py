@@ -24,7 +24,8 @@ def load_all_cities():
 
 @st.cache_data
 def default_data(all_cities_df, state):
-    cities_df = all_cities_df[all_cities_df["State"] == state]
+    cities_df = all_cities_df[all_cities_df["State"] == state].copy()
+    cities_df.drop_duplicates(subset="City", keep="first", inplace=True)
     cities = list(cities_df["City"])
     facilities = random.sample(cities, 3)
     customers = random.sample(cities, 6)
@@ -108,12 +109,10 @@ def main():
     # Display all locations
 
     facilities_df = cities_df[cities_df["City"].isin(facility_locations)].copy()
-    facilities_df.drop_duplicates(subset="City", keep="first", inplace=True)
     facilities_df["color"] = "#00FF00"
     facilities_df["size"] = 10000
     facilities_df["Type"] = "Facility"
     customers_df = cities_df[cities_df["City"].isin(customer_locations)].copy()
-    customers_df.drop_duplicates(subset="City", keep="first", inplace=True)
     customers_df["color"] = "#FF0000"
     customers_df["size"] = 1
     customers_df["Type"] = "Customer"
