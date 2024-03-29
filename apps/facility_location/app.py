@@ -248,11 +248,12 @@ def main():
 
     # Pick the location to solve the problems
 
+    NEXTMV_APP_ID = "first-app"
     NEXTMV_API_KEY = os.environ.get("NEXTMV_API_KEY", "")
     if NEXTMV_API_KEY == "":
         NEXTMV_API_KEY = st.query_params.get("NEXTMV_API_KEY", "")
     if NEXTMV_API_KEY != "":
-        worker_locations = ["nextmv", "locally"]
+        worker_locations = ["nextmv", "nextmv-async", "locally"]
         worker_location = st.selectbox(
             "Pick where to run 👇", worker_locations, key="worker_location"
         )
@@ -264,9 +265,44 @@ def main():
     approaches = ["stochastic", "individual scenarios"]
     approach = st.selectbox("Pick a solution approach 👇", approaches, key="approach")
 
+    def nextmv_job_async(data: dict, solver: str) -> str:
+        """
+        Solve the problem asynchronously using the Nextmv Cloud API and return the run_id.
+        """
+        from nextmv.cloud import Application, Client
+
+        client = Client(api_key=NEXTMV_API_KEY)
+        app = Application(client=client, id=NEXTMV_APP_ID)
+        run_id = app.new_run(
+            input=serialize_input(data),
+            options={"provider": solver},
+        )
+        return run_id
+
+    def retrieve_nextmv_run_response(run_id: str) -> dict:
+        """
+        Retrieve the result from a run_id on Nextmv.
+        """
+        from nextmv.cloud import Application, Client, PollingOptions
+
+        client = Client(api_key=NEXTMV_API_KEY)
+        app = Application(client=client, id=NEXTMV_APP_ID)
+        result = app.run_result_with_polling(
+            run_id=run_id,
+            polling_options=PollingOptions(),
+        )
+        return result.to_dict()
+
     def nextmv_job(data: dict, solver: str) -> dict:
         """
-        Solve the problem using the Nextmv Cloud API.
+        Solve the problem using the Nextmv Cloud API and return the result.
+        """
+        run_id = nextmv_job_async(data, solver)
+        return retrieve_nextmv_run_response(run_id)
+
+    def nextmv_job_with_result(data: dict, solver: str) -> dict:
+        """
+        Solve the problem using the Nextmv Cloud API and return the result.
         """
         from nextmv.cloud import Application, Client, PollingOptions
 
@@ -304,17 +340,14 @@ def main():
             "total_cost": total_cost,
         }
 
-    def solve_nextmv(data: dict, solver: str) -> dict:
-        response_data = nextmv_job(data, solver)
-        output = response_data["output"]["statistics"]["result"]["custom"][
-            "solve_output"
-        ]
-        run_duration = response_data["output"]["statistics"]["run"]["duration"]
+    def extract_nextmv_solution(response):
+        output = response["output"]["statistics"]["result"]["custom"]["solve_output"]
+        run_duration = response["output"]["statistics"]["run"]["duration"]
         solution = pd.read_json(
-            io.StringIO(response_data["output"]["solutions"][0]["facility_open"]),
+            io.StringIO(response["output"]["solutions"][0]["facility_open"]),
             orient="table",
         )
-        total_cost = response_data["output"]["solutions"][0]["total_cost"]
+        total_cost = response["output"]["solutions"][0]["total_cost"]
         return {
             "output": output,
             "run_duration": run_duration,
@@ -322,14 +355,31 @@ def main():
             "total_cost": total_cost,
         }
 
-    def solve(worker_location, data, solver):
+    def solve(worker_location, solver, data):
         if worker_location == "locally":
             return solve_locally(data, solver)
-        elif worker_location == "nextmv":
-            return solve_nextmv(data, solver)
+        elif worker_location.startswith("nextmv"):
+            response = nextmv_job(data, solver)
+            return extract_nextmv_solution(response)
         else:
             st.error("Invalid worker location")
             st.stop()
+
+    def solve_all(worker_location, solver, jobs):
+        if worker_location == "nextmv-async":
+            run_ids = {}
+            for job, data in jobs.items():
+                run_ids[job] = nextmv_job_async(data, solver)
+            results = {}
+            for job in run_ids:
+                response = retrieve_nextmv_run_response(run_ids[job])
+                results[job] = extract_nextmv_solution(response)
+            return results
+
+        results = {}
+        for job, data in jobs.items():
+            results[job] = solve(worker_location, solver, data)
+        return results
 
     def display_solution(
         result,
@@ -366,17 +416,21 @@ def main():
             st.write(f"```\n{result['output']}\n```")
 
     if approach == "stochastic":
-        result = solve(worker_location, data, solver)
+        result = solve(worker_location, solver, data)
         st.write("## Solution")
         display_solution(result, show_map=True, show_solve_output=True)
     elif approach == "individual scenarios":
-        solutions = {}
+        jobs = {}
         for scenario in data["SCENARIOS"]:
             data_scenario = data.copy()
             data_scenario["SCENARIOS"] = [scenario]
             data_scenario["prob"] = {scenario: 1}
             data_scenario["customer_demand"] = data["customer_demand"][[scenario]]
-            result = solve(worker_location, data_scenario, solver)
+            jobs[scenario] = data_scenario
+        results = solve_all(worker_location, solver, jobs)
+        solutions = {}
+        for scenario in data["SCENARIOS"]:
+            result = results[scenario]
             for index, row in result["solution"].iterrows():
                 solutions[index, scenario] = row["facility_open"]
             st.write(f"## Solution for {scenario}")
