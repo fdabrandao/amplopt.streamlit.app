@@ -249,17 +249,20 @@ def main():
 
     # Pick the location to solve the problems
 
-    if os.environ.get("NEXTMV_API_KEY", "") != "":
-        solve_methods = ["nextmv", "locally"]
-        solve_method = st.selectbox(
-            "Pick where to run 👇", solve_methods, key="solve_method"
+    NEXTMV_API_KEY = os.environ.get("NEXTMV_API_KEY", "")
+    if NEXTMV_API_KEY == "":
+        NEXTMV_API_KEY = st.query_params.get("NEXTMV_API_KEY", "")
+    if NEXTMV_API_KEY != "":
+        worker_locations = ["nextmv", "locally"]
+        worker_location = st.selectbox(
+            "Pick where to run 👇", worker_locations, key="worker_location"
         )
     else:
-        solve_method = "locally"
+        worker_location = "locally"
 
     # Pick approach
 
-    approaches = ["stochastic", "deterministic"]
+    approaches = ["stochastic", "individual scenarios"]
     approach = st.selectbox("Pick a solution approach 👇", approaches, key="approach")
 
     def nextmv_job(data: dict, solver: str) -> dict:
@@ -268,7 +271,7 @@ def main():
         """
         from nextmv.cloud import Application, Client, PollingOptions
 
-        client = Client(api_key=os.getenv("NEXTMV_API_KEY"))
+        client = Client(api_key=NEXTMV_API_KEY)
         app = Application(client=client, id="first-app")
         result = app.new_run_with_result(
             input=serialize_input(data),
@@ -320,6 +323,15 @@ def main():
             "total_cost": total_cost,
         }
 
+    def solve(worker_location, data, solver):
+        if worker_location == "locally":
+            return solve_locally(data, solver)
+        elif worker_location == "nextmv":
+            return solve_nextmv(data, solver)
+        else:
+            st.error("Invalid worker location")
+            st.stop()
+
     def display_solution(
         result,
         show_map=False,
@@ -355,23 +367,17 @@ def main():
             st.write(f"```\n{result['output']}\n```")
 
     if approach == "stochastic":
-        if solve_method == "locally":
-            result = solve_locally(data, solver)
-        elif solve_method == "nextmv":
-            result = solve_nextmv(data, solver)
-        else:
-            st.error("Invalid solve method")
-            st.stop()
+        result = solve(worker_location, data, solver)
         st.write("## Solution")
         display_solution(result, show_map=True, show_solve_output=True)
-    elif approach == "deterministic":
+    elif approach == "individual scenarios":
         solutions = {}
         for scenario in data["SCENARIOS"]:
             data_scenario = data.copy()
             data_scenario["SCENARIOS"] = [scenario]
             data_scenario["prob"] = {scenario: 1}
             data_scenario["customer_demand"] = data["customer_demand"][[scenario]]
-            result = solve_nextmv(data_scenario, solver)
+            result = solve(worker_location, data_scenario, solver)
             for index, row in result["solution"].iterrows():
                 solutions[index, scenario] = row["facility_open"]
             st.write(f"## Solution for {scenario}")
