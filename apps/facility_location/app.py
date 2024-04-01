@@ -186,9 +186,7 @@ def main():
     n_scenarios = st.slider(
         "Number of scenarios to generate 👇",
         min_value=5,
-        max_value=min(
-            50, int(2000 / (len(edited_facilities_df) * len(edited_customers_df)))
-        ),
+        max_value=25,
         step=1,
     )
 

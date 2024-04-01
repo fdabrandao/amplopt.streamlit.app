@@ -18,7 +18,7 @@ param sub_facility_open{FACILITIES} binary default 0; # 1 if facility i is open,
 param sub_scenario symbolic in SCENARIOS;
 
 # Subproblem variables
-var production{FACILITIES, CUSTOMERS, SCENARIOS} >= 0;  # production from facility i to satisfy customer demand j in scenario s
+var production{FACILITIES, CUSTOMERS, s in SCENARIOS: s == sub_scenario} >= 0;  # production from facility i to satisfy customer demand j in scenario s
 
 # Subproblem objective
 minimize operating_cost: 
