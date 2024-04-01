@@ -21,4 +21,5 @@ streamlit==1.32.2
 matplotlib==3.7.1
 yfinance==0.2.17
 altair==4.2.2
-nextmv==0.4.1
+#nextmv==0.4.1
+nextmv @ git+https://github.com/nextmv-io/nextmv-py@v0.4.1
