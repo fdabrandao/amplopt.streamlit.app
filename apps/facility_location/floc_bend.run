@@ -37,6 +37,7 @@ repeat {
    for {s in SCENARIOS} {
       let sub_scenario := s;
       solve Sub;
+      # display _nvars;
       if Sub.result = "infeasible" then {
          let cut_type[nITER, s] := "feas";
          let {j in CUSTOMERS} customer_price[j,sub_scenario,nITER] := max(satisfying_customer_demand[j].dunbdd, 0);

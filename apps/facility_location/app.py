@@ -184,7 +184,12 @@ def main():
     st.write("## Scenarios")
 
     n_scenarios = st.slider(
-        "Number of scenarios to generate 👇", min_value=3, max_value=100, step=1
+        "Number of scenarios to generate 👇",
+        min_value=5,
+        max_value=min(
+            50, int(2000 / (len(edited_facilities_df) * len(edited_customers_df)))
+        ),
+        step=1,
     )
 
     @st.cache_data
