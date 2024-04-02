@@ -1,17 +1,11 @@
-import os
-import sys
 import streamlit as st
 import numpy as np
 import pandas as pd
-from amplpy import AMPL, modules
 import matplotlib.pyplot as plt
 import yfinance as yf
 import datetime
 from pypfopt import expected_returns, risk_models
 from . import models
-
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 
 TICKERS = [

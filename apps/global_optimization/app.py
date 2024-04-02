@@ -1,15 +1,11 @@
 import streamlit as st
-from amplpy import AMPL, modules
+from amplpy import AMPL
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import patheffects
 import random
 import math
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 
 class ChristmasTreeOptimizer:

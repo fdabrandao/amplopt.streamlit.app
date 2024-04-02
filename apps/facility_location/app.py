@@ -6,10 +6,6 @@ import time
 import json
 import os
 import io
-import sys
-
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 
 @st.cache_data()
