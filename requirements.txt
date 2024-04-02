@@ -23,3 +23,5 @@ yfinance==0.2.17
 altair==4.2.2
 #nextmv==0.4.1
 #nextmv @ git+https://github.com/nextmv-io/nextmv-py@v0.4.1
+nextmv @ git+https://github.com/nextmv-io/nextmv-py@bbd330e
+ 
