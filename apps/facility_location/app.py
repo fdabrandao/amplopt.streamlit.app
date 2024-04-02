@@ -395,6 +395,7 @@ def main():
         st.write(f"Total Cost: {result['total_cost']}")
         st.write("Facilities:")
         solution = result["solution"]
+        solution.columns = ["Facility Open"]
         st.write(solution)
 
         if show_map:
@@ -402,7 +403,7 @@ def main():
             sol_locations.set_index(["City"], inplace=True)
             sol_locations["color"] = sol_locations.index.map(
                 lambda c: (
-                    "#0000FF" if solution.loc[c, "facility_open"] >= 0.5 else "#000000"
+                    "#0000FF" if solution.loc[c, "Facility Open"] >= 0.5 else "#000000"
                 )
             )
             st.map(
@@ -431,15 +432,29 @@ def main():
             data_scenario["customer_demand"] = data["customer_demand"][[scenario]]
             jobs[scenario] = data_scenario
         results = solve_all(worker_location, solver, jobs)
+        statistics = []
         solutions = {}
         for scenario in data["SCENARIOS"]:
             result = results[scenario]
             for index, row in result["solution"].iterrows():
                 solutions[index, scenario] = row["facility_open"]
-            st.write(f"## Solution for {scenario}")
-            display_solution(result, show_map=False, show_solve_output=False)
+            run_duration, total_cost = result["run_duration"], result["total_cost"]
+            statistics.append(
+                {
+                    "Scenario": scenario,
+                    "Solver": solver,
+                    "Run Duration": run_duration,
+                    "Total Cost": total_cost,
+                }
+            )
+            # st.write(f"## Solution for {scenario}")
+            # display_solution(result, show_map=False, show_solve_output=False)
 
         st.write("## Summary")
+        df = pd.DataFrame(statistics)
+        df.set_index(["Scenario"], inplace=True)
+        st.write(df)
+
         df = pd.Series(solutions).reset_index()
         df.columns = ["City", "Scenario", "Open"]
         df = df.pivot_table(index="City", columns="Scenario", values="Open")
