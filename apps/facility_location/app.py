@@ -293,9 +293,10 @@ def main():
         "customer_demand": customer_demand_df,
     }
 
-    # Serialize the instance data in JSON
-
     def serialize_input(data):
+        """
+        Serialize the instance data in JSON
+        """
         return json.dumps(
             data,
             default=lambda x: (
@@ -306,7 +307,7 @@ def main():
     json_data = serialize_input(data)
 
     # Write json file for debugging
-    # open("input.json", "w").write(json_data)
+    # open(os.path.join(os.path.dirname(__file__), "input.json"), "w").write(json_data)
 
     # Pick the solver to use
 
@@ -315,7 +316,8 @@ def main():
 
     # Pick the location to solve the problems
 
-    NEXTMV_APP_ID = "first-app"
+    NEXTMV_APP_ID = "facility-location"
+    NEXTMV_INSTANCE_ID = "candidate-1"
     NEXTMV_API_KEY = os.environ.get("NEXTMV_API_KEY", "")
     if NEXTMV_API_KEY == "":
         NEXTMV_API_KEY = st.query_params.get("NEXTMV_API_KEY", "")
@@ -343,7 +345,9 @@ def main():
         from nextmv.cloud import Application, Client
 
         client = Client(api_key=NEXTMV_API_KEY)
-        app = Application(client=client, id=NEXTMV_APP_ID)
+        app = Application(
+            client=client, id=NEXTMV_APP_ID, default_instance_id=NEXTMV_INSTANCE_ID
+        )
         run_id = app.new_run(
             input=serialize_input(data),
             options={"provider": solver},
@@ -357,7 +361,9 @@ def main():
         from nextmv.cloud import Application, Client, PollingOptions
 
         client = Client(api_key=NEXTMV_API_KEY)
-        app = Application(client=client, id=NEXTMV_APP_ID)
+        app = Application(
+            client=client, id=NEXTMV_APP_ID, default_instance_id=NEXTMV_INSTANCE_ID
+        )
         result = app.run_result_with_polling(
             run_id=run_id,
             polling_options=PollingOptions(),
@@ -378,7 +384,9 @@ def main():
         from nextmv.cloud import Application, Client, PollingOptions
 
         client = Client(api_key=NEXTMV_API_KEY)
-        app = Application(client=client, id="first-app")
+        app = Application(
+            client=client, id=NEXTMV_APP_ID, default_instance_id=NEXTMV_INSTANCE_ID
+        )
         result = app.new_run_with_result(
             input=serialize_input(data),
             polling_options=PollingOptions(),
@@ -532,7 +540,7 @@ def main():
         df.set_index(["Scenario"], inplace=True)
         st.write(df)
         df = df[["Run Duration", "Total Cost"]].mean()
-        df.columns = ["Mean"]
+        df.name = "Mean"
         st.write(df)
 
         df = pd.Series(solutions).reset_index()
@@ -549,3 +557,7 @@ def main():
         """
     #### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/facility_location)]"""
     )
+
+
+if __name__ == "__main__":
+    main()

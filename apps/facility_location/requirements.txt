@@ -1,0 +1,9 @@
+--index-url https://pypi.ampl.com
+--extra-index-url https://pypi.org/simple
+ampl_module_base
+ampl_module_highs
+ampl_module_gurobi
+ampl_module_cplex
+amplpy
+nextmv
+streamlit
