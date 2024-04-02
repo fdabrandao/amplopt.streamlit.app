@@ -531,6 +531,9 @@ def main():
         df = pd.DataFrame(statistics)
         df.set_index(["Scenario"], inplace=True)
         st.write(df)
+        df = df[["Run Duration", "Total Cost"]].mean()
+        df.columns = ["Mean"]
+        st.write(df)
 
         df = pd.Series(solutions).reset_index()
         df.columns = ["City", "Scenario", "Open"]
