@@ -69,6 +69,70 @@ def main():
     # Streamlit app
     st.header("🏭 Stochastic Facility Location")
 
+    st.markdown(
+        r"""
+        Facility location decisions have significant social, economic, and environmental impacts, affecting 
+        operational efficiency, market reach, and sustainability. Sophisticated models, considering factors
+        like transportation costs, labor availability, and environmental regulations, aid in identifying 
+        optimal locations. However, uncertainty in future conditions complicates decisions, prompting 
+        engineers to use stochastic models and robust optimization techniques to ensure the effectiveness
+        of selected locations across diverse potential scenarios.
+
+        Learn more with our notebooks on Google Colab: [Facility Location Notebooks](https://colab.ampl.com/tags/facility-location.html)
+        """
+    )
+
+    with st.expander("Mixed Integer Programming model"):
+        st.markdown(
+            r"""
+            ## Mixed integer program
+            Below you can find a simple capacitated facility location problem as an explicit mixed integer program. 
+
+            **Given:** 
+            * A set of facilities: $I$.
+            * A set of customers: $J$.
+
+            **Task:** 
+            * Find the minimum cost facilities to open such that the customer demand can be satisfied.
+
+            ### Variables
+            * $x_i \in \{0, 1\} \quad \forall i \in I$
+                * $x_i = 1$ if facility $i$ is opened.
+            * $y_{ij} \geq 0 \quad \forall i \in I, \forall j \in J$
+                * $y_{ij}$ is the level of demand for customer $j$ satisfied by facility $i$.
+
+            ### Parameters:
+            * $f_i$: the fixed cost for opening facility $i$,
+            * $q_{ij}$: the cost of servicing customer $j$ from facility $i$,
+            * $\lambda_j$: the demand of customer $j$,
+            * $k_i:$ the capacity of facility $i$.
+
+
+            ### The explicit form
+            The explicit mixed integer program can be formulated as follows:
+
+            $$
+            \begin{equation}
+            \begin{array}{rll}
+            \min \quad & \sum_{i \in I} f_i x_i + \sum_{i \in I} \sum_{j \in J} q_{ij} y_{ij} & \\
+            & &  \\
+            \textrm{subject to} \quad & \sum_{i \in I} y_{ij} \geq \lambda_j & \forall j \in J \\
+            & \sum_{j \in J} y_{ij} \leq k_i x_i & \forall i \in I \\
+            & \sum_{i \in I} k_i x_i \geq \sum_{j \in J} \lambda_j & \\
+            & &  \\
+            & x_i \in \{0, 1\} & \forall i \in I \\
+            & y_{ij} \geq 0 & \forall i \in I, \forall j \in J
+            \end{array} \tag{1}
+            \end{equation}
+            $$
+            """
+        )
+
+    with st.expander("AMPL model for Stochastic Facility Location"):
+        st.code(
+            open(os.path.join(os.path.dirname(__file__), "floc_bend.mod"), "r").read()
+        )
+
     st.write("## Facility and Customer Locations")
 
     states, all_cities_df = load_all_cities()
@@ -265,7 +329,11 @@ def main():
 
     # Pick approach
 
-    approaches = ["stochastic", "individual scenarios"]
+    approaches = [
+        "stochastic",
+        "individual scenarios",
+        "stochastic + individual scenarios",
+    ]
     approach = st.selectbox("Pick a solution approach 👇", approaches, key="approach")
 
     def nextmv_job_async(data: dict, solver: str) -> str:
@@ -390,10 +458,14 @@ def main():
         show_solve_output=False,
     ):
         # Display the solution
-        st.write(f"Solver: {solver}")
-        st.write(f"Run duration: {result['run_duration']:.2f}s")
-        st.write(f"Total Cost: {result['total_cost']}")
-        st.write("Facilities:")
+        st.write(
+            f"""
+            - Solver: {solver}
+            - Run duration: {result['run_duration']:,.2f}s
+            - Total Cost: {result['total_cost']:,.2f}
+            - Solution:
+        """
+        )
         solution = result["solution"]
         solution.columns = ["Facility Open"]
         st.write(solution)
@@ -415,15 +487,19 @@ def main():
             )
 
         if show_solve_output:
-            # Display the solve process output
-            st.write("### Solve process output")
-            st.write(f"```\n{result['output']}\n```")
+            with st.expander("Click to expand solve process output"):
+                # Display the solve process output
+                st.write("### Solve process output")
+                st.write(f"```\n{result['output']}\n```")
 
-    if approach == "stochastic":
+    valid_approach = False
+    if "stochastic" in approach:
+        valid_approach = True
         result = solve(worker_location, solver, data)
-        st.write("## Solution")
+        st.write("## Stochastic Solution")
         display_solution(result, show_map=True, show_solve_output=True)
-    elif approach == "individual scenarios":
+    if "individual scenarios" in approach:
+        valid_approach = True
         jobs = {}
         for scenario in data["SCENARIOS"]:
             data_scenario = data.copy()
@@ -434,6 +510,7 @@ def main():
         results = solve_all(worker_location, solver, jobs)
         statistics = []
         solutions = {}
+
         for scenario in data["SCENARIOS"]:
             result = results[scenario]
             for index, row in result["solution"].iterrows():
@@ -450,7 +527,7 @@ def main():
             # st.write(f"## Solution for {scenario}")
             # display_solution(result, show_map=False, show_solve_output=False)
 
-        st.write("## Summary")
+        st.write("## Individual Scenarios")
         df = pd.DataFrame(statistics)
         df.set_index(["Scenario"], inplace=True)
         st.write(df)
@@ -460,7 +537,8 @@ def main():
         df = df.pivot_table(index="City", columns="Scenario", values="Open")
         df["Average"] = df.mean(axis=1)
         st.write(df)
-    else:
+
+    if not valid_approach:
         st.error("Invalid approach")
         st.stop()
 
