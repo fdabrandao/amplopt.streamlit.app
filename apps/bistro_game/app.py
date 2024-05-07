@@ -9,8 +9,7 @@ import json
 import os
 
 # Initialize Google Maps client with your API key
-API_KEY = os.environ["GOOGLE_API_KEY"]
-gmaps = googlemaps.Client(key=API_KEY)
+API_KEY = os.environ.get("GOOGLE_API_KEY", None)
 
 # List of Disney World theme parks
 parks = [
@@ -24,6 +23,7 @@ parks = [
 # Function to fetch coordinates
 @st.cache_data
 def fetch_coordinates(park_name):
+    gmaps = googlemaps.Client(key=API_KEY)
     geocode_result = gmaps.geocode(park_name)
     if geocode_result:
         location = geocode_result[0]["geometry"]["location"]
@@ -34,6 +34,7 @@ def fetch_coordinates(park_name):
 
 @st.cache_data
 def find_place_near_location(location, place_type="restaurant", radius=1000):
+    gmaps = googlemaps.Client(key=API_KEY)
     print(f"find_place_near_location({location})")
     # Perform a nearby search for restaurants within the specified radius
     result = gmaps.places_nearby(location=location, radius=radius, type=place_type)
