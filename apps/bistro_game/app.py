@@ -97,7 +97,7 @@ def main():
         index=0,
     )
 
-    park_location = fetch_coordinates(park_name)
+    park_location = data[park_name]["coordinates"]
     places = data[park_name][place_type]
 
     @st.cache_data
