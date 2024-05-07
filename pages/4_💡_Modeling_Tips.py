@@ -4,8 +4,8 @@ import streamlit as st
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from apps import risk_return, common_header, badge
+from apps import tips, common_header, badge
 
+st.sidebar.markdown(badge("Modeling_Tips"))
 common_header()
-risk_return.main()
-st.sidebar.markdown(badge("Risk_Return"))
+tips.main()

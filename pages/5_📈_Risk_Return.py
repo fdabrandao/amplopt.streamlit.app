@@ -4,8 +4,8 @@ import streamlit as st
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from apps import global_optimization, common_header, badge
+from apps import risk_return, common_header, badge
 
-st.sidebar.markdown(badge("Python_Integration"))
+st.sidebar.markdown(badge("Risk_Return"))
 common_header()
-global_optimization.main()
+risk_return.main()

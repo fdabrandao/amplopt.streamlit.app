@@ -4,8 +4,8 @@ import streamlit as st
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from apps import tips, common_header, badge
+from apps import python, common_header, badge
 
+st.sidebar.markdown(badge("Python_Integration"))
 common_header()
-tips.main()
-st.sidebar.markdown(badge("Modeling_Tips"))
+python.main()

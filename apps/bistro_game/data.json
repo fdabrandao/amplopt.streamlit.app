@@ -1,0 +1,996 @@
+{
+  "EPCOT, Orlando, FL": {
+    "coordinates": [
+      28.3764687,
+      -81.5494034
+    ],
+    "restaurants": [
+      {
+        "name": "Nine Dragons Restaurant",
+        "coordinates": [
+          28.3700875,
+          -81.5467005
+        ],
+        "rating": 4.2,
+        "reviews": 1091
+      },
+      {
+        "name": "Cape May Cafe",
+        "coordinates": [
+          28.3712774,
+          -81.55711459999999
+        ],
+        "rating": 4.5,
+        "reviews": 2443
+      },
+      {
+        "name": "Le Cellier Steakhouse",
+        "coordinates": [
+          28.3716375,
+          -81.5515384
+        ],
+        "rating": 4.5,
+        "reviews": 2425
+      },
+      {
+        "name": "Garden Grill Restaurant",
+        "coordinates": [
+          28.3739627,
+          -81.5521983
+        ],
+        "rating": 4.4,
+        "reviews": 712
+      },
+      {
+        "name": "Rose & Crown Dining Room",
+        "coordinates": [
+          28.3704245,
+          -81.55158709999999
+        ],
+        "rating": 4.5,
+        "reviews": 558
+      },
+      {
+        "name": "Akershus Royal Banquet Hall",
+        "coordinates": [
+          28.3705047,
+          -81.54676479999999
+        ],
+        "rating": 4.3,
+        "reviews": 715
+      },
+      {
+        "name": "Chefs de France",
+        "coordinates": [
+          28.3689887,
+          -81.5525953
+        ],
+        "rating": 4.2,
+        "reviews": 1196
+      },
+      {
+        "name": "Monsieur Paul",
+        "coordinates": [
+          28.3709845,
+          -81.5471996
+        ],
+        "rating": 4.1,
+        "reviews": 157
+      },
+      {
+        "name": "Rose & Crown Pub",
+        "coordinates": [
+          28.3704985,
+          -81.5516761
+        ],
+        "rating": 4.3,
+        "reviews": 363
+      },
+      {
+        "name": "Yorkshire County Fish Shop",
+        "coordinates": [
+          28.3704225,
+          -81.5517459
+        ],
+        "rating": 4.4,
+        "reviews": 318
+      },
+      {
+        "name": "Coral Reef Restaurant",
+        "coordinates": [
+          28.3752791,
+          -81.55033829999999
+        ],
+        "rating": 4.2,
+        "reviews": 1897
+      },
+      {
+        "name": "Restaurant Marrakesh",
+        "coordinates": [
+          28.3709845,
+          -81.5471996
+        ],
+        "rating": 4.5,
+        "reviews": 911
+      },
+      {
+        "name": "Biergarten Restaurant",
+        "coordinates": [
+          28.36811509999999,
+          -81.5469516
+        ],
+        "rating": 4.5,
+        "reviews": 1463
+      },
+      {
+        "name": "San Angel Inn Restaurante",
+        "coordinates": [
+          28.371666,
+          -81.54695819999999
+        ],
+        "rating": 4.1,
+        "reviews": 2154
+      },
+      {
+        "name": "Kabuki Cafe",
+        "coordinates": [
+          28.3679334,
+          -81.5501642
+        ],
+        "rating": 3.9,
+        "reviews": 38
+      },
+      {
+        "name": "Sunshine Seasons",
+        "coordinates": [
+          28.3739719,
+          -81.5518168
+        ],
+        "rating": 4.1,
+        "reviews": 311
+      },
+      {
+        "name": "Kringla Bakeri Og Kafe",
+        "coordinates": [
+          28.3706841,
+          -81.5467937
+        ],
+        "rating": 4.5,
+        "reviews": 367
+      },
+      {
+        "name": "Teppan Edo",
+        "coordinates": [
+          28.3677054,
+          -81.55070930000001
+        ],
+        "rating": 4.5,
+        "reviews": 977
+      },
+      {
+        "name": "Lotus Blossom Café",
+        "coordinates": [
+          28.3709845,
+          -81.5471996
+        ],
+        "rating": 3.4,
+        "reviews": 137
+      },
+      {
+        "name": "Connections Eatery",
+        "coordinates": [
+          28.3742241,
+          -81.54855649999999
+        ],
+        "rating": 4.2,
+        "reviews": 192
+      }
+    ],
+    "cafes": [
+      {
+        "name": "Connections Cafe",
+        "coordinates": [
+          28.3741547,
+          -81.54877920000001
+        ],
+        "rating": 4.2,
+        "reviews": 153
+      },
+      {
+        "name": "Joffrey's Coffee & Tea Company",
+        "coordinates": [
+          28.3742712,
+          -81.548138
+        ],
+        "rating": 5,
+        "reviews": 1
+      },
+      {
+        "name": "Starbucks",
+        "coordinates": [
+          28.3717588,
+          -81.5505708
+        ],
+        "rating": 4.8,
+        "reviews": 4
+      },
+      {
+        "name": "Joffrey's Coffee & Tea Company in Showcase Plaza at EPCOT",
+        "coordinates": [
+          28.3716768,
+          -81.5487771
+        ],
+        "rating": 5,
+        "reviews": 1
+      },
+      {
+        "name": "Starbucks",
+        "coordinates": [
+          28.372522,
+          -81.54615
+        ],
+        "rating": 3.5,
+        "reviews": 53
+      },
+      {
+        "name": "Joy of Tea",
+        "coordinates": [
+          28.3698358,
+          -81.54694070000001
+        ],
+        "rating": 4.2,
+        "reviews": 35
+      },
+      {
+        "name": "Garden House",
+        "coordinates": [
+          28.3676475,
+          -81.5505001
+        ],
+        "rating": 4.9,
+        "reviews": 9
+      }
+    ]
+  },
+  "Magic Kingdom, Orlando, FL": {
+    "coordinates": [
+      28.4188163,
+      -81.5817689
+    ],
+    "restaurants": [
+      {
+        "name": "Chef Mickey's",
+        "coordinates": [
+          28.4143854,
+          -81.5743849
+        ],
+        "rating": 4.3,
+        "reviews": 3373
+      },
+      {
+        "name": "California Grill",
+        "coordinates": [
+          28.4148282,
+          -81.57449319999999
+        ],
+        "rating": 4.6,
+        "reviews": 1722
+      },
+      {
+        "name": "\"The Plaza Restaurant\"",
+        "coordinates": [
+          28.4179386,
+          -81.5809429
+        ],
+        "rating": 3.7,
+        "reviews": 419
+      },
+      {
+        "name": "1900 Park Fare",
+        "coordinates": [
+          28.411517,
+          -81.587435
+        ],
+        "rating": 4.6,
+        "reviews": 1079
+      },
+      {
+        "name": "The Crystal Palace",
+        "coordinates": [
+          28.4180741,
+          -81.5818695
+        ],
+        "rating": 4.2,
+        "reviews": 1777
+      },
+      {
+        "name": "Sunshine Tree Terrace",
+        "coordinates": [
+          28.4184266,
+          -81.5825833
+        ],
+        "rating": 4.4,
+        "reviews": 75
+      },
+      {
+        "name": "The Friar's Nook",
+        "coordinates": [
+          28.4201418,
+          -81.58086949999999
+        ],
+        "rating": 3.5,
+        "reviews": 121
+      },
+      {
+        "name": "Westward Ho",
+        "coordinates": [
+          28.4209201,
+          -81.5790435
+        ],
+        "rating": 4.1,
+        "reviews": 10
+      },
+      {
+        "name": "Jungle Navigation Co. LTD Skipper Canteen",
+        "coordinates": [
+          28.4185761,
+          -81.58264899999999
+        ],
+        "rating": 4.3,
+        "reviews": 977
+      },
+      {
+        "name": "Main Street Bakery",
+        "coordinates": [
+          28.4177747,
+          -81.5810837
+        ],
+        "rating": 4.3,
+        "reviews": 254
+      },
+      {
+        "name": "Cheshire Café",
+        "coordinates": [
+          28.4197654,
+          -81.5800467
+        ],
+        "rating": 4.1,
+        "reviews": 83
+      },
+      {
+        "name": "Cinderella's Royal Table",
+        "coordinates": [
+          28.4195968,
+          -81.58106939999999
+        ],
+        "rating": 4.1,
+        "reviews": 899
+      },
+      {
+        "name": "Be Our Guest Restaurant",
+        "coordinates": [
+          28.421241,
+          -81.5807138
+        ],
+        "rating": 4,
+        "reviews": 4341
+      },
+      {
+        "name": "Contemporary Grounds",
+        "coordinates": [
+          28.4146307,
+          -81.5743974
+        ],
+        "rating": 4.1,
+        "reviews": 29
+      },
+      {
+        "name": "Liberty Tree Tavern",
+        "coordinates": [
+          28.4191096,
+          -81.5826337
+        ],
+        "rating": 4.5,
+        "reviews": 1028
+      },
+      {
+        "name": "Narcoossee's",
+        "coordinates": [
+          28.4125461,
+          -81.5858191
+        ],
+        "rating": 4.6,
+        "reviews": 963
+      },
+      {
+        "name": "Tony's Town Square Restaurant",
+        "coordinates": [
+          28.4168812,
+          -81.58079959999999
+        ],
+        "rating": 4.2,
+        "reviews": 2932
+      },
+      {
+        "name": "Cosmic Ray's Starlight Café",
+        "coordinates": [
+          28.4195009,
+          -81.5798586
+        ],
+        "rating": 4,
+        "reviews": 3738
+      },
+      {
+        "name": "Gaston's Tavern",
+        "coordinates": [
+          28.4213393,
+          -81.5804385
+        ],
+        "rating": 4.3,
+        "reviews": 606
+      },
+      {
+        "name": "Columbia Harbour House",
+        "coordinates": [
+          28.4199765,
+          -81.5825234
+        ],
+        "rating": 4.2,
+        "reviews": 880
+      }
+    ],
+    "cafes": [
+      {
+        "name": "The Friar's Nook",
+        "coordinates": [
+          28.4201418,
+          -81.58086949999999
+        ],
+        "rating": 3.5,
+        "reviews": 121
+      },
+      {
+        "name": "Starbucks",
+        "coordinates": [
+          28.41785,
+          -81.58042999999999
+        ],
+        "rating": 4.2,
+        "reviews": 384
+      },
+      {
+        "name": "Be Our Guest Restaurant",
+        "coordinates": [
+          28.421241,
+          -81.5807138
+        ],
+        "rating": 4,
+        "reviews": 4341
+      },
+      {
+        "name": "Contemporary Grounds",
+        "coordinates": [
+          28.4146307,
+          -81.5743974
+        ],
+        "rating": 4.1,
+        "reviews": 29
+      },
+      {
+        "name": "Cosmic Ray's Starlight Café",
+        "coordinates": [
+          28.4195009,
+          -81.5798586
+        ],
+        "rating": 4,
+        "reviews": 3738
+      },
+      {
+        "name": "Joffrey's Coffee & Tea Co.",
+        "coordinates": [
+          28.4185087,
+          -81.578486
+        ],
+        "rating": 3.5,
+        "reviews": 36
+      },
+      {
+        "name": "Contempo Café",
+        "coordinates": [
+          28.4144957,
+          -81.57455039999999
+        ],
+        "rating": 4.3,
+        "reviews": 229
+      }
+    ]
+  },
+  "Disney's Hollywood Studios, Orlando, FL": {
+    "coordinates": [
+      28.3580628,
+      -81.5590975
+    ],
+    "restaurants": [
+      {
+        "name": "Il Mulino New York Trattoria",
+        "coordinates": [
+          28.3658939,
+          -81.5586866
+        ],
+        "rating": 4.1,
+        "reviews": 995
+      },
+      {
+        "name": "Kimonos",
+        "coordinates": [
+          28.3657509,
+          -81.5593665
+        ],
+        "rating": 4.4,
+        "reviews": 543
+      },
+      {
+        "name": "Garden Grove",
+        "coordinates": [
+          28.365606,
+          -81.559403
+        ],
+        "rating": 3.9,
+        "reviews": 510
+      },
+      {
+        "name": "Sci-Fi Dine-In Theater Restaurant",
+        "coordinates": [
+          28.355804,
+          -81.5597252
+        ],
+        "rating": 4.2,
+        "reviews": 2090
+      },
+      {
+        "name": "Hollywood & Vine",
+        "coordinates": [
+          28.3575754,
+          -81.5591488
+        ],
+        "rating": 4.3,
+        "reviews": 1343
+      },
+      {
+        "name": "Mama Melrose's Ristorante Italiano",
+        "coordinates": [
+          28.3546248,
+          -81.55913319999999
+        ],
+        "rating": 4.3,
+        "reviews": 1990
+      },
+      {
+        "name": "Epic Eats",
+        "coordinates": [
+          28.3565864,
+          -81.5589124
+        ],
+        "rating": 4.6,
+        "reviews": 44
+      },
+      {
+        "name": "Backlot Express",
+        "coordinates": [
+          28.355967,
+          -81.558493
+        ],
+        "rating": 4.2,
+        "reviews": 1736
+      },
+      {
+        "name": "Tune-In Lounge",
+        "coordinates": [
+          28.3572828,
+          -81.5587472
+        ],
+        "rating": 4.4,
+        "reviews": 29
+      },
+      {
+        "name": "Dockside Diner",
+        "coordinates": [
+          28.3571569,
+          -81.5595053
+        ],
+        "rating": 3.8,
+        "reviews": 101
+      },
+      {
+        "name": "Catalina Eddie's",
+        "coordinates": [
+          28.35905769999999,
+          -81.56008179999999
+        ],
+        "rating": 3.7,
+        "reviews": 40
+      },
+      {
+        "name": "Rosie's All-American Café",
+        "coordinates": [
+          28.35905769999999,
+          -81.56008179999999
+        ],
+        "rating": 3.9,
+        "reviews": 239
+      },
+      {
+        "name": "PizzeRizzo",
+        "coordinates": [
+          28.3549027,
+          -81.55899099999999
+        ],
+        "rating": 4.2,
+        "reviews": 880
+      },
+      {
+        "name": "Splash Pool Bar & Grill",
+        "coordinates": [
+          28.3652056,
+          -81.5592999
+        ],
+        "rating": 4,
+        "reviews": 6
+      },
+      {
+        "name": "The Hollywood Brown Derby",
+        "coordinates": [
+          28.3576581,
+          -81.56027
+        ],
+        "rating": 4.2,
+        "reviews": 1504
+      },
+      {
+        "name": "50's Prime Time Café",
+        "coordinates": [
+          28.3574363,
+          -81.5587144
+        ],
+        "rating": 4.3,
+        "reviews": 1269
+      },
+      {
+        "name": "Sunset Ranch Market",
+        "coordinates": [
+          28.3586447,
+          -81.56040999999999
+        ],
+        "rating": 4.2,
+        "reviews": 37
+      },
+      {
+        "name": "Fairfax Fare",
+        "coordinates": [
+          28.359036,
+          -81.5600846
+        ],
+        "rating": 4.1,
+        "reviews": 184
+      },
+      {
+        "name": "Sunshine Day Bar",
+        "coordinates": [
+          28.3582502,
+          -81.560031
+        ],
+        "rating": 4.2,
+        "reviews": 6
+      },
+      {
+        "name": "Subway",
+        "coordinates": [
+          28.358211,
+          -81.5604334
+        ],
+        "rating": 3.6,
+        "reviews": 11
+      }
+    ],
+    "cafes": [
+      {
+        "name": "Starbucks",
+        "coordinates": [
+          28.3578244,
+          -81.559636
+        ],
+        "rating": 4.4,
+        "reviews": 1031
+      },
+      {
+        "name": "50's Prime Time Café",
+        "coordinates": [
+          28.3574363,
+          -81.5587144
+        ],
+        "rating": 4.3,
+        "reviews": 1269
+      },
+      {
+        "name": "The Trolley Car Cafe",
+        "coordinates": [
+          28.3577437,
+          -81.5596472
+        ],
+        "rating": 4.4,
+        "reviews": 11
+      },
+      {
+        "name": "Oasis Canteen",
+        "coordinates": [
+          28.356529,
+          -81.558925
+        ],
+        "rating": 5,
+        "reviews": 2
+      },
+      {
+        "name": "Joffrey’s Coffee & Tea Company",
+        "coordinates": [
+          28.3597005,
+          -81.5596056
+        ],
+        "rating": 4,
+        "reviews": 63
+      },
+      {
+        "name": "Carousel Coffee",
+        "coordinates": [
+          28.3664832,
+          -81.5560751
+        ],
+        "rating": 4.3,
+        "reviews": 10
+      }
+    ]
+  },
+  "Disney's Animal Kingdom, Orlando, FL": {
+    "coordinates": [
+      28.3574423,
+      -81.5905788
+    ],
+    "restaurants": [
+      {
+        "name": "Rainforest Cafe",
+        "coordinates": [
+          28.3546441,
+          -81.5907719
+        ],
+        "rating": 4.2,
+        "reviews": 4212
+      },
+      {
+        "name": "Dawa Bar",
+        "coordinates": [
+          28.3586232,
+          -81.5920754
+        ],
+        "rating": 4,
+        "reviews": 32
+      },
+      {
+        "name": "Quality Beverages",
+        "coordinates": [
+          28.3587976,
+          -81.58929959999999
+        ],
+        "rating": 4,
+        "reviews": 2
+      },
+      {
+        "name": "Tusker House Restaurant",
+        "coordinates": [
+          28.3586843,
+          -81.59224909999999
+        ],
+        "rating": 4.3,
+        "reviews": 1315
+      },
+      {
+        "name": "Tamu Tamu Refreshments",
+        "coordinates": [
+          28.3586251,
+          -81.59169050000001
+        ],
+        "rating": 4.3,
+        "reviews": 112
+      },
+      {
+        "name": "Kusafiri Coffee Shop & Bakery",
+        "coordinates": [
+          28.358873,
+          -81.5921304
+        ],
+        "rating": 4,
+        "reviews": 65
+      },
+      {
+        "name": "Tiffins Restaurant",
+        "coordinates": [
+          28.3569733,
+          -81.5914202
+        ],
+        "rating": 4.3,
+        "reviews": 1011
+      },
+      {
+        "name": "Harambe Market",
+        "coordinates": [
+          28.3591352,
+          -81.5913508
+        ],
+        "rating": 4.4,
+        "reviews": 360
+      },
+      {
+        "name": "Dino-Bite Snacks",
+        "coordinates": [
+          28.3563414,
+          -81.588854
+        ],
+        "rating": 4.3,
+        "reviews": 16
+      },
+      {
+        "name": "Satu'li Canteen",
+        "coordinates": [
+          28.3561093,
+          -81.5924706
+        ],
+        "rating": 4.4,
+        "reviews": 1084
+      },
+      {
+        "name": "Pongu Pongu",
+        "coordinates": [
+          28.3558109,
+          -81.5925103
+        ],
+        "rating": 4.5,
+        "reviews": 168
+      },
+      {
+        "name": "Yak & Yeti Restaurant",
+        "coordinates": [
+          28.3586353,
+          -81.5895561
+        ],
+        "rating": 4.4,
+        "reviews": 2366
+      },
+      {
+        "name": "Flame Tree Barbecue",
+        "coordinates": [
+          28.3573755,
+          -81.589535
+        ],
+        "rating": 4.3,
+        "reviews": 1758
+      },
+      {
+        "name": "Pizzafari",
+        "coordinates": [
+          28.3572467,
+          -81.5913901
+        ],
+        "rating": 3.8,
+        "reviews": 532
+      },
+      {
+        "name": "Restaurantosaurus",
+        "coordinates": [
+          28.35612789999999,
+          -81.58903509999999
+        ],
+        "rating": 4.3,
+        "reviews": 1104
+      },
+      {
+        "name": "The Smiling Crocodile",
+        "coordinates": [
+          28.3575755,
+          -81.5898134
+        ],
+        "rating": 3.8,
+        "reviews": 6
+      },
+      {
+        "name": "Eight Spoon Café",
+        "coordinates": [
+          28.3579968,
+          -81.5899499
+        ],
+        "rating": 4.5,
+        "reviews": 26
+      },
+      {
+        "name": "Nomad Lounge",
+        "coordinates": [
+          28.3568262,
+          -81.59144189999999
+        ],
+        "rating": 4.6,
+        "reviews": 500
+      },
+      {
+        "name": "Terra Treats",
+        "coordinates": [
+          28.3579939,
+          -81.59154749999999
+        ],
+        "rating": 3.8,
+        "reviews": 4
+      },
+      {
+        "name": "Mr. Kamal's",
+        "coordinates": [
+          28.3585925,
+          -81.59051939999999
+        ],
+        "rating": 4.1,
+        "reviews": 37
+      }
+    ],
+    "cafes": [
+      {
+        "name": "Kusafiri Coffee Shop & Bakery",
+        "coordinates": [
+          28.358873,
+          -81.5921304
+        ],
+        "rating": 4,
+        "reviews": 65
+      },
+      {
+        "name": "Starbucks",
+        "coordinates": [
+          28.357821,
+          -81.5916513
+        ],
+        "rating": 4.4,
+        "reviews": 837
+      },
+      {
+        "name": "Relaxation Station",
+        "coordinates": [
+          28.3584421,
+          -81.5902843
+        ],
+        "rating": 5,
+        "reviews": 2
+      },
+      {
+        "name": "Isle of Java",
+        "coordinates": [
+          28.3572123,
+          -81.58939319999999
+        ],
+        "rating": 3.9,
+        "reviews": 9
+      },
+      {
+        "name": "Joffrey's Coffee & Tea Company® in Asia at Disney's Animal Kingdom",
+        "coordinates": [
+          28.3583935,
+          -81.5893291
+        ],
+        "rating": 4.4,
+        "reviews": 17
+      },
+      {
+        "name": "Joffrey's Tea and Coffee Company",
+        "coordinates": [
+          28.3545864,
+          -81.58980559999999
+        ],
+        "rating": 4.2,
+        "reviews": 13
+      }
+    ]
+  }
+}
