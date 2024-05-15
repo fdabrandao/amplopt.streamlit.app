@@ -121,6 +121,81 @@ def main():
             \end{array} \tag{1}
             \end{equation}
             $$
+
+            ### Capacitated Facility Location in AMPL
+
+            ```python
+            # Sets and indices
+            set Facilities;  # potential locations for opening facilities
+            set Customers;  # customers to be served
+
+            # Parameters
+            param ShippingCost{Facilities, Customers};  # cost of shipping from facility to customer
+            param OpeningCost{Facilities};              # fixed cost of opening a facility
+            param CustomerDemand{Customers};            # demand of each customer
+            param FacilityCapacity{Facilities};         # capacity of each facility
+
+            # Decision variables
+            var Shipment{Facilities, Customers} >= 0;  # quantity shipped from a facility to a customer
+            var IsOpen{Facilities} binary;             # 1 if a facility is open, 0 otherwise
+
+            # Objective: Minimize total cost of opening facilities and shipping to customers
+            minimize TotalCost: 
+                sum{Facility in Facilities, Customer in Customers} ShippingCost[Facility, Customer] * Shipment[Facility, Customer] +
+                sum{Facility in Facilities} OpeningCost[Facility] * IsOpen[Facility];
+
+            # Constraints
+            # Ensure each customer's demand is exactly met
+            subject to FulfillDemand{Customer in Customers}: 
+                sum{Facility in Facilities} Shipment[Facility, Customer] = CustomerDemand[Customer];
+
+            # A facility's total shipments can't exceed its capacity, and it ships only if it's open
+            subject to RespectCapacity{Facility in Facilities}: 
+                sum{Customer in Customers} Shipment[Facility, Customer] <= FacilityCapacity[Facility] * IsOpen[Facility];
+
+            # Logical constraint linking shipment to facility status
+            subject to ActivateFacility{Facility in Facilities, Customer in Customers}: 
+                Shipment[Facility, Customer] <= FacilityCapacity[Facility] * IsOpen[Facility];
+            ```
+
+            ### Stochastic Capacitated Facility Location in AMPL
+
+            ```python
+            # Sets
+            set Facilities;        # locations to potentially open facilities
+            set Customers;         # customers to be served
+            set Scenarios;         # potential future scenarios
+
+            # Parameters
+            param ShippingCost{Facilities, Customers, Scenarios};  # scenario-specific shipping cost
+            param OpeningCost{Facilities};                         # fixed cost of opening a facility
+            param CustomerDemand{Customers, Scenarios};            # scenario-specific customer demand
+            param FacilityCapacity{Facilities};                    # capacity of each facility
+            param Probability{Scenarios};                          # probability of each scenario occurring
+
+            # Decision Variables
+            var Shipment{Facilities, Customers, Scenarios} >= 0;   # shipments per scenario
+            var IsOpen{Facilities} binary;                         # facility open status
+
+            # Objective: Minimize expected total cost
+            minimize ExpectedTotalCost: 
+                sum{Facility in Facilities, Customer in Customers, Scenario in Scenarios} 
+                    (Probability[Scenario] * ShippingCost[Facility, Customer, Scenario] * Shipment[Facility, Customer, Scenario]) +
+                sum{Facility in Facilities} (OpeningCost[Facility] * IsOpen[Facility]);
+
+            # Constraints
+            # Ensure each customer's demand is exactly met in each scenario
+            subject to FulfillDemand{Customer in Customers, Scenario in Scenarios}: 
+                sum{Facility in Facilities} Shipment[Facility, Customer, Scenario] = CustomerDemand[Customer, Scenario];
+
+            # A facility's total shipments can't exceed its capacity in any scenario, and it ships only if it's open
+            subject to RespectCapacity{Facility in Facilities, Scenario in Scenarios}: 
+                sum{Customer in Customers} Shipment[Facility, Customer, Scenario] <= FacilityCapacity[Facility] * IsOpen[Facility];
+
+            # Logical constraint linking shipment to facility status (not scenario-dependent)
+            subject to ActivateFacility{Facility in Facilities, Customer in Customers, Scenario in Scenarios}: 
+                Shipment[Facility, Customer, Scenario] <= FacilityCapacity[Facility] * IsOpen[Facility];
+            ```
             """
         )
 
