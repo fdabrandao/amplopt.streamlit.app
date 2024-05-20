@@ -249,7 +249,7 @@ def main():
     facilities_df["Type"] = "Facility"
     customers_df = cities_df[cities_df["City"].isin(customer_locations)].copy()
     customers_df["color"] = "#FF0000"
-    customers_df["size"] = 1
+    customers_df["size"] = 7000
     customers_df["Type"] = "Customer"
     locations = pd.concat([facilities_df, customers_df], axis=0)
     st.map(
