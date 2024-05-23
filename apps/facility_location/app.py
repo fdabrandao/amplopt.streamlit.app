@@ -199,10 +199,36 @@ def main():
             """
         )
 
-    with st.expander("AMPL model for Stochastic Facility Location"):
+    with st.expander(
+        "AMPL model for Stochastic Facility Location using Benders Decomposition"
+    ):
         st.code(
             open(os.path.join(os.path.dirname(__file__), "floc_bend.mod"), "r").read()
         )
+
+    @st.experimental_dialog("Configure Nextmv Backend")
+    def configure_nextmv():
+        api_key = st.text_input(
+            "Nextmv API KEY", st.query_params.get("NEXTMV_API_KEY", "")
+        )
+        app_id = st.text_input("Nextmv App ID", value="facility-location")
+        instance_id = st.text_input("Instance ID", value="candidate-1")
+        if st.button("Update configuration"):
+            st.session_state.nextmv = {
+                "NEXTMV_API_KEY": api_key,
+                "NEXTMV_APP_ID": app_id,
+                "NEXTMV_INSTANCE_ID": instance_id,
+            }
+            st.rerun()
+
+    st.markdown(
+        """
+        This App can be configured to run the optimization jobs on [Nextmv](https://www.nextmv.io/videos/optimization-modeling-with-ampl-streamlit-and-nextmv-a-stochastic-facility-location-example?utm_campaign=AMPL%20integration&utm_source=AMPL) in order to be able to solve
+        bigger instances in isolated environments 👇
+        """
+    )
+    if st.button("Configure Nextmv Backend"):
+        configure_nextmv()
 
     st.write("## Facility and Customer Locations")
 
@@ -380,19 +406,14 @@ def main():
     # Write json file for debugging
     # open(os.path.join(os.path.dirname(__file__), "input.json"), "w").write(json_data)
 
-    # Pick the solver to use
-
-    solvers = ["gurobi", "cplex", "highs"]
-    solver = st.selectbox("Pick the solver to use 👇", solvers, key="solver")
-
     # Pick the location to solve the problems
+    NEXTMV_API_KEY, NEXTMV_APP_ID, NEXTMV_INSTANCE_ID = "", "", ""
+    if "nextmv" in st.session_state:
+        NEXTMV_API_KEY = st.session_state.nextmv["NEXTMV_API_KEY"]
+        NEXTMV_APP_ID = st.session_state.nextmv["NEXTMV_APP_ID"]
+        NEXTMV_INSTANCE_ID = st.session_state.nextmv["NEXTMV_INSTANCE_ID"]
 
-    NEXTMV_APP_ID = "facility-location"
-    NEXTMV_INSTANCE_ID = "candidate-1"
-    NEXTMV_API_KEY = os.environ.get("NEXTMV_API_KEY", "")
-    if NEXTMV_API_KEY == "":
-        NEXTMV_API_KEY = st.query_params.get("NEXTMV_API_KEY", "")
-    if NEXTMV_API_KEY != "":
+    if NEXTMV_API_KEY and NEXTMV_APP_ID and NEXTMV_INSTANCE_ID:
         worker_locations = ["nextmv", "nextmv-async", "locally"]
         worker_location = st.selectbox(
             "Pick where to run 👇", worker_locations, key="worker_location"
@@ -400,8 +421,14 @@ def main():
     else:
         worker_location = "locally"
 
-    # Pick approach
+    # Pick the solver to use
+    if worker_location != "locally":
+        solvers = ["highs", "gurobi"]
+    else:
+        solvers = ["gurobi", "cplex", "highs"]
+    solver = st.selectbox("Pick the solver to use 👇", solvers, key="solver")
 
+    # Pick approach
     approaches = [
         "stochastic",
         "individual scenarios",
