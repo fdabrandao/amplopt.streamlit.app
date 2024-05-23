@@ -61,6 +61,30 @@ def haversine_distance(p1, p2):
     return distance
 
 
+@st.experimental_dialog("Configure Nextmv Backend")
+def configure_nextmv():
+    default_api_key = st.query_params.get("NEXTMV_API_KEY", "")
+    default_app_id = "facility-location"
+    default_instance_id = "candidate-3"
+    if "nextmv" in st.session_state:
+        default_api_key = st.session_state.nextmv.get("NEXTMV_API_KEY", default_api_key)
+        default_app_id = st.session_state.nextmv.get("NEXTMV_APP_ID", default_app_id)
+        default_instance_id = st.session_state.nextmv.get(
+            "NEXTMV_INSTANCE_ID", default_instance_id
+        )
+
+    api_key = st.text_input("Nextmv API KEY", value=default_api_key)
+    app_id = st.text_input("Nextmv App ID", value=default_app_id)
+    instance_id = st.text_input("Instance ID", value=default_instance_id)
+    if st.button("Update configuration"):
+        st.session_state.nextmv = {
+            "NEXTMV_API_KEY": api_key,
+            "NEXTMV_APP_ID": app_id,
+            "NEXTMV_INSTANCE_ID": instance_id,
+        }
+        st.rerun()
+
+
 def main():
     # Streamlit app
     st.header("🏭 Stochastic Facility Location")
@@ -205,21 +229,6 @@ def main():
         st.code(
             open(os.path.join(os.path.dirname(__file__), "floc_bend.mod"), "r").read()
         )
-
-    @st.experimental_dialog("Configure Nextmv Backend")
-    def configure_nextmv():
-        api_key = st.text_input(
-            "Nextmv API KEY", st.query_params.get("NEXTMV_API_KEY", "")
-        )
-        app_id = st.text_input("Nextmv App ID", value="facility-location")
-        instance_id = st.text_input("Instance ID", value="candidate-1")
-        if st.button("Update configuration"):
-            st.session_state.nextmv = {
-                "NEXTMV_API_KEY": api_key,
-                "NEXTMV_APP_ID": app_id,
-                "NEXTMV_INSTANCE_ID": instance_id,
-            }
-            st.rerun()
 
     st.markdown(
         """
@@ -518,11 +527,13 @@ def main():
         }
 
     def extract_nextmv_solution(response):
-        output = response["output"]["statistics"]["result"]["custom"]["solve_output"]
         run_duration = response["output"]["statistics"]["run"]["duration"]
         solution = pd.read_json(
             io.StringIO(response["output"]["solutions"][0]["facility_open"]),
             orient="table",
+        )
+        output = response["output"]["solutions"][0].get(
+            "solve_output", "No solver output available"
         )
         total_cost = response["output"]["solutions"][0]["total_cost"]
         return {
