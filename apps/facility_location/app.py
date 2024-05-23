@@ -78,7 +78,7 @@ def configure_nextmv():
 
     api_key = st.text_input("Nextmv API KEY", value=default_api_key, type="password")
     app_id = st.text_input("Nextmv App ID", value=default_app_id)
-    instance_id = st.text_input("Instance ID", value=default_instance_id)
+    instance_id = st.text_input("Nextmv Instance ID", value=default_instance_id)
     if st.button("Update configuration"):
         st.session_state.nextmv = {
             "NEXTMV_API_KEY": api_key,
