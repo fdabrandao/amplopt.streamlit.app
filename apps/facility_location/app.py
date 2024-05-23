@@ -61,9 +61,12 @@ def haversine_distance(p1, p2):
     return distance
 
 
-@st.experimental_dialog("Configure Nextmv Backend")
+# @st.experimental_dialog("Configure Nextmv Backend")
 def configure_nextmv():
-    default_api_key = st.query_params.get("NEXTMV_API_KEY", "")
+    default_api_key = ""
+    for param in st.query_params:
+        if "NEXTMV_API_KEY" in param:
+            default_api_key = st.query_params[param]
     default_app_id = "facility-location"
     default_instance_id = "candidate-3"
     if "nextmv" in st.session_state:
@@ -73,7 +76,7 @@ def configure_nextmv():
             "NEXTMV_INSTANCE_ID", default_instance_id
         )
 
-    api_key = st.text_input("Nextmv API KEY", value=default_api_key)
+    api_key = st.text_input("Nextmv API KEY", value=default_api_key, type="password")
     app_id = st.text_input("Nextmv App ID", value=default_app_id)
     instance_id = st.text_input("Instance ID", value=default_instance_id)
     if st.button("Update configuration"):
@@ -236,7 +239,7 @@ def main():
         bigger instances in isolated environments 👇
         """
     )
-    if st.button("Configure Nextmv Backend"):
+    with st.expander("Configure Nextmv Backend"):
         configure_nextmv()
 
     st.write("## Facility and Customer Locations")
