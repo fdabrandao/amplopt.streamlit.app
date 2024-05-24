@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from . import examples, stnutils
-import random
 import math
+import json
 import os
 
 
@@ -117,13 +117,29 @@ class BatchProcessOptimizer:
         ampl.option["highs_options"] = "outlev=1 timelim=15"
         ampl.option["gurobi_options"] = "outlev=1 timelim=15"
         ampl.option["cplex_options"] = "outlev=1 timelim=15"
-        return ampl.solve(solver=solver, return_output=True)
+        # Write json file for debugging
+        # open(os.path.join(os.path.dirname(__file__), "input.json"), "w").write(
+        #     json.dumps({"data": ampl.export_data()})
+        # )
+        output = ampl.solve(solver=solver, return_output=True)
+        sol = self.ampl.get_solution(flat=False, zeros=True)
+        self.solution = {
+            "total_value": ampl.get_value("TotalValue"),
+            "total_cost": ampl.get_value("TotalCost"),
+            "total_profit": ampl.get_value("Total_Profit"),
+            "W": sol["W"],
+            "B": sol["B"],
+            "S": sol["S"],
+            "Q": sol["Q"],
+        }
+        return output
 
     def solution_analysis(self):
-        ampl = self.ampl
-        total_value, total_cost = ampl.get_value("TotalValue"), ampl.get_value(
-            "TotalCost"
-        )
+        solution = self.solution
+        st.write(self.solution["W"])
+        total_value = self.solution["total_value"]
+        total_cost = self.solution["total_cost"]
+
         st.write("## Analysis")
         st.write(
             f"""
@@ -133,7 +149,6 @@ class BatchProcessOptimizer:
             - Net Objective = {total_value - total_cost:12.2f}
             """
         )
-        solution = self.ampl.get_solution(flat=False, zeros=True)
 
         st.write("### Unit assignment")
 
