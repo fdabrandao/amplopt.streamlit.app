@@ -169,10 +169,18 @@ class BatchProcessOptimizer:
             "total_value": solutions[0]["total_value"],
             "total_cost": solutions[0]["total_cost"],
             "total_profit": solutions[0]["total_profit"],
-            "W": pd.read_json(io.StringIO(solutions[0]["W"]), orient="table"),
-            "B": pd.read_json(io.StringIO(solutions[0]["B"]), orient="table"),
-            "S": pd.read_json(io.StringIO(solutions[0]["S"]), orient="table"),
-            "Q": pd.read_json(io.StringIO(solutions[0]["Q"]), orient="table"),
+            "W": pd.read_json(io.StringIO(solutions[0]["W"]), orient="table").to_dict()[
+                "W.val"
+            ],
+            "B": pd.read_json(io.StringIO(solutions[0]["B"]), orient="table").to_dict()[
+                "B.val"
+            ],
+            "S": pd.read_json(io.StringIO(solutions[0]["S"]), orient="table").to_dict()[
+                "S.val"
+            ],
+            "Q": pd.read_json(io.StringIO(solutions[0]["Q"]), orient="table").to_dict()[
+                "Q.val"
+            ],
         }
         self.solve_result = solutions[0]["solve_result"]
         self.solve_time = solutions[0]["solve_time"]
