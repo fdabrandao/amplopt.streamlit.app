@@ -7,6 +7,31 @@ from . import examples, stnutils
 import math
 import json
 import os
+import io
+
+
+class NextmvClient:
+    def __init__(self, api_key: str, app_id: str, instance_id: str):
+        self.api_key = api_key
+        self.app_id = app_id
+        self.instance_id = instance_id
+
+    def new_run_with_result(self, data: dict, solver: str) -> dict:
+        """
+        Solve the problem using the Nextmv Cloud API and return the result.
+        """
+        from nextmv.cloud import Application, Client, PollingOptions
+
+        client = Client(api_key=self.api_key)
+        app = Application(
+            client=client, id=self.app_id, default_instance_id=self.instance_id
+        )
+        result = app.new_run_with_result(
+            input=json.dumps(data),
+            polling_options=PollingOptions(),
+            run_options={"provider": solver},
+        )
+        return result.to_dict()
 
 
 class BatchProcessOptimizer:
@@ -122,6 +147,8 @@ class BatchProcessOptimizer:
         #     json.dumps({"data": ampl.export_data()})
         # )
         output = ampl.solve(solver=solver, return_output=True)
+        self.solve_result = ampl.solve_result
+        self.solve_time = ampl.get_value("_total_solve_time")
         sol = self.ampl.get_solution(flat=False, zeros=True)
         self.solution = {
             "total_value": ampl.get_value("TotalValue"),
@@ -134,9 +161,25 @@ class BatchProcessOptimizer:
         }
         return output
 
+    def solve_on_nextmv(self, client, solver):
+        ampl = self.ampl
+        response = client.new_run_with_result({"data": ampl.export_data()}, solver)
+        solutions = response["output"]["solutions"]
+        self.solution = {
+            "total_value": solutions[0]["total_value"],
+            "total_cost": solutions[0]["total_cost"],
+            "total_profit": solutions[0]["total_profit"],
+            "W": pd.read_json(io.StringIO(solutions[0]["W"]), orient="table"),
+            "B": pd.read_json(io.StringIO(solutions[0]["B"]), orient="table"),
+            "S": pd.read_json(io.StringIO(solutions[0]["S"]), orient="table"),
+            "Q": pd.read_json(io.StringIO(solutions[0]["Q"]), orient="table"),
+        }
+        self.solve_result = solutions[0]["solve_result"]
+        self.solve_time = solutions[0]["solve_time"]
+        return solutions[0]["solve_output"]
+
     def solution_analysis(self):
         solution = self.solution
-        st.write(self.solution["W"])
         total_value = self.solution["total_value"]
         total_cost = self.solution["total_cost"]
 
@@ -341,6 +384,32 @@ class BatchProcessOptimizer:
             )
 
 
+def configure_nextmv():
+    default_api_key = ""
+    for param in st.query_params:
+        if "NEXTMV_API_KEY" in param:
+            default_api_key = st.query_params[param]
+    default_app_id = "batch-process"
+    default_instance_id = "candidate-1"
+    if "nextmv" in st.session_state:
+        default_api_key = st.session_state.nextmv.get("NEXTMV_API_KEY", default_api_key)
+        default_app_id = st.session_state.nextmv.get("NEXTMV_APP_ID", default_app_id)
+        default_instance_id = st.session_state.nextmv.get(
+            "NEXTMV_INSTANCE_ID", default_instance_id
+        )
+
+    api_key = st.text_input("Nextmv API KEY", value=default_api_key, type="password")
+    app_id = st.text_input("Nextmv App ID", value=default_app_id)
+    instance_id = st.text_input("Nextmv Instance ID", value=default_instance_id)
+    if st.button("Update configuration"):
+        st.session_state.nextmv = {
+            "NEXTMV_API_KEY": api_key,
+            "NEXTMV_APP_ID": app_id,
+            "NEXTMV_INSTANCE_ID": instance_id,
+        }
+        st.rerun()
+
+
 def main():
     st.markdown(
         r"""
@@ -349,7 +418,20 @@ def main():
     The State-Task Network (STN) is an approach to modeling multipurpose batch process for the purpose of short term scheduling. It was first developed by Kondili, et al., in 1993, and subsequently developed and extended by others.
     
     Learn more with our notebooks on Google Colab: [Batch Process Optimization Notebooks](https://ampl.com/colab/tags/batch-processes.html)
+        """
+    )
 
+    st.markdown(
+        """
+        This App can be configured to run the optimization jobs on [Nextmv](https://www.nextmv.io/videos/optimization-modeling-with-ampl-streamlit-and-nextmv-a-stochastic-facility-location-example?utm_campaign=AMPL%20integration&utm_source=AMPL) in order to be able to solve
+        bigger instances in isolated environments 👇
+        """
+    )
+    with st.expander("Configure Nextmv Backend"):
+        configure_nextmv()
+
+    st.markdown(
+        r"""
     ## Example (Kondili, et al., 1993)
 
     A state-task network is a graphical representation of the activities in a multi-product batch process. The representation includes the minimum details needed for short term scheduling of batch operations.
@@ -428,17 +510,45 @@ def main():
     stnutils.draw_graph(full_stn, full_graph, with_labels=True, verbose=False)
 
     st.write("## Let's optimize!")
-    solver = st.selectbox("Solver to use 👇", ["gurobi", "highs", "cplex"])
+
+    # Pick the location to solve the problems
+    NEXTMV_API_KEY, NEXTMV_APP_ID, NEXTMV_INSTANCE_ID = "", "", ""
+    if "nextmv" in st.session_state:
+        NEXTMV_API_KEY = st.session_state.nextmv["NEXTMV_API_KEY"]
+        NEXTMV_APP_ID = st.session_state.nextmv["NEXTMV_APP_ID"]
+        NEXTMV_INSTANCE_ID = st.session_state.nextmv["NEXTMV_INSTANCE_ID"]
+
+    if NEXTMV_API_KEY and NEXTMV_APP_ID and NEXTMV_INSTANCE_ID:
+        worker_locations = ["nextmv", "locally"]
+        worker_location = st.selectbox(
+            "Pick where to run 👇", worker_locations, key="worker_location"
+        )
+    else:
+        worker_location = "locally"
+
+    # Pick the solver to use
+    if worker_location != "locally":
+        solvers = ["highs", "gurobi"]
+    else:
+        solvers = ["gurobi", "cplex", "xpress", "highs"]
+    solver = st.selectbox("Pick the solver to use 👇", solvers, key="solver")
     if solver == "cplex":
         solver = "cplexmp"
 
     # Load instance
     opt = BatchProcessOptimizer(full_stn)
-    output = opt.solve(solver)
+    if worker_location == "locally":
+        output = opt.solve(solver)
+    elif worker_location == "nextmv":
+        nextmv_client = NextmvClient(NEXTMV_API_KEY, NEXTMV_APP_ID, NEXTMV_INSTANCE_ID)
+        output = opt.solve_on_nextmv(nextmv_client, solver)
+    else:
+        st.error("Invalid selection.")
+        st.stop()
     st.write(
         f"""
-        - Solve result: {opt.ampl.solve_result}
-        - Solve time: {opt.ampl.get_value("_total_solve_time"):.2f}s
+        - Solve result: {opt.solve_result}
+        - Solve time: {opt.solve_time:.2f}s
         """
     )
 

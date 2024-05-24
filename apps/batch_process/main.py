@@ -114,6 +114,9 @@ def solve(input_data: dict[str, Any], duration: int, provider: str) -> dict[str,
     ampl = AMPL()
     ampl.read("batch_process.mod")
     ampl.eval("data;" + input_data["data"])
+    ampl.option["highs_options"] = "outlev=1"
+    ampl.option["gurobi_options"] = "outlev=1"
+    ampl.option["cplex_options"] = "outlev=1"
 
     # Sets the solver and options.
     ampl.option["solver"] = provider
@@ -158,6 +161,9 @@ def solve(input_data: dict[str, Any], duration: int, provider: str) -> dict[str,
                 "B": ampl.var["B"].to_pandas().to_json(orient="table"),
                 "S": ampl.var["S"].to_pandas().to_json(orient="table"),
                 "Q": ampl.var["Q"].to_pandas().to_json(orient="table"),
+                "solve_output": solve_output,
+                "solve_result": ampl.solve_result,
+                "solve_time": ampl.get_value("_total_solve_time"),
             }
         ],
         "statistics": statistics,

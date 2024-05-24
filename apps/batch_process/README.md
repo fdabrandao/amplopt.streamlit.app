@@ -1,6 +1,6 @@
 <img src="https://portal.ampl.com/static/img/logo-inline-web-v4.png" align="right" height="60"/>
 
-# Stochastic Facility Location
+# Batch Process Optimization
 
 ## Files
 
