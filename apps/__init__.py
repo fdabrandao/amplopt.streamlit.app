@@ -8,7 +8,7 @@ complex optimization solutions in business & scientific applications.
 INFO_FOOTER = """
 - [Documentation](https://dev.ampl.com/)
 - [Support Forum](https://discuss.ampl.com/)
-- [Model Colaboratory](https://colab.ampl.com/)
+- [Model Colaboratory](https://ampl.com/colab/)
 
 Follow us on [Twitter](https://twitter.com/AMPLopt) and [LinkedIn](https://www.linkedin.com/company/ampl) to get the latest updates from the dev team!
 """

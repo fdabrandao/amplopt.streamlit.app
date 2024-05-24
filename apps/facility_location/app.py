@@ -101,7 +101,7 @@ def main():
         engineers to use stochastic models and robust optimization techniques to ensure the effectiveness
         of selected locations across diverse potential scenarios.
 
-        Learn more with our notebooks on Google Colab: [Facility Location Notebooks](https://colab.ampl.com/tags/facility-location.html)
+        Learn more with our notebooks on Google Colab: [Facility Location Notebooks](https://ampl.com/colab/tags/facility-location.html)
         """
     )
 

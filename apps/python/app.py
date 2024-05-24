@@ -73,7 +73,7 @@ def main():
 
     ## On Google Colab
 
-    You can also install AMPL on [Google Colab](https://dev.ampl.com/ampl/python/colab.html) ([where it is free by default](https://colab.ampl.com/getting-started.html#ampl-is-free-on-colab)) as follows:
+    You can also install AMPL on [Google Colab](https://dev.ampl.com/ampl/python/colab.html) ([where it is free by default](https://ampl.com/colab/getting-started.html#ampl-is-free-on-colab)) as follows:
 
     ```python
     # Install dependencies

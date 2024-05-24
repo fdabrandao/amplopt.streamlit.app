@@ -536,7 +536,7 @@ def classify_small_dataset():
         """
     Logistic regression is an example of a binary classifier, where the output takes one of the two values 0 or 1 for each data point. We call the two values *classes*.
 
-    **As we see from the plot, a linear separation of the classes is not reasonable. We lift the 2D data into $\mathbf{R}^{28}$ via sums of monomials of degrees up to 6.** [[See Google Colab Notebook for more details](https://colab.ampl.com/notebooks.html#logistic-regression-with-amplpy)]
+    **As we see from the plot, a linear separation of the classes is not reasonable. We lift the 2D data into $\mathbf{R}^{28}$ via sums of monomials of degrees up to 6.** [[See Google Colab Notebook for more details](https://ampl.com/colab/notebooks.html#logistic-regression-with-amplpy)]
     """
     )
     ModelEvaluator(dataset, "logistic_regression.mod").test("ipopt")
@@ -567,7 +567,7 @@ def classify_larger_dataset():
         """
     **From the 4 features we select 2 ("variance" and "skewness") to be able to
     visualize the results. Similar to the small example, we lift the 2D data into
-    $\mathbf{R}^{28}$ via sums of monomials of degrees up to 6.** [[See Google Colab Notebook for more details](https://colab.ampl.com/notebooks.html#logistic-regression-with-amplpy)]
+    $\mathbf{R}^{28}$ via sums of monomials of degrees up to 6.** [[See Google Colab Notebook for more details](https://ampl.com/colab/notebooks.html#logistic-regression-with-amplpy)]
     """
     )
     ModelEvaluator(dataset, "logistic_regression.mod").test("ipopt")
@@ -620,7 +620,7 @@ def footer():
 
     st.markdown(
         """
-        #### [[Google Colab Notebook](https://colab.ampl.com/notebooks.html#logistic-regression-with-amplpy)] [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7092187981612023808)] [[On Twitter](https://twitter.com/AMPLopt/status/1686424007422234624)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-7-logistic-regression-with-exponential-cones/657)] [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)]
+        #### [[Google Colab Notebook](https://ampl.com/colab/notebooks.html#logistic-regression-with-amplpy)] [[On LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7092187981612023808)] [[On Twitter](https://twitter.com/AMPLopt/status/1686424007422234624)] [[On Discourse](https://discuss.ampl.com/t/ampl-modeling-tips-7-logistic-regression-with-exponential-cones/657)] [[Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/tips)]
         """
     )
 

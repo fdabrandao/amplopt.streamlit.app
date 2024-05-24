@@ -13,7 +13,7 @@ you are familiar with.
 
 - [AMPL Website](https://ampl.com)
 - [AMPL Documentation](https://dev.ampl.com/)
-- [AMPL Model Colaboratory](https://colab.ampl.com/)
+- [AMPL Model Colaboratory](https://ampl.com/colab/)
 - [AMPL Forum on Discourse](https://discuss.ampl.com/)
 
 Follow us on [Twitter](https://twitter.com/AMPLopt) and [LinkedIn](https://www.linkedin.com/company/ampl) to get the latest updates from the dev team!
