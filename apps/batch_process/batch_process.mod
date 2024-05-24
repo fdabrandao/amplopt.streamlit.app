@@ -26,8 +26,8 @@ param rho_out{i in TASKS, s in S_Out[i]};  # rho_out[i,s] output fraction of tas
 
 param Bmin{(i,j) in UNITS cross TASKS};
 param Bmax{(i,j) in UNITS cross TASKS};
-param Cost{(i,j) in UNITS cross TASKS} > 0;
-param vCost{(i,j) in UNITS cross TASKS} > 0;
+param Cost{(i,j) in UNITS cross TASKS} >= 0;
+param vCost{(i,j) in UNITS cross TASKS} >= 0;
 
 # W[i,j,t] 1 if task i starts in unit j at time t
 var W{i in TASKS, j in K[i], t in TIME} binary;

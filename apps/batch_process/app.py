@@ -390,7 +390,7 @@ def configure_nextmv():
         if "NEXTMV_API_KEY" in param:
             default_api_key = st.query_params[param]
     default_app_id = "batch-process"
-    default_instance_id = "candidate-1"
+    default_instance_id = "candidate-3"
     if "nextmv" in st.session_state:
         default_api_key = st.session_state.nextmv.get("NEXTMV_API_KEY", default_api_key)
         default_app_id = st.session_state.nextmv.get("NEXTMV_APP_ID", default_app_id)
@@ -557,7 +557,7 @@ def main():
         st.write("### Solve process output")
         st.write(f"```\n{output}\n```")
 
-    if opt.ampl.solve_result in ["solved", "limit"]:
+    if opt.solve_result in ["solved", "limit"]:
         opt.solution_analysis()
 
     st.markdown(
