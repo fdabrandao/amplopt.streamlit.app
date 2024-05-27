@@ -12,6 +12,9 @@ from typing import Any
 import pandas as pd
 import io
 
+from serializer import DataSerializer, TableSerializer
+
+
 from amplpy import AMPL, ErrorHandler, OutputHandler, modules
 
 # Duration parameter for the solver.
@@ -113,7 +116,8 @@ def solve(input_data: dict[str, Any], duration: int, provider: str) -> dict[str,
     ampl.set_error_handler(error_handler)
     ampl = AMPL()
     ampl.read("batch_process.mod")
-    ampl.eval("data;" + input_data["data"])
+    ds = DataSerializer.from_json(input_data)
+    ampl.eval(f"data; {ds.to_dat()}")
     ampl.option["highs_options"] = "outlev=1"
     ampl.option["gurobi_options"] = "outlev=1"
     ampl.option["cplex_options"] = "outlev=1"
@@ -157,10 +161,10 @@ def solve(input_data: dict[str, Any], duration: int, provider: str) -> dict[str,
                 "total_value": ampl.get_value("TotalValue"),
                 "total_cost": ampl.get_value("TotalCost"),
                 "total_profit": ampl.get_value("Total_Profit"),
-                "W": ampl.var["W"].to_pandas().to_json(orient="table"),
-                "B": ampl.var["B"].to_pandas().to_json(orient="table"),
-                "S": ampl.var["S"].to_pandas().to_json(orient="table"),
-                "Q": ampl.var["Q"].to_pandas().to_json(orient="table"),
+                "W": TableSerializer(ampl.var["W"].to_pandas()).to_json_obj(),
+                "B": TableSerializer(ampl.var["B"].to_pandas()).to_json_obj(),
+                "S": TableSerializer(ampl.var["S"].to_pandas()).to_json_obj(),
+                "Q": TableSerializer(ampl.var["Q"].to_pandas()).to_json_obj(),
                 "solve_output": solve_output,
                 "solve_result": ampl.solve_result,
                 "solve_time": ampl.get_value("_total_solve_time"),

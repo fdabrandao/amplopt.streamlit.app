@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from . import examples, stnutils
+from .serializer import DataSerializer, TableSerializer
 import math
 import json
 import os
@@ -112,29 +113,35 @@ class BatchProcessOptimizer:
         ampl.cd(os.path.dirname(__file__))
         ampl.read("batch_process.mod")
         self.TIME = np.array(self.TIME)
-        ampl.set["TIME"] = self.TIME
-        ampl.set["TASKS"] = self.TASKS
-        ampl.set["UNITS"] = self.UNITS
-        ampl.set["STATES"] = self.STATES.keys()
-        ampl.set["I"] = self.I
-        ampl.set["K"] = self.K
-        ampl.set["T_In"] = self.T_
-        ampl.set["T_Out"] = self.T
-        ampl.set["S_In"] = self.S
-        ampl.set["S_Out"] = self.S_
-        ampl.param["H"] = self.H
-        ampl.param["price"] = states_df[["price"]]
-        ampl.param["initial"] = states_df[["initial"]]
-        ampl.param["P"] = self.P
-        ampl.param["p"] = self.p
-        ampl.param["C"] = self.C
-        ampl.param["rho_in"] = self.rho
-        ampl.param["rho_out"] = self.rho_
-        ampl.param["Bmin"] = unit_tasks_pd[["Bmin"]]
-        ampl.param["Bmax"] = unit_tasks_pd[["Bmax"]]
-        ampl.param["Cost"] = unit_tasks_pd[["Cost"]]
-        ampl.param["vCost"] = unit_tasks_pd[["vCost"]]
-        ampl.param["Tclean"] = unit_tasks_pd[["Tclean"]]
+        ds = DataSerializer()
+        ds.set["TIME"] = self.TIME
+        ds.set["TASKS"] = self.TASKS
+        ds.set["UNITS"] = self.UNITS
+        ds.set["STATES"] = self.STATES.keys()
+        ds.set["I"] = self.I
+        ds.set["K"] = self.K
+        ds.set["T_In"] = self.T_
+        ds.set["T_Out"] = self.T
+        ds.set["S_In"] = self.S
+        ds.set["S_Out"] = self.S_
+        ds.param["H"] = self.H
+        ds.param["price"] = states_df[["price"]]
+        ds.param["initial"] = states_df[["initial"]]
+        ds.param["P"] = self.P
+        ds.param["p"] = self.p
+        ds.param["C"] = self.C
+        ds.param["rho_in"] = self.rho
+        ds.param["rho_out"] = self.rho_
+        ds.param["Bmin"] = unit_tasks_pd[["Bmin"]]
+        ds.param["Bmax"] = unit_tasks_pd[["Bmax"]]
+        ds.param["Cost"] = unit_tasks_pd[["Cost"]]
+        ds.param["vCost"] = unit_tasks_pd[["vCost"]]
+        ds.param["Tclean"] = unit_tasks_pd[["Tclean"]]
+        # json_file = os.path.join(os.path.dirname(__file__), "input.json")
+        # open(json_file, "w").write(ds.to_json())
+        # ds = DataSerializer.from_json(open(json_file, "r").read())
+        ampl.eval(f"data; {ds.to_dat()}")
+        self.ds = ds
         self.ampl = ampl
 
     def solve(self, solver):
@@ -162,25 +169,16 @@ class BatchProcessOptimizer:
         return output
 
     def solve_on_nextmv(self, client, solver):
-        ampl = self.ampl
-        response = client.new_run_with_result({"data": ampl.export_data()}, solver)
+        response = client.new_run_with_result(self.ds.to_json_obj(), solver)
         solutions = response["output"]["solutions"]
         self.solution = {
             "total_value": solutions[0]["total_value"],
             "total_cost": solutions[0]["total_cost"],
             "total_profit": solutions[0]["total_profit"],
-            "W": pd.read_json(io.StringIO(solutions[0]["W"]), orient="table").to_dict()[
-                "W.val"
-            ],
-            "B": pd.read_json(io.StringIO(solutions[0]["B"]), orient="table").to_dict()[
-                "B.val"
-            ],
-            "S": pd.read_json(io.StringIO(solutions[0]["S"]), orient="table").to_dict()[
-                "S.val"
-            ],
-            "Q": pd.read_json(io.StringIO(solutions[0]["Q"]), orient="table").to_dict()[
-                "Q.val"
-            ],
+            "W": TableSerializer.from_json(solutions[0]["W"]).to_dict(),
+            "B": TableSerializer.from_json(solutions[0]["B"]).to_dict(),
+            "S": TableSerializer.from_json(solutions[0]["S"]).to_dict(),
+            "Q": TableSerializer.from_json(solutions[0]["Q"]).to_dict(),
         }
         self.solve_result = solutions[0]["solve_result"]
         self.solve_time = solutions[0]["solve_time"]
@@ -398,7 +396,7 @@ def configure_nextmv():
         if "NEXTMV_API_KEY" in param:
             default_api_key = st.query_params[param]
     default_app_id = "batch-process"
-    default_instance_id = "candidate-3"
+    default_instance_id = "candidate-4"
     if "nextmv" in st.session_state:
         default_api_key = st.session_state.nextmv.get("NEXTMV_API_KEY", default_api_key)
         default_app_id = st.session_state.nextmv.get("NEXTMV_APP_ID", default_app_id)
