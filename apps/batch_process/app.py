@@ -451,11 +451,22 @@ def main():
     The rectangular nodes denote process tasks. When scheduled for execution, each task is assigned an appropriate piece of equipment, and assigned a batch of material according to the incoming arcs. Each incoming arc begins at a state where the associated label indicates the mass fraction of the batch coming from that particular state. Outgoing arcs indicate the disposition of the batch to product states. The outgoing are labels indicate the fraction of the batch assigned to each product state, and the time necessary to produce that product.
 
     Not shown in the diagram is the process equipment used to execute the tasks. A separate list of process units is available, each characterized by a capacity and list of tasks which can be performed in that unit.
-    
+        """
+    )
+    with st.expander(
+        "AMPL model for Multipurpose Batch Processes using State-Task Networks"
+    ):
+        st.code(
+            open(
+                os.path.join(os.path.dirname(__file__), "batch_process.mod"), "r"
+            ).read()
+        )
+    st.markdown(
+        r"""
     ## Encoding the STN data
 
     The basic data structure specifies the states, tasks, and units comprising a state-task network. The intention is for all relevant problem data to be contained in the following tables.
-    """
+        """
     )
 
     # Create a select box widget on the sidebar
