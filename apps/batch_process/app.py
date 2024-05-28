@@ -140,7 +140,7 @@ class BatchProcessOptimizer:
         # json_file = os.path.join(os.path.dirname(__file__), "input.json")
         # open(json_file, "w").write(ds.to_json())
         # ds = DataSerializer.from_json(open(json_file, "r").read())
-        ampl.eval(f"data; {ds.to_dat()}")
+        ampl.eval(ds.to_dat())
         self.ds = ds
         self.ampl = ampl
 
@@ -396,7 +396,7 @@ def configure_nextmv():
         if "NEXTMV_API_KEY" in param:
             default_api_key = st.query_params[param]
     default_app_id = "batch-process"
-    default_instance_id = "candidate-4"
+    default_instance_id = "candidate-5"
     if "nextmv" in st.session_state:
         default_api_key = st.session_state.nextmv.get("NEXTMV_API_KEY", default_api_key)
         default_app_id = st.session_state.nextmv.get("NEXTMV_APP_ID", default_app_id)

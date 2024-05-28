@@ -117,7 +117,7 @@ def solve(input_data: dict[str, Any], duration: int, provider: str) -> dict[str,
     ampl = AMPL()
     ampl.read("batch_process.mod")
     ds = DataSerializer.from_json(input_data)
-    ampl.eval(f"data; {ds.to_dat()}")
+    ampl.eval(ds.to_dat())
     ampl.option["highs_options"] = "outlev=1"
     ampl.option["gurobi_options"] = "outlev=1"
     ampl.option["cplex_options"] = "outlev=1"

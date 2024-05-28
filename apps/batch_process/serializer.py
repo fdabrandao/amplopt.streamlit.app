@@ -154,7 +154,7 @@ class DataSerializer:
         return json.dumps(self.to_json_obj())
 
     def to_dat(self):
-        dat = ""
+        dat = "data;"
 
         def set_members_to_dat(members):
             return " ".join(map(str, members))

@@ -65,6 +65,6 @@ nextmv app version create \
 nextmv app instance create \
     -a batch-process \
     -v $VERSION_ID \
-    -i candidate-4 \
-    -n "Test candidate 4"
+    -i candidate-5 \
+    -n "Test candidate 5"
 ```
