@@ -1,4 +1,5 @@
 import streamlit as st
+import platform
 
 INFO_HEADER = """
 [AMPL](https://ampl.com) is the most powerful and intuitive tool for developing and deploying
@@ -27,4 +28,6 @@ def common_header():
 
 
 def badge(app=""):
+    if platform.system() != "Linux":
+        return ""
     return f"[![Hits](https://h.ampl.com/https://amplopt.streamlit.app/{app})](https://github.com/fdabrandao/amplopt.streamlit.app)"
