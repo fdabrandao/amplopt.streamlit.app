@@ -16,6 +16,13 @@ pyplot_show = lambda plt: st.pyplot(plt)
 display = lambda x: st.write(x)
 
 
+def split_preferences(pref):
+    desired_slots = [s for s in pref if pref[s] > 0]
+    desired_slots.sort(key=lambda s: pref[s], reverse=True)
+    undesired_slots = [s for s in pref if pref[s] == 0]
+    return desired_slots, undesired_slots
+
+
 class Instance:
     def __init__(self):
         ## Data arrays / matrices for all trainees
@@ -85,15 +92,16 @@ class Instance:
         ).set_index(["Trainee"])
         self.trainee_position = df["Position"].to_dict()
         self.trainee_seniority = df["Seniority"].to_dict()
-        self.trainee_language = df["Language"].to_dict()
+        self.trainee_language = (
+            df["Language"].apply(lambda l: self.languages.index(l)).to_dict()
+        )
         self.trainee_expiration = df["Expiration"].to_dict()
 
         with st.expander("📅 Training Slot Preferences"):
             for t in self.trainee_preferences:
-                pref = self.trainee_preferences[t]
-                desired_slots = [s for s in pref if pref[s] > 0]
-                desired_slots.sort(key=lambda s: pref[s], reverse=True)
-                undesired_slots = [s for s in pref if pref[s] == 0]
+                desired_slots, undesired_slots = split_preferences(
+                    self.trainee_preferences[t]
+                )
                 left, right = st.columns(2)
                 pref = {}
                 with left:
@@ -124,7 +132,6 @@ class InstanceGenerator:
         self.num_trainees = num_trainees
         self.num_sessions = num_sessions  # Set lower to have non-assignments
         ## Ranges and probabilities
-        self.position_kind = ["CP", "FO", "PU", "FA"]
         self.position_prob = [0.25, 0.25, 0.25, 0.25]
         self.language_prob = [0.5, 0.25, 0.25]
         self.expiration_prob = [0.5, 0.25, 0.25]
@@ -132,16 +139,32 @@ class InstanceGenerator:
         self.pref_0 = 0.5
         ## These are constant for all instances
         self.languages = ["Both", "Language 1", "Language 2"]
-        self.positions = ["CP", "FO", "PU", "FA"]
-        self.position_capacity = {"CP": 4, "FO": 4, "PU": 4, "FA": 4}
-        self.meta_positions = ["All", "CK", "CB"]
-        self.group_capacity = {"All": 10, "CK": 6, "CB": 6}
+        CP, FO, PU, FA = (
+            "CP: Captain",
+            "FO: First Officer",
+            "PU: Purser",
+            "FA: Flight Attendant",
+        )
+        CK, CB = "CK: Cockpit", "CB: Cabin"
+        self.positions = [CP, FO, PU, FA]
+        self.position_capacity = {CP: 4, FO: 4, PU: 4, FA: 4}
+        self.meta_positions = ["All", CK, CB]
+        self.group_capacity = {"All": 10, CK: 6, CB: 6}
         self.position_groups = {
-            "CP": ["All", "CK"],
-            "FO": ["All", "CK"],
-            "PU": ["All", "CB"],
-            "FA": ["All", "CB"],
+            CP: ["All", CK],
+            FO: ["All", CK],
+            PU: ["All", CB],
+            FA: ["All", CB],
         }
+        # self.position_capacity = {"CP": 4, "FO": 4, "PU": 4, "FA": 4}
+        # self.meta_positions = ["All", "CK", "CB"]
+        # self.group_capacity = {"All": 10, "CK": 6, "CB": 6}
+        # self.position_groups = {
+        #     "CP": ["All", "CK"],
+        #     "FO": ["All", "CK"],
+        #     "PU": ["All", "CB"],
+        #     "FA": ["All", "CB"],
+        # }
 
     def generate_instance(self):
         rng = self.rng
@@ -161,7 +184,7 @@ class InstanceGenerator:
         )
         for _, t in enumerate(inst.trainees):
             inst.trainee_position[t] = rng.choice(
-                self.position_kind,
+                self.positions,
                 p=self.position_prob,
             )
             inst.trainee_language[t] = rng.choice(self.languages, p=self.language_prob)
@@ -441,6 +464,28 @@ class SolveStats:
 
 
 def present_solution(ampl: AMPL, inst: Instance):
+    assignments = dict(
+        ampl.get_data("{t in Trainees, s in Sessions: Assign[t, s] > 0.5} Assign[t, s]")
+        .to_dict()
+        .keys()
+    )
+    st.write("## Optimal solution")
+    st.write(
+        pd.DataFrame(
+            {
+                "Assigned": {t: assignments.get(t, None) for t in assignments},
+                "Desired": {
+                    t: split_preferences(inst.trainee_preferences[t])[0]
+                    for t in inst.trainees
+                },
+                "Undesired": {
+                    t: split_preferences(inst.trainee_preferences[t])[1]
+                    for t in inst.trainees
+                },
+            }
+        ).reindex(inst.trainees)
+    )
+
     output = io.StringIO()
     with contextlib.redirect_stdout(output):
         stats = SolveStats()
@@ -507,6 +552,7 @@ def present_solution(ampl: AMPL, inst: Instance):
     st.pyplot(plt)
     # Solution as a heat map
     assign_df = ampl.get_variable("Assign").to_pandas().unstack().T
+    plt.clf()
     plt.imshow(assign_df)
     plt.title("Schedule")
     plt.xlabel("Trainees")
@@ -551,12 +597,26 @@ def main():
         """
     )
 
+    with st.expander(
+        "AMPL model for aircrew training scheduling with seniority constraints"
+    ):
+        base_mod = open(
+            os.path.join(os.path.dirname(__file__), "airtrainee_base.mod"), "r"
+        ).read()
+        seniority_mod = open(
+            os.path.join(
+                os.path.dirname(__file__), "airtrainee_seniority_reverse_PBS.mod"
+            ),
+            "r",
+        ).read()
+        st.code(base_mod + seniority_mod)
+
     rng = np.random.default_rng(1234)
 
     left, right = st.columns(2)
     with left:
         num_trainees = st.slider(
-            "Number of trainees 👇", min_value=25, max_value=500, step=1, value=200
+            "Number of trainees 👇", min_value=25, max_value=200, step=1, value=100
         )
     with right:
         num_sessions = st.slider(

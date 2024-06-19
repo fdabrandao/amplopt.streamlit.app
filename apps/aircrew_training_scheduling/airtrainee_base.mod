@@ -1,12 +1,12 @@
-set Trainees;                # Trainees
-set Sessions;                # Training sessions
+set Trainees;                 # Trainees
+set Sessions;                 # Training sessions
 set Positions;                # Positions
 set MetaPositions;            # Meta-positions (e.g, All, Cockpit, Cabin)
 set PositionGroups{Positions} in MetaPositions ordered; # Groups corresponding to each position
 
 param TraineePosition{Trainees} in Positions symbolic;  # Trainee's position
 param TraineeSeniority{Trainees};             # Seniority (smaller value <=> higher seniority)
-param TraineeLanguage{Trainees} symbolic;              # Language (0 - both, 1 or 2 - one only)
+param TraineeLanguage{Trainees};              # Language (0 - both, 1 or 2 - one only)
 param TraineeExpiration{Trainees};            # Expiration: 0 - this month, 1 - next month, 2 - in 2 months
 param TraineePreferences{Trainees, Sessions} default -1;    # Priority: -1 -  not possible, 0 - not wanted, larger value <=> higher preference
 param PositionCapacity{Positions};            # Position capacity
