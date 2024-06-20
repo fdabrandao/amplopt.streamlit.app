@@ -614,15 +614,15 @@ def main():
     left, right = st.columns(2)
     with left:
         num_trainees = st.slider(
-            "Number of trainees 👇", min_value=25, max_value=200, step=1, value=100
+            "Number of trainees 👇", min_value=25, max_value=200, step=1, value=50
         )
     with right:
         num_sessions = st.slider(
             "Number of sessions 👇",
-            min_value=25,
+            min_value=10,
             max_value=num_trainees,
             step=1,
-            value=int(math.ceil(num_trainees / 13)),
+            value=max(10, int(math.ceil(num_trainees / 10))),
         )
 
     generator = InstanceGenerator(
@@ -637,8 +637,10 @@ def main():
         ["airtrainee_base.mod", "airtrainee_seniority_reverse_PBS.mod"], instance
     )
 
-    solvers = ["highs", "scip", "cbc", "gurobi", "xpress", "cplexmp", "mosek", "copt"]
+    solvers = ["highs", "scip", "cbc", "gurobi", "xpress", "cplex", "mosek", "copt"]
     solver = st.selectbox("Pick the solver to use 👇", solvers, key="solver")
+    if solver == "cplex":
+        solver = "cplexmp"
 
     output = ampl.solve(
         solver=solver,
@@ -648,7 +650,7 @@ def main():
     with st.expander("📄 Solve process output"):
         st.write(f"```\n{output}\n```")
     st.write(
-        f"Solve result = {ampl.solve_result}, time: {ampl.get_value('_total_solve_time'):.3}s"
+        f"Solver: {solver}, Solve result: {ampl.solve_result}, Time: {ampl.get_value('_total_solve_time'):.3}s"
     )
 
     if ampl.solve_result == "solved":
