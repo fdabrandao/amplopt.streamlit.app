@@ -4,6 +4,7 @@ import io
 import contextlib
 import math
 import os
+import json
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,7 +23,7 @@ def split_preferences(pref):
 
 
 class Instance:
-    def __init__(self):
+    def __init__(self, init_dict=None):
         ## Data arrays / matrices for all trainees
         self.num_trainees = 0
         self.num_sessions = 0
@@ -40,9 +41,21 @@ class Instance:
         self.meta_positions = []
         self.position_groups = {}
         self.group_capacity = {}
+        if init_dict is not None:
+            for key, value in init_dict.items():
+                self.__dict__[key] = value
 
     def to_dict(self):
         return self.__dict__
+
+    def to_json(self):
+        return json.dumps(self.to_dict(), indent=4)
+
+    @classmethod
+    def from_json(cls, json_data):
+        if isinstance(json_data, str):
+            json_data = json.loads(json_data)
+        return cls(json_data)
 
     def instance_editor(self):
         df = pd.DataFrame(
@@ -668,8 +681,11 @@ def main():
         generator.generator_editor()
     instance = generator.generate_instance()
     instance.instance_editor()
-    # with st.expander("Instance"):
-    #    st.write(instance.to_dict())
+
+    # with st.expander("JSON Instance"):
+    #     st.write(instance.to_dict())
+    # json_data = instance.to_json()
+    # open(os.path.join(os.path.dirname(__file__), "input.json"), "w").write(json_data)
 
     ampl = make_ampl_instance(["airtrainee.mod"], instance)
     load_imbalance = st.checkbox(
@@ -697,7 +713,7 @@ def main():
     with st.expander("📄 Solve process output"):
         st.write(f"```\n{output}\n```")
     st.write(
-        f"Solver: {solver}, Solve result: {ampl.solve_result}, Time: {ampl.get_value('_total_solve_time'):.3}s"
+        f"Solver: {solver}, Solve result: {ampl.solve_result}, Time: {float(ampl.get_value('_total_solve_time')):.3}s"
     )
 
     if ampl.solve_result == "solved":
