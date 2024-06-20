@@ -637,7 +637,7 @@ def main():
         ["airtrainee_base.mod", "airtrainee_seniority_reverse_PBS.mod"], instance
     )
 
-    solvers = ["highs", "scip", "cbc"]
+    solvers = ["highs", "scip", "cbc", "gurobi", "xpress", "cplexmp", "mosek", "copt"]
     solver = st.selectbox("Pick the solver to use 👇", solvers, key="solver")
 
     output = ampl.solve(
@@ -645,16 +645,14 @@ def main():
         mp_options="outlev=1 multiobj=1 tech:timing=1",  # mp_options for MP-based solvers
         return_output=True,
     )
-    present_solution(ampl, instance)
-
-    with st.expander("Solve process output"):
+    with st.expander("📄 Solve process output"):
         st.write(f"```\n{output}\n```")
+    st.write(
+        f"Solve result = {ampl.solve_result}, time: {ampl.get_value('_total_solve_time'):.3}s"
+    )
 
-    # st.write(
-    #     "Solve result = {}, time: {:.3}s\n--------------------------------".format(
-    #         ampl.solve_result, ampl.get_value("Initial.time")
-    #     )
-    # )
+    if ampl.solve_result == "solved":
+        present_solution(ampl, instance)
 
     st.markdown(
         """
