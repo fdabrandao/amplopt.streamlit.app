@@ -154,15 +154,6 @@ class InstanceGenerator:
             PU: ["All", CB],
             FA: ["All", CB],
         }
-        # self.position_capacity = {"CP": 4, "FO": 4, "PU": 4, "FA": 4}
-        # self.meta_positions = ["All", "CK", "CB"]
-        # self.group_capacity = {"All": 10, "CK": 6, "CB": 6}
-        # self.position_groups = {
-        #     "CP": ["All", "CK"],
-        #     "FO": ["All", "CK"],
-        #     "PU": ["All", "CB"],
-        #     "FA": ["All", "CB"],
-        # }
 
     def generate_instance(self):
         rng = self.rng
@@ -596,7 +587,7 @@ def main():
     )
 
     with st.expander(
-        "AMPL model for aircrew training scheduling with seniority constraints"
+        "📁 AMPL model for aircrew training scheduling with seniority constraints"
     ):
         base_mod = open(
             os.path.join(os.path.dirname(__file__), "airtrainee_base.mod"), "r"
@@ -607,12 +598,17 @@ def main():
             ),
             "r",
         ).read()
-        st.code(base_mod + seniority_mod)
+        load_mod = open(
+            os.path.join(os.path.dirname(__file__), "airtrainee_load_balancing.mod"),
+            "r",
+        ).read()
+        st.code(f"{base_mod}\n{seniority_mod}\n{load_mod}")
 
     rng = np.random.default_rng(1234)
 
     left, right = st.columns(2)
     with left:
+        # With the Demo license, set up to 50
         num_trainees = st.slider(
             "Number of trainees 👇", min_value=25, max_value=200, step=1, value=50
         )
@@ -623,20 +619,33 @@ def main():
             min_value=min_value,
             max_value=num_trainees,
             step=1,
-            value=min_value*2,
+            value=min_value * 2,
         )
 
-    generator = InstanceGenerator(
-        num_trainees, num_sessions, rng
-    )  # With the Demo license, set up to 50
+    generator = InstanceGenerator(num_trainees, num_sessions, rng)
     instance = generator.generate_instance()
     instance.instance_editor()
     # with st.expander("Instance"):
     #    st.write(instance.to_dict())
 
     ampl = make_ampl_instance(
-        ["airtrainee_base.mod", "airtrainee_seniority_reverse_PBS.mod"], instance
+        [
+            "airtrainee_base.mod",
+            "airtrainee_seniority_reverse_PBS.mod",
+            "airtrainee_load_balancing.mod",
+        ],
+        instance,
     )
+    load_imbalance = st.checkbox(
+        "Minimize session load imbalance?",
+        help="""
+            Similar to the last model extension in [1], we post-process the solution
+            to minimize session load imbalance. We only tackle the imbalance in overall class loads.
+            For that we add yet another objective function.
+        """,
+    )
+    if not load_imbalance:
+        ampl.obj["LoadImbalance"].drop()
 
     solvers = ["highs", "scip", "cbc", "gurobi", "xpress", "cplex", "mosek", "copt"]
     solver = st.selectbox("Pick the solver to use 👇", solvers, key="solver")

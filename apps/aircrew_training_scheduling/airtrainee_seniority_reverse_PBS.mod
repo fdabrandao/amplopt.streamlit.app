@@ -1,4 +1,3 @@
-
 # Reverse seniority constraints,
 # sublimated as post-processing objectives.
 # Optimize for all trainees with TraineeExpiration[t]==1, ranked by reverse seniority,
