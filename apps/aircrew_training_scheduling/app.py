@@ -155,6 +155,74 @@ class InstanceGenerator:
             FA: ["All", CB],
         }
 
+    def generator_editor(self):
+        left, right = st.columns(2)
+        with left:
+            df = st.data_editor(
+                pd.DataFrame(
+                    {
+                        "Position": self.positions,
+                        "Probability": self.position_prob,
+                    }
+                ).set_index(["Position"]),
+                column_config={
+                    "Probability": st.column_config.NumberColumn(required=True)
+                },
+            )
+            df["Probability"] /= df["Probability"].sum()
+            self.position_prob = df["Probability"].tolist()
+        with right:
+            df = st.data_editor(
+                pd.DataFrame(
+                    {
+                        "Language": self.languages,
+                        "Probability": self.language_prob,
+                    }
+                ).set_index(["Language"]),
+                column_config={
+                    "Probability": st.column_config.NumberColumn(required=True)
+                },
+            )
+            df["Probability"] /= df["Probability"].sum()
+            self.language_prob = df["Probability"].tolist()
+
+        with left:
+            df = st.data_editor(
+                pd.DataFrame(
+                    {
+                        "Expiration": range(len(self.expiration_prob)),
+                        "Probability": self.expiration_prob,
+                    }
+                ).set_index(["Expiration"]),
+                column_config={
+                    "Probability": st.column_config.NumberColumn(required=True)
+                },
+            )
+            df["Probability"] /= df["Probability"].sum()
+            self.expiration_prob = df["Probability"].tolist()
+
+        with right:
+            self.num_sessions_range[0] = st.slider(
+                "Minimum number of valid sessions 👇",
+                min_value=1,
+                max_value=self.num_sessions,
+                value=self.num_sessions_range[0],
+                step=1,
+            )
+            self.num_sessions_range[1] = st.slider(
+                "Maximum number of valid sessions 👇",
+                min_value=self.num_sessions_range[0],
+                max_value=self.num_sessions,
+                value=self.num_sessions_range[1],
+                step=1,
+            )
+            self.pref_0 = st.slider(
+                "Probability of undesired slots 👇",
+                min_value=0.0,
+                max_value=1.0,
+                value=self.pref_0,
+            )
+
     def generate_instance(self):
         rng = self.rng
         inst = Instance()
@@ -623,6 +691,8 @@ def main():
         )
 
     generator = InstanceGenerator(num_trainees, num_sessions, rng)
+    with st.expander("Instance generation configuration"):
+        generator.generator_editor()
     instance = generator.generate_instance()
     instance.instance_editor()
     # with st.expander("Instance"):
