@@ -617,12 +617,13 @@ def main():
             "Number of trainees 👇", min_value=25, max_value=200, step=1, value=50
         )
     with right:
+        min_value = max(5, int(math.ceil(num_trainees / 13)))
         num_sessions = st.slider(
             "Number of sessions 👇",
-            min_value=10,
+            min_value=min_value,
             max_value=num_trainees,
             step=1,
-            value=max(10, int(math.ceil(num_trainees / 10))),
+            value=min_value,
         )
 
     generator = InstanceGenerator(
@@ -645,6 +646,7 @@ def main():
     output = ampl.solve(
         solver=solver,
         mp_options="outlev=1 multiobj=1 tech:timing=1",  # mp_options for MP-based solvers
+        gurobi_options="mip:intfocus=1",
         return_output=True,
     )
     with st.expander("📄 Solve process output"):
