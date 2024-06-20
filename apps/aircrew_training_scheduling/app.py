@@ -157,50 +157,34 @@ class InstanceGenerator:
 
     def generator_editor(self):
         left, right = st.columns(2)
-        with left:
+
+        def probability_editor(label, indices, values):
             df = st.data_editor(
                 pd.DataFrame(
                     {
-                        "Position": self.positions,
-                        "Probability": self.position_prob,
+                        label: indices,
+                        "Probability": values,
                     }
-                ).set_index(["Position"]),
+                ).set_index([label]),
                 column_config={
                     "Probability": st.column_config.NumberColumn(required=True)
                 },
             )
             df["Probability"] /= df["Probability"].sum()
-            self.position_prob = df["Probability"].tolist()
+            return df["Probability"].tolist()
+
+        with left:
+            self.position_prob = probability_editor(
+                "Position", self.positions, self.position_prob
+            )
         with right:
-            df = st.data_editor(
-                pd.DataFrame(
-                    {
-                        "Language": self.languages,
-                        "Probability": self.language_prob,
-                    }
-                ).set_index(["Language"]),
-                column_config={
-                    "Probability": st.column_config.NumberColumn(required=True)
-                },
+            self.language_prob = probability_editor(
+                "Language", self.languages, self.language_prob
             )
-            df["Probability"] /= df["Probability"].sum()
-            self.language_prob = df["Probability"].tolist()
-
         with left:
-            df = st.data_editor(
-                pd.DataFrame(
-                    {
-                        "Expiration": range(len(self.expiration_prob)),
-                        "Probability": self.expiration_prob,
-                    }
-                ).set_index(["Expiration"]),
-                column_config={
-                    "Probability": st.column_config.NumberColumn(required=True)
-                },
+            self.expiration_prob = probability_editor(
+                "Expiration", range(len(self.expiration_prob)), self.expiration_prob
             )
-            df["Probability"] /= df["Probability"].sum()
-            self.expiration_prob = df["Probability"].tolist()
-
         with right:
             self.num_sessions_range[0] = st.slider(
                 "Minimum number of valid sessions 👇",
