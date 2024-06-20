@@ -623,7 +623,7 @@ def main():
             min_value=min_value,
             max_value=num_trainees,
             step=1,
-            value=min_value,
+            value=min_value*2,
         )
 
     generator = InstanceGenerator(
