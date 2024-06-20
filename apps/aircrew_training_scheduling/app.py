@@ -9,11 +9,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-pyplot_show = lambda plt: plt.show()
-
-
-pyplot_show = lambda plt: st.pyplot(plt)
-display = lambda x: st.write(x)
+# pyplot_show = lambda plt: plt.show()
+# pyplot_show = lambda plt: st.pyplot(plt)
+# display = lambda x: st.write(x)
 
 
 def split_preferences(pref):
@@ -639,8 +637,11 @@ def main():
         ["airtrainee_base.mod", "airtrainee_seniority_reverse_PBS.mod"], instance
     )
 
+    solvers = ["highs", "scip", "cbc"]
+    solver = st.selectbox("Pick the solver to use 👇", solvers, key="solver")
+
     output = ampl.solve(
-        solver="highs",
+        solver=solver,
         mp_options="outlev=1 multiobj=1 tech:timing=1",  # mp_options for MP-based solvers
         return_output=True,
     )
@@ -658,7 +659,7 @@ def main():
     st.markdown(
         """
         ## References:
-        1. Kozanidis, MetaPositions. (2017). Optimal assignment of aircrew trainees to simulator and classroom training sessions subject to seniority and preference restrictions. Journal of Air Transport Management 59, 143-154.
+        1. Kozanidis, G. (2017). Optimal assignment of aircrew trainees to simulator and classroom training sessions subject to seniority and preference restrictions. Journal of Air Transport Management 59, 143-154.
         2. Gamache, M., Soumis, F., Villeneuve, D., Desrosiers, J., & Gélinas, É. (1998). The preferential bidding system at Air Canada. Transportation Science, 32(3), 246-255.
         3. Achour, H., Gamache, M., Soumis, F., & Desaulniers, MetaPositions. (2007). An exact solution approach for the preferential bidding system problem in the airline industry. Transportation Science, 41(3), 354-365.
         """
