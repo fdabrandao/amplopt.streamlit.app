@@ -641,20 +641,9 @@ def main():
     with st.expander(
         "📁 AMPL model for aircrew training scheduling with seniority constraints"
     ):
-        base_mod = open(
-            os.path.join(os.path.dirname(__file__), "airtrainee_base.mod"), "r"
-        ).read()
-        seniority_mod = open(
-            os.path.join(
-                os.path.dirname(__file__), "airtrainee_seniority_reverse_PBS.mod"
-            ),
-            "r",
-        ).read()
-        load_mod = open(
-            os.path.join(os.path.dirname(__file__), "airtrainee_load_balancing.mod"),
-            "r",
-        ).read()
-        st.code(f"{base_mod}\n{seniority_mod}\n{load_mod}")
+        st.code(
+            open(os.path.join(os.path.dirname(__file__), "airtrainee.mod"), "r").read()
+        )
 
     rng = np.random.default_rng(1234)
 
@@ -682,14 +671,7 @@ def main():
     # with st.expander("Instance"):
     #    st.write(instance.to_dict())
 
-    ampl = make_ampl_instance(
-        [
-            "airtrainee_base.mod",
-            "airtrainee_seniority_reverse_PBS.mod",
-            "airtrainee_load_balancing.mod",
-        ],
-        instance,
-    )
+    ampl = make_ampl_instance(["airtrainee.mod"], instance)
     load_imbalance = st.checkbox(
         "Minimize session load imbalance?",
         help="""

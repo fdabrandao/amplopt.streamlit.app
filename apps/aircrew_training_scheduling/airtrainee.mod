@@ -55,3 +55,23 @@ minimize PreferenceViolationRanked {l in SeniorityLevels}:
           * Assign[t, s]
      + sum {s in TraineeSessions[t]: TraineePreferences[t, s] == 0} Assign[t, s])           # penalty 2 for unwanted assignment
   suffix objpriority max {t in Trainees} TraineeSeniority[t] + 2*SeniorityRange + 1 - l;
+
+# Reverse seniority constraints,
+# sublimated as post-processing objectives.
+# Optimize for all trainees with TraineeExpiration[t]==1, ranked by reverse seniority,
+# then for all with TraineeExpiration[t]==2.
+# In this special case the objectives can be aggregated for each value of e
+# (see Solve with aggregated preferences.)
+maximize ReverseSeniority {e in 1..2, t in Trainees: TraineeExpiration[t] == e}:
+  sum {s in TraineeSessions[t]: TraineePreferences[t, s]==0}
+    TraineeSeniority[t] * Assign[t, s]
+  suffix objpriority (2-e)*SeniorityRange + 1 + TraineeSeniority[t] - min {ti in Trainees} TraineeSeniority[ti];
+
+# Minimize overall session load imbalance
+minimize LoadImbalance:
+  sum {s in Sessions}
+    abs(
+      sum {t in Trainees: s in TraineeSessions[t]} Assign[t, s] 
+      - sum {t in Trainees, s1 in TraineeSessions[t]} Assign[t, s1] / card(Sessions)
+    )
+  suffix objpriority 0;
