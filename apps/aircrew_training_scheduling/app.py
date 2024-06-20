@@ -652,7 +652,8 @@ def main():
     )
 
     with st.expander(
-        "📁 AMPL model for aircrew training scheduling with seniority constraints"
+        "📁 AMPL model for aircrew training scheduling with seniority constraints",
+        expanded=True,
     ):
         st.code(
             open(os.path.join(os.path.dirname(__file__), "airtrainee.mod"), "r").read()
