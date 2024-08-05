@@ -102,9 +102,9 @@ pages = {
         app_page(facility_location.main, "🏭", "Stochastic Facility Location"),
     ],
     "Puzzles & Games": [
+        app_page(nqueens.main, "👑", "N-Queens"),
         app_page(bistro_game.main, "🍽️", "Bistro Game"),
         app_page(global_optimization.main, "🎅", "Global Optimization"),
-        app_page(nqueens.main, "👑", "N-Queens"),
     ],
     "Tools & Documentation": [
         app_page(python.main, "🐍", "Python Integration"),
