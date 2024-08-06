@@ -10,6 +10,7 @@ from apps import (
     global_optimization,
     batch_process,
     facility_location,
+    supply_chain,
     aircrew_training_scheduling,
     risk_return,
     nqueens,
@@ -109,6 +110,7 @@ pages = {
         app_page(aircrew_training_scheduling.main, "✈️", "Aircrew Training Scheduling"),
         app_page(batch_process.main, "⚙️", "Batch Process Optimization"),
         app_page(facility_location.main, "🏭", "Stochastic Facility Location"),
+        app_page(supply_chain.main, "📦", "Supply Chain Optimization"),
     ],
     "Puzzles & Games": [
         app_page(nqueens.main, "👑", "N-Queens"),
