@@ -64,50 +64,54 @@ class InputData:
     def filter_dimensions(self):
         cols = st.columns(3)
         with cols[0]:
-            selected_products = st.multiselect(
+            self.selected_products = st.multiselect(
                 "Products:", self.all_products, default=self.all_products
             )
             # Filter products
-            self.demand = self.demand[self.demand["Product"].isin(selected_products)]
-            self.starting_inventory = self.starting_inventory[
-                self.starting_inventory["Product"].isin(selected_products)
+            self.demand = self.demand[
+                self.demand["Product"].isin(self.selected_products)
             ]
-            self.rate = self.rate[self.rate["Product"].isin(selected_products)]
+            self.starting_inventory = self.starting_inventory[
+                self.starting_inventory["Product"].isin(self.selected_products)
+            ]
+            self.rate = self.rate[self.rate["Product"].isin(self.selected_products)]
         with cols[1]:
-            selected_components = st.multiselect(
+            self.selected_components = st.multiselect(
                 "Components:", self.all_components, default=self.all_components
             )
             # FIXME: Nothing to filter yet
         with cols[2]:
-            selected_locations = st.multiselect(
+            self.selected_locations = st.multiselect(
                 "Locations:", self.all_locations, default=self.all_locations
             )
             # Filter locations
-            self.demand = self.demand[self.demand["Location"].isin(selected_locations)]
-            self.starting_inventory = self.starting_inventory[
-                self.starting_inventory["Location"].isin(selected_locations)
+            self.demand = self.demand[
+                self.demand["Location"].isin(self.selected_locations)
             ]
-            self.rate = self.rate[self.rate["Location"].isin(selected_locations)]
+            self.starting_inventory = self.starting_inventory[
+                self.starting_inventory["Location"].isin(self.selected_locations)
+            ]
+            self.rate = self.rate[self.rate["Location"].isin(self.selected_locations)]
             self.available_capacity = self.available_capacity[
-                self.available_capacity["Location"].isin(selected_locations)
+                self.available_capacity["Location"].isin(self.selected_locations)
             ]
             self.transportation_costs = self.transportation_costs[
-                self.transportation_costs["ToLocation"].isin(selected_locations)
+                self.transportation_costs["ToLocation"].isin(self.selected_locations)
             ]
 
-        selected_customers = st.multiselect(
+        self.selected_customers = st.multiselect(
             "Customers:", self.all_customers, default=self.all_customers
         )
         # FIXME: Nothing to filter yet
 
-        selected_resources = st.multiselect(
+        self.selected_resources = st.multiselect(
             "Resources:", self.all_resources, default=self.all_resources
         )
         # FIXME: Nothing to filter yet
 
         cols = st.columns(len(self.all_locations))
         resources_at = {}
-        for i, location in enumerate(selected_locations):
+        for i, location in enumerate(self.selected_locations):
             with cols[i]:
                 resources_at[location] = st.multiselect(
                     f"Resources at {location}:",
@@ -134,7 +138,7 @@ class InputData:
             min(self.all_periods).to_pydatetime(),
             max(self.all_periods).to_pydatetime(),
         )
-        selected_range = st.slider(
+        self.selected_range = st.slider(
             "Periods:",
             min_value=date_range[0],
             max_value=date_range[1],
@@ -143,15 +147,15 @@ class InputData:
         )
         # Filter periods
         self.demand = self.demand[
-            (self.demand["Period"] >= selected_range[0])
-            & (self.demand["Period"] <= selected_range[1])
+            (self.demand["Period"] >= self.selected_range[0])
+            & (self.demand["Period"] <= self.selected_range[1])
         ]
         self.starting_inventory = self.starting_inventory[
-            (self.starting_inventory["Period"] >= selected_range[0])
-            & (self.starting_inventory["Period"] <= selected_range[1])
+            (self.starting_inventory["Period"] >= self.selected_range[0])
+            & (self.starting_inventory["Period"] <= self.selected_range[1])
         ]
 
-        selected_suppliers = st.multiselect(
+        self.selected_suppliers = st.multiselect(
             "Suppliers:", self.all_suppliers, default=self.all_suppliers
         )
         # FIXME: Nothing to filter yet
@@ -242,16 +246,89 @@ def main():
     output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
     st.write(f"```\n{output}\n```")
 
-    st.markdown("Demand report:")
+    # Demand report
     df = ampl.get_data("Demand", "MetDemand", "UnmetDemand").to_pandas()
     df.reset_index(inplace=True)
     df.columns = ["Product", "Location", "Period"] + list(df.columns[3:])
-    st.dataframe(df, hide_index=True)
 
-    st.markdown("Material balance report:")
+    def demand_report(df):
+        columns = [
+            "Demand",
+            "MetDemand",
+            "UnmetDemand",
+        ]
+        pivot_table = pd.pivot_table(
+            df,
+            index="Period",  # Use 'Period' as the index
+            values=columns,  # Specify the columns to aggregate
+            aggfunc="sum",  # Use sum as the aggregation function
+        )[columns]
+        st.dataframe(pivot_table.T)
+
+    view = st.selectbox(
+        "Demand Report",
+        [
+            "Pivot Table",
+            "Pivot Table Per Product",
+            "Pivot Table Per Location",
+            "Full Table",
+        ],
+    )
+
+    if view == "Pivot Table":
+        demand_report(df)
+    elif view == "Pivot Table Per Product":
+        for product in instance.selected_products:
+            st.markdown(f"Product: {product}")
+            demand_report(df[df["Product"] == product])
+    elif view == "Pivot Table Per Location":
+        for location in instance.selected_locations:
+            st.markdown(f"Location: {location}")
+            demand_report(df[df["Location"] == location])
+    else:
+        st.dataframe(df, hide_index=True)
+
+    # Material balance report
     df = ampl.get_data(
         "StartingInventory", "MetDemand", "Production", "EndingInventory"
     ).to_pandas()
     df.reset_index(inplace=True)
     df.columns = ["Product", "Location", "Period"] + list(df.columns[3:])
-    st.dataframe(df, hide_index=True)
+
+    view = st.selectbox(
+        "Material Balance Report",
+        [
+            "Pivot Table",
+            "Pivot Table Per Product",
+            "Pivot Table Per Location",
+            "Full Table",
+        ],
+    )
+
+    def material_balance(df):
+        columns = [
+            "StartingInventory",
+            "MetDemand",
+            "Production",
+            "EndingInventory",
+        ]
+        pivot_table = pd.pivot_table(
+            df,
+            index="Period",  # Use 'Period' as the index
+            values=columns,  # Specify the columns to aggregate
+            aggfunc="sum",  # Use sum as the aggregation function
+        )[columns]
+        st.dataframe(pivot_table.T)
+
+    if view == "Pivot Table":
+        material_balance(df)
+    elif view == "Pivot Table Per Product":
+        for product in instance.selected_products:
+            st.markdown(f"Product: {product}")
+            material_balance(df[df["Product"] == product])
+    elif view == "Pivot Table Per Location":
+        for location in instance.selected_locations:
+            st.markdown(f"Location: {location}")
+            material_balance(df[df["Location"] == location])
+    else:
+        st.dataframe(df, hide_index=True)
