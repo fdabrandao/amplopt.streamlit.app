@@ -52,6 +52,15 @@ def home():
         "**👈 Select an app from the sidebar** to see some examples of what you can do with AMPL on Streamlit!"
     )
 
+    lst_markdown = ""
+    for group in pages:
+        lst_markdown += f"- {group}\n"
+        for page in pages[group]:
+            if page.url_path == "":
+                continue
+            lst_markdown += f"    - [{page.icon} {page.title}]({page.url_path})\n"
+    st.markdown(lst_markdown)
+
     st.markdown(
         """
         - [📖 Documentation](https://dev.ampl.com/)
@@ -112,5 +121,4 @@ pages = {
     ],
 }
 
-pg = st.navigation(pages)
-pg.run()
+st.navigation(pages).run()
