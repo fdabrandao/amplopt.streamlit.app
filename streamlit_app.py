@@ -52,14 +52,14 @@ def home():
         "**👈 Select an app from the sidebar** to see some examples of what you can do with AMPL on Streamlit!"
     )
 
-    lst_markdown = ""
+    app_list = ""
     for group in pages:
-        lst_markdown += f"- {group}\n"
+        app_list += f"- {group}\n"
         for page in pages[group]:
             if page.url_path == "":
                 continue
-            lst_markdown += f"    - [{page.icon} {page.title}]({page.url_path})\n"
-    st.markdown(lst_markdown)
+            app_list += f"    - [{page.icon} {page.title}](/{page.url_path})\n"
+    st.markdown(app_list)
 
     st.markdown(
         """
