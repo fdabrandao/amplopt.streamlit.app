@@ -2,6 +2,7 @@ import streamlit as st
 from amplpy import AMPL
 import pandas as pd
 import os
+import re
 
 
 class InputData:
@@ -204,45 +205,141 @@ def main():
 
     instance.edit_data()
 
-    ampl = AMPL()
-    ampl.eval(
-        r"""
-        set ProductLocationPeriod dimen 3;
+    model = r"""
+        set Products;  # Set of products
+        set Locations;  # Set of distribution or production locations
+        set TimePeriods ordered;  # Ordered set of time periods for planning
 
-        param Demand{ProductLocationPeriod};
-        
-        var UnmetDemand{ProductLocationPeriod} >= 0;
-        var MetDemand{ProductLocationPeriod} >= 0;
+        param Demand{p in Products, l in Locations, t in TimePeriods} >= 0 default 0;
+                # Demand for each product at each location during each time period
+                
+        var UnmetDemand{p in Products, l in Locations, t in TimePeriods} >= 0;
+                # Quantity of demand that is not met for a product at a location in a time period
+        var MetDemand{p in Products, l in Locations, t in TimePeriods} >= 0;
+                # Quantity of demand that is met for a product at a location in a time period
 
-        var StartingInventory{ProductLocationPeriod} >= 0;
-        var EndingInventory{ProductLocationPeriod} >= 0;
-        
-        var Production{ProductLocationPeriod} >= 0;
+        param InitialInventory{p in Products, l in Locations} >= 0 default 0;
+                # Initial inventory levels for each product at each location
+        var StartingInventory{p in Products, l in Locations, t in TimePeriods} >= 0;
+                # Inventory at the beginning of each time period
+        var EndingInventory{p in Products, l in Locations, t in TimePeriods} >= 0;
+                # Inventory at the end of each time period
 
-        minimize Objective:
-            sum {(p, l, t) in ProductLocationPeriod}
+        var Production{p in Products, l in Locations, t in TimePeriods} >= 0;
+                # Production volume for each product at each location during each time period
+
+        minimize TotalCost:
+            sum {p in Products, l in Locations, t in TimePeriods}
                 (10 * UnmetDemand[p, l, t] + 5 * EndingInventory[p, l, t]);
+                # Objective function to minimize total costs associated with unmet demand and leftover inventory
+    """
 
-        s.t. DemandBalance{(p, l, t) in ProductLocationPeriod}:
+    demand_fulfillment = r"""
+        s.t. DemandFulfillment{p in Products, l in Locations, t in TimePeriods}:
             Demand[p, l, t] = MetDemand[p, l, t] + UnmetDemand[p, l, t];
-        """
-    )
-    st.write(instance.demand)
-    st.write(
-        instance.demand[["Product", "Location", "Period", "Quantity"]].set_index(
-            ["Product", "Location", "Period"]
-        )
-    )
-    df = instance.demand[["Product", "Location", "Period", "Quantity"]].copy()
-    df["Period"] = df["Period"].dt.strftime("%Y-%m-%d")
-    df.set_index(["Product", "Location", "Period"], inplace=True)
-    ampl.set["ProductLocationPeriod"] = df.index
-    ampl.param["Demand"] = df
+                # Ensure that all demand is accounted for either as met or unmet
+    """
+
+    inventory_balance = r"""         
+        s.t. InventoryFlow{p in Products, l in Locations, t in TimePeriods}:
+            StartingInventory[p, l, t] =
+                if ord(t) > 1 then
+                    EndingInventory[p, l, prev(t, TimePeriods)]
+                else
+                    InitialInventory[p, l];
+                # Define how inventory is carried over from one period to the next
+    """
+
+    stock_balance = r"""       
+        s.t. StockBalance{p in Products, l in Locations, t in TimePeriods}:
+            StartingInventory[p, l, t] + Production[p, l, t] - Demand[p, l, t] = EndingInventory[p, l, t];
+                # Balance starting inventory and production against demand to determine ending inventory
+    """
+
+    st.code(model)
+
+    demand = instance.demand[["Product", "Location", "Period", "Quantity"]].copy()
+    starting_inventory = instance.starting_inventory[
+        ["Product", "Location", "Quantity"]
+    ].copy()
+    demand["Period"] = demand["Period"].dt.strftime("%Y-%m-%d")
+    periods = list(sorted(set(demand["Period"])))
+    demand.set_index(["Product", "Location", "Period"], inplace=True)
+    starting_inventory.set_index(["Product", "Location"], inplace=True)
+
+    ampl = AMPL()
+    ampl.eval(model)
+    ampl.set["Products"] = instance.selected_products
+    ampl.set["Locations"] = instance.selected_locations
+    ampl.set["TimePeriods"] = periods
+    ampl.param["Demand"] = demand["Quantity"]
+    ampl.param["InitialInventory"] = starting_inventory["Quantity"]
+
+    def exercise(name, constraint, needs):
+        if st.checkbox(f"Skip {name} exercise", value=False):
+            ampl.eval(constraint)
+        else:
+            constraint = constraint[constraint.find("s.t.") :]
+            constraint = constraint[: constraint.find("\n")] + "\n\t"
+            answer = st.text_input(f"Implement the {name} below").strip()
+            st.code(constraint + answer)
+            help = f"Must use: {needs} and end with a ';'"
+            forbidden = ["model", "data", "include", "shell", "cd"]
+            if answer == "":
+                st.error(f"Please write the equation above. {help}")
+            elif any(s not in answer for s in needs) or any(
+                s in answer for s in forbidden
+            ):
+                st.error(f"Wrong answer! {help}")
+            else:
+                output = ampl.get_output(constraint + answer + ";")
+                if output != "":
+                    output = re.sub(
+                        r"\bfile\s*-\s*line\s+\d+\s+offset\s+\d+\b", "", output
+                    )
+                    st.error(f"Error: {output}")
+                else:
+                    st.success("Great! No syntax errors!")
 
     solvers = ["gurobi", "xpress", "cplex", "mosek", "copt", "highs", "scip", "cbc"]
-    solver = st.selectbox("Pick the solver to use 👇", solvers, key="solver")
+    solver = st.selectbox("Pick the MIP solver to use 👇", solvers, key="solver")
     if solver == "cplex":
         solver = "cplexmp"
+
+    st.markdown("## Production Optimization Exercises")
+    st.markdown("### Exercise 1: Demand Fulfillment Constraint")
+    exercise(
+        "Demand Fulfillment Constraint",
+        demand_fulfillment,
+        ["Demand", "MetDemand", "UnmetDemand", "="],
+    )
+
+    st.markdown("### Exercise 2: Inventory Balance Constraint")
+    exercise(
+        "Inventory Balance Constraint",
+        inventory_balance,
+        [
+            "StartingInventory",
+            "EndingInventory",
+            "InitialInventory",
+            "=",
+        ],
+    )
+
+    st.markdown("### Exercise 3: Stock Balance Constraint")
+    exercise(
+        "Stock Balance Constraint",
+        stock_balance,
+        [
+            "StartingInventory",
+            "Production",
+            "Demand",
+            "EndingInventory",
+            "=",
+        ],
+    )
+
+    # Solve the problem
     output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
     st.write(f"```\n{output}\n```")
 
