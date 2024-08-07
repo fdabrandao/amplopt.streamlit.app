@@ -203,7 +203,8 @@ def main():
     with st.expander("Dimensions"):
         instance.filter_dimensions()
 
-    instance.edit_data()
+    with st.expander("Data"):
+        instance.edit_data()
 
     model = r"""
         set Products;  # Set of products
@@ -244,7 +245,7 @@ def main():
         s.t. InventoryFlow{p in Products, l in Locations, t in TimePeriods}:
             StartingInventory[p, l, t] =
                 if ord(t) > 1 then
-                    EndingInventory[p, l, prev(t, TimePeriods)]
+                    EndingInventory[p, l, prev(t)]
                 else
                     InitialInventory[p, l];
                 # Define how inventory is carried over from one period to the next
@@ -276,7 +277,7 @@ def main():
     ampl.param["InitialInventory"] = starting_inventory["Quantity"]
 
     def exercise(name, constraint, needs):
-        if st.checkbox(f"Skip {name} exercise", value=False):
+        if st.checkbox(f"Skip {name} exercise", value=True):
             ampl.eval(constraint)
         else:
             constraint = constraint[constraint.find("s.t.") :]
@@ -285,19 +286,34 @@ def main():
             st.code(constraint + answer)
             help = f"Must use: {needs} and end with a ';'"
             forbidden = ["model", "data", "include", "shell", "cd"]
-            if answer == "":
-                st.error(f"Please write the equation above. {help}")
-            elif any(s not in answer for s in needs) or any(
-                s in answer for s in forbidden
-            ):
-                st.error(f"Wrong answer! {help}")
+            validation_report = ""
+            answer_nospace = answer.replace(" ", "")
+
+            incomplete = False
+            for s in needs:
+                passed = s.replace(" ", "") in answer_nospace
+                if not passed:
+                    incomplete = True
+                validation_report += f"- {'✅' if passed else '❌'} uses {s}\n"
+
+            passed = answer_nospace.endswith(";")
+            if not passed:
+                incomplete = True
+
+            validation_report += f"- {'✅' if passed else '❌'} ends with ';'\n"
+            st.markdown(validation_report)
+
+            if answer_nospace == "":
+                st.error(f"Please write the equation above.")
+            elif incomplete or any(s in answer_nospace for s in forbidden):
+                st.error(f"Please complete the equation above.")
             else:
                 output = ampl.get_output(constraint + answer + ";")
                 if output != "":
                     output = re.sub(
                         r"\bfile\s*-\s*line\s+\d+\s+offset\s+\d+\b", "", output
                     )
-                    st.error(f"Error: {output}")
+                    st.error(f"❌ Syntax Error: {output}")
                 else:
                     st.success("Great! No syntax errors!")
 
@@ -311,7 +327,7 @@ def main():
     exercise(
         "Demand Fulfillment Constraint",
         demand_fulfillment,
-        ["Demand", "MetDemand", "UnmetDemand", "="],
+        ["Demand[p, l, t]", "MetDemand[p, l, t]", "UnmetDemand[p, l, t]", "="],
     )
 
     st.markdown("### Exercise 2: Inventory Balance Constraint")
@@ -319,9 +335,9 @@ def main():
         "Inventory Balance Constraint",
         inventory_balance,
         [
-            "StartingInventory",
-            "EndingInventory",
-            "InitialInventory",
+            "StartingInventory[p, l, t]",
+            "EndingInventory[p, l, prev(t)]",
+            "InitialInventory[p, l]",
             "=",
         ],
     )
@@ -331,16 +347,17 @@ def main():
         "Stock Balance Constraint",
         stock_balance,
         [
-            "StartingInventory",
-            "Production",
-            "Demand",
-            "EndingInventory",
+            "StartingInventory[p, l, t]",
+            "Production[p, l, t]",
+            "Demand[p, l, t]",
+            "EndingInventory[p, l, t]",
             "=",
         ],
     )
 
     # Solve the problem
     output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
+    st.markdown("### Solve output")
     st.write(f"```\n{output}\n```")
 
     # Demand report
