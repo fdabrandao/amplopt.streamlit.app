@@ -327,7 +327,7 @@ def main():
                 else:
                     st.success("Great! No syntax errors!")
                 output = ampl.get_output("write 0;")
-                if output != "":
+                if output != "" and not output.startswith("No files written"):
                     if "Error executing " in output:
                         output = output[output.find(":") + 1 :].strip()
                     st.error(f"❌ Error: {output}")
