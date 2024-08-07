@@ -312,10 +312,15 @@ def main():
                 if output != "":
                     output = re.sub(
                         r"\bfile\s*-\s*line\s+\d+\s+offset\s+\d+\b", "", output
-                    )
+                    ).strip()
                     st.error(f"❌ Syntax Error: {output}")
                 else:
                     st.success("Great! No syntax errors!")
+                output = ampl.get_output("write 0;")
+                if output != "":
+                    if "Error executing " in output:
+                        output = output[output.find(":") + 1 :].strip()
+                    st.error(f"❌ Error: {output}")
 
     solvers = ["gurobi", "xpress", "cplex", "mosek", "copt", "highs", "scip", "cbc"]
     solver = st.selectbox("Pick the MIP solver to use 👇", solvers, key="solver")
