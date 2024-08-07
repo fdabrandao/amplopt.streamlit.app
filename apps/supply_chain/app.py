@@ -234,24 +234,24 @@ def main():
                 (10 * UnmetDemand[p, l, t] + 5 * EndingInventory[p, l, t]);
                 # Objective function to minimize total costs associated with unmet demand and leftover inventory
     
-        # s.t. DemandFulfillment{p in Products, l in Locations, t in TimePeriods}:
+        # s.t. DemandBalance{p in Products, l in Locations, t in TimePeriods}:
         # ... Exercise 1
 
-        # s.t. InventoryBalance{p in Products, l in Locations, t in TimePeriods}:
+        # s.t. InventoryCarryover{p in Products, l in Locations, t in TimePeriods}:
         # ... Exercise 2
 
-        # s.t. StockBalance{p in Products, l in Locations, t in TimePeriods}:
+        # s.t. MaterialBalance{p in Products, l in Locations, t in TimePeriods}:
         # ... Exercise 3
     """
 
     demand_fulfillment = r"""
-        s.t. DemandFulfillment{p in Products, l in Locations, t in TimePeriods}:
+        s.t. DemandBalance{p in Products, l in Locations, t in TimePeriods}:
             Demand[p, l, t] = MetDemand[p, l, t] + UnmetDemand[p, l, t];
                 # Ensure that all demand is accounted for either as met or unmet
     """
 
     inventory_balance = r"""         
-        s.t. InventoryBalance{p in Products, l in Locations, t in TimePeriods}:
+        s.t. InventoryCarryover{p in Products, l in Locations, t in TimePeriods}:
             StartingInventory[p, l, t] =
                 if ord(t) > 1 then
                     EndingInventory[p, l, prev(t)]
@@ -261,7 +261,7 @@ def main():
     """
 
     stock_balance = r"""       
-        s.t. StockBalance{p in Products, l in Locations, t in TimePeriods}:
+        s.t. MaterialBalance{p in Products, l in Locations, t in TimePeriods}:
             StartingInventory[p, l, t] + Production[p, l, t] - Demand[p, l, t] = EndingInventory[p, l, t];
                 # Balance starting inventory and production against demand to determine ending inventory
     """
@@ -332,16 +332,16 @@ def main():
                         output = output[output.find(":") + 1 :].strip()
                     st.error(f"❌ Error: {output}")
 
-    st.markdown("### Exercise 1: Demand Fulfillment Constraint")
+    st.markdown("### Exercise 1: Demand Balance Constraint")
     exercise(
-        "Demand Fulfillment Constraint",
+        "Demand Balance Constraint",
         demand_fulfillment,
         ["Demand[p, l, t]", "MetDemand[p, l, t]", "UnmetDemand[p, l, t]", "="],
     )
 
-    st.markdown("### Exercise 2: Inventory Balance Constraint")
+    st.markdown("### Exercise 2: Inventory Carryover Constraint")
     exercise(
-        "Inventory Balance Constraint",
+        "Inventory Carryover Constraint",
         inventory_balance,
         [
             "StartingInventory[p, l, t]",
@@ -351,9 +351,9 @@ def main():
         ],
     )
 
-    st.markdown("### Exercise 3: Stock Balance Constraint")
+    st.markdown("### Exercise 3: Material Balance Constraint")
     exercise(
-        "Stock Balance Constraint",
+        "Material Balance Constraint",
         stock_balance,
         [
             "StartingInventory[p, l, t]",
