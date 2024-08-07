@@ -233,6 +233,15 @@ def main():
             sum {p in Products, l in Locations, t in TimePeriods}
                 (10 * UnmetDemand[p, l, t] + 5 * EndingInventory[p, l, t]);
                 # Objective function to minimize total costs associated with unmet demand and leftover inventory
+    
+        # s.t. DemandFulfillment{p in Products, l in Locations, t in TimePeriods}:
+        # ... Exercise 1
+
+        # s.t. InventoryBalance{p in Products, l in Locations, t in TimePeriods}:
+        # ... Exercise 2
+
+        # s.t. StockBalance{p in Products, l in Locations, t in TimePeriods}:
+        # ... Exercise 3
     """
 
     demand_fulfillment = r"""
@@ -242,7 +251,7 @@ def main():
     """
 
     inventory_balance = r"""         
-        s.t. InventoryFlow{p in Products, l in Locations, t in TimePeriods}:
+        s.t. InventoryBalance{p in Products, l in Locations, t in TimePeriods}:
             StartingInventory[p, l, t] =
                 if ord(t) > 1 then
                     EndingInventory[p, l, prev(t)]
@@ -257,6 +266,7 @@ def main():
                 # Balance starting inventory and production against demand to determine ending inventory
     """
 
+    st.markdown("## Production Optimization")
     st.code(model)
 
     demand = instance.demand[["Product", "Location", "Period", "Quantity"]].copy()
@@ -322,12 +332,6 @@ def main():
                         output = output[output.find(":") + 1 :].strip()
                     st.error(f"❌ Error: {output}")
 
-    solvers = ["gurobi", "xpress", "cplex", "mosek", "copt", "highs", "scip", "cbc"]
-    solver = st.selectbox("Pick the MIP solver to use 👇", solvers, key="solver")
-    if solver == "cplex":
-        solver = "cplexmp"
-
-    st.markdown("## Production Optimization Exercises")
     st.markdown("### Exercise 1: Demand Fulfillment Constraint")
     exercise(
         "Demand Fulfillment Constraint",
@@ -361,9 +365,16 @@ def main():
     )
 
     # Solve the problem
+    st.markdown("## MIP solver output")
+    solvers = ["gurobi", "xpress", "cplex", "mosek", "copt", "highs", "scip", "cbc"]
+    solver = st.selectbox("Pick the MIP solver to use 👇", solvers, key="solver")
+    if solver == "cplex":
+        solver = "cplexmp"
     output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
-    st.markdown("### Solve output")
     st.write(f"```\n{output}\n```")
+
+    # Reports
+    st.markdown("## Reports")
 
     # Demand report
     df = ampl.get_data("Demand", "MetDemand", "UnmetDemand").to_pandas()
