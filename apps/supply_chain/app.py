@@ -1,5 +1,6 @@
 import streamlit as st
 from amplpy import AMPL
+import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import re
@@ -7,7 +8,7 @@ import re
 
 class InputData:
     DEMAND_COLUMNS = ["Product", "Location", "Period", "Quantity", "DemandType"]
-    STARTING_INVENTORY_COLUMNS = ["Product", "Location", "Period", "Quantity"]
+    STARTING_INVENTORY_COLUMNS = ["Product", "Location", "Quantity"]
     RATE_COLUMNS = ["Product", "Resource", "Rate", "Location", "Details"]
     AVAILABLE_CAPACITY_COLUMNS = ["Resource", "Location", "TotalCapacity", "Unit"]
     TRANSPORTATION_COSTS_COLUMNS = ["FromLocation", "ToLocation", "Allowed?", "Cost"]
@@ -18,9 +19,6 @@ class InputData:
             sheet_name=None,
         )
         self.dfs["Demand"]["Period"] = pd.to_datetime(self.dfs["Demand"]["Period"])
-        self.dfs["StartingInventory"]["Period"] = pd.to_datetime(
-            self.dfs["StartingInventory"]["Period"]
-        )
 
         def load_sheet(name, columns):
             if set(columns) - set(self.dfs[name].columns) != set():
@@ -57,9 +55,7 @@ class InputData:
             self.all_resources_at[location] = list(
                 sorted(self.all_resources_at[location])
             )
-        self.all_periods = list(
-            sorted(set(self.demand["Period"]) | set(self.starting_inventory["Period"]))
-        )
+        self.all_periods = list(sorted(set(self.demand["Period"])))
         self.all_suppliers = ["Flour Shop", "Chocolate Shop"]
 
     def filter_dimensions(self):
@@ -151,10 +147,6 @@ class InputData:
             (self.demand["Period"] >= self.selected_range[0])
             & (self.demand["Period"] <= self.selected_range[1])
         ]
-        self.starting_inventory = self.starting_inventory[
-            (self.starting_inventory["Period"] >= self.selected_range[0])
-            & (self.starting_inventory["Period"] <= self.selected_range[1])
-        ]
 
         self.selected_suppliers = st.multiselect(
             "Suppliers:", self.all_suppliers, default=self.all_suppliers
@@ -185,6 +177,210 @@ class InputData:
 
         st.write("TransportationCosts:")
         self.transportation_costs = data_editor(self.transportation_costs, ["Cost"])
+
+
+class Reports:
+    def __init__(self, instance, ampl):
+        self.instance = instance
+        self.ampl = ampl
+
+    def demand_report(self):
+        demand_df = self.ampl.get_data("Demand", "MetDemand", "UnmetDemand").to_pandas()
+        demand_df.reset_index(inplace=True)
+        demand_df.columns = ["Product", "Location", "Period"] + list(
+            demand_df.columns[3:]
+        )
+
+        def demand_planning_view(df, label):
+            columns = [
+                "Demand",
+                "MetDemand",
+                "UnmetDemand",
+            ]
+            pivot_table = pd.pivot_table(
+                df,
+                index="Period",  # Use 'Period' as the index
+                values=columns,  # Specify the columns to aggregate
+                aggfunc="sum",  # Use sum as the aggregation function
+            )[columns]
+            st.dataframe(pivot_table.T)
+
+            df = pivot_table.T
+            fig, ax = plt.subplots(figsize=(12, 3))
+            # Stacking 'Met Demand' on top of 'Demand' and 'Unmet Demand' on top of 'Met Demand'
+            ax.bar(
+                df.columns,
+                df.loc["Demand", :],
+                label="Demand",
+                edgecolor="black",
+                linewidth=1.5,
+                facecolor="none",
+            )
+            metdemand_bars = ax.bar(
+                df.columns,
+                df.loc["MetDemand", :],
+                label="MetDemand",
+                color="green",
+            )
+            unmetdemand_bars = ax.bar(
+                df.columns,
+                df.loc["UnmetDemand", :],
+                bottom=df.loc["MetDemand", :],
+                label="UnmetDemand",
+                color="red",
+            )
+
+            # Adding labels and title
+            ax.set_ylabel("Units")
+            ax.set_title(f"{label} Demand Overview")
+            ax.legend()
+
+            # Adding text inside the bars for 'Met Demand' and 'Unmet Demand'
+            for bar in metdemand_bars:
+                yval = bar.get_height()
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() / 2,
+                    f"{yval}",
+                    ha="center",
+                    va="center",
+                    color="white",
+                    fontweight="bold",
+                )
+
+            for bar in unmetdemand_bars:
+                yval = bar.get_height()
+                if yval > 0:  # Only display if there's a noticeable unmet demand
+                    ax.text(
+                        bar.get_x() + bar.get_width() / 2,
+                        bar.get_height() + bar.get_y() - yval / 2,
+                        f"{yval}",
+                        ha="center",
+                        va="center",
+                        color="white",
+                        fontweight="bold",
+                    )
+
+            # Show the plot
+            st.pyplot(plt)
+
+        view = st.selectbox(
+            "Demand Report",
+            [
+                "Planning View",
+                "Planning View Per Product",
+                "Planning View Per Location",
+                "Full Report",
+            ],
+        )
+
+        if view == "Planning View":
+            demand_planning_view(demand_df, "Average")
+        elif view == "Planning View Per Product":
+            for product in self.instance.selected_products:
+                st.markdown(f"Product: {product}")
+                demand_planning_view(
+                    demand_df[demand_df["Product"] == product], product
+                )
+        elif view == "Planning View Per Location":
+            for location in self.instance.selected_locations:
+                st.markdown(f"Location: {location}")
+                demand_planning_view(
+                    demand_df[demand_df["Location"] == location], location
+                )
+        else:
+            st.dataframe(demand_df, hide_index=True)
+
+    def material_balance_report(self):
+        material_df = self.ampl.get_data(
+            "StartingInventory", "MetDemand", "Production", "EndingInventory"
+        ).to_pandas()
+        material_df.reset_index(inplace=True)
+        material_df.columns = ["Product", "Location", "Period"] + list(
+            material_df.columns[3:]
+        )
+
+        view = st.selectbox(
+            "Material Balance Report",
+            [
+                "Planning View",
+                "Planning View Per Product",
+                "Planning View Per Location",
+                "Full Report",
+            ],
+        )
+
+        def material_balance(df, label):
+            columns = [
+                "StartingInventory",
+                "MetDemand",
+                "Production",
+                "EndingInventory",
+            ]
+            pivot_table = pd.pivot_table(
+                df,
+                index="Period",  # Use 'Period' as the index
+                values=columns,  # Specify the columns to aggregate
+                aggfunc="sum",  # Use sum as the aggregation function
+            )[columns]
+            st.dataframe(pivot_table.T)
+
+            df = pivot_table.T
+            fig, ax = plt.subplots(figsize=(12, 3))
+            # Stacking 'Met Demand' on top of 'Demand' and 'Unmet Demand' on top of 'Met Demand'
+            # ax.bar(
+            #     df.columns,
+            #     df.loc["MetDemand", :],
+            #     label="MetDemand",
+            #     edgecolor="black",
+            #     linewidth=1.5,
+            #     facecolor="none",
+            # )
+            starting_bars = ax.bar(
+                df.columns,
+                df.loc["StartingInventory", :],
+                label="StartingInventory",
+                color="green",
+            )
+            production_bars = ax.bar(
+                df.columns,
+                df.loc["Production", :],
+                bottom=df.loc["StartingInventory", :],
+                label="Production",
+                color="blue",
+            )
+            ending_bars = ax.bar(
+                df.columns,
+                df.loc["EndingInventory", :],
+                bottom=df.loc["StartingInventory", :] + df.loc["Production", :],
+                label="EndingInventory",
+                color="orange",
+            )
+
+            # Adding labels and title
+            ax.set_ylabel("Units")
+            ax.set_title(f"{label} Material Balance Overview")
+            ax.legend()
+
+            # Show the plot
+            st.pyplot(plt)
+
+        if view == "Planning View":
+            material_balance(material_df, "Average")
+        elif view == "Planning View Per Product":
+            for product in self.instance.selected_products:
+                st.markdown(f"Product: {product}")
+                material_balance(
+                    material_df[material_df["Product"] == product], product
+                )
+        elif view == "Planning View Per Location":
+            for location in self.instance.selected_locations:
+                st.markdown(f"Location: {location}")
+                material_balance(
+                    material_df[material_df["Location"] == location], location
+                )
+        else:
+            st.dataframe(material_df, hide_index=True)
 
 
 def main():
@@ -286,32 +482,33 @@ def main():
     ampl.param["Demand"] = demand["Quantity"]
     ampl.param["InitialInventory"] = starting_inventory["Quantity"]
 
-    def exercise(name, constraint, needs):
+    def exercise(name, constraint, needs, help=""):
         if st.checkbox(f"Skip {name} exercise", value=True):
             ampl.eval(constraint)
         else:
             constraint = constraint[constraint.find("s.t.") :]
             constraint = constraint[: constraint.find("\n")] + "\n\t"
             answer = st.text_input(f"Implement the {name} below").strip()
-            st.code(constraint + answer)
-            help = f"Must use: {needs} and end with a ';'"
+            if answer != "" and not answer.endswith(";"):
+                answer += "\n;"
+
+            if answer != "":
+                st.code(constraint + answer)
+            else:
+                st.code(constraint + "\t... the equation above goes here ...;")
             forbidden = ["model", "data", "include", "shell", "cd"]
             validation_report = ""
-            answer_nospace = answer.replace(" ", "")
 
+            answer_nospace = answer.replace(" ", "")
             incomplete = False
             for s in needs:
                 passed = s.replace(" ", "") in answer_nospace
                 if not passed:
                     incomplete = True
-                validation_report += f"- {'✅' if passed else '❌'} uses {s}\n"
-
-            passed = answer_nospace.endswith(";")
-            if not passed:
-                incomplete = True
-
-            validation_report += f"- {'✅' if passed else '❌'} ends with ';'\n"
+                validation_report += f"- {'✅' if passed else '❌'} uses `{s}`\n"
             st.markdown(validation_report)
+            if help != "":
+                st.info(help)
 
             if answer_nospace == "":
                 st.error(f"Please write the equation above.")
@@ -347,8 +544,17 @@ def main():
             "StartingInventory[p, l, t]",
             "EndingInventory[p, l, prev(t)]",
             "InitialInventory[p, l]",
+            "if",
+            "ord(t)",
+            "then",
             "=",
         ],
+        help="""
+        The set `TimePeriods` is an ordered set (declared as `set TimePeriods ordered;`).
+        This allows checking the order of a set element `t` with `ord(t)` (starting at 1),
+        and access the previous and following elements with `prev(t)` and `next(t)`, respectively.
+        Learn more about this in Chapter 5 of [The AMPL Book](https://ampl.com/ampl-book/).              
+        """,
     )
 
     st.markdown("### Exercise 3: Material Balance Constraint")
@@ -375,90 +581,6 @@ def main():
 
     # Reports
     st.markdown("## Reports")
-
-    # Demand report
-    df = ampl.get_data("Demand", "MetDemand", "UnmetDemand").to_pandas()
-    df.reset_index(inplace=True)
-    df.columns = ["Product", "Location", "Period"] + list(df.columns[3:])
-
-    def demand_report(df):
-        columns = [
-            "Demand",
-            "MetDemand",
-            "UnmetDemand",
-        ]
-        pivot_table = pd.pivot_table(
-            df,
-            index="Period",  # Use 'Period' as the index
-            values=columns,  # Specify the columns to aggregate
-            aggfunc="sum",  # Use sum as the aggregation function
-        )[columns]
-        st.dataframe(pivot_table.T)
-
-    view = st.selectbox(
-        "Demand Report",
-        [
-            "Pivot Table",
-            "Pivot Table Per Product",
-            "Pivot Table Per Location",
-            "Full Table",
-        ],
-    )
-
-    if view == "Pivot Table":
-        demand_report(df)
-    elif view == "Pivot Table Per Product":
-        for product in instance.selected_products:
-            st.markdown(f"Product: {product}")
-            demand_report(df[df["Product"] == product])
-    elif view == "Pivot Table Per Location":
-        for location in instance.selected_locations:
-            st.markdown(f"Location: {location}")
-            demand_report(df[df["Location"] == location])
-    else:
-        st.dataframe(df, hide_index=True)
-
-    # Material balance report
-    df = ampl.get_data(
-        "StartingInventory", "MetDemand", "Production", "EndingInventory"
-    ).to_pandas()
-    df.reset_index(inplace=True)
-    df.columns = ["Product", "Location", "Period"] + list(df.columns[3:])
-
-    view = st.selectbox(
-        "Material Balance Report",
-        [
-            "Pivot Table",
-            "Pivot Table Per Product",
-            "Pivot Table Per Location",
-            "Full Table",
-        ],
-    )
-
-    def material_balance(df):
-        columns = [
-            "StartingInventory",
-            "MetDemand",
-            "Production",
-            "EndingInventory",
-        ]
-        pivot_table = pd.pivot_table(
-            df,
-            index="Period",  # Use 'Period' as the index
-            values=columns,  # Specify the columns to aggregate
-            aggfunc="sum",  # Use sum as the aggregation function
-        )[columns]
-        st.dataframe(pivot_table.T)
-
-    if view == "Pivot Table":
-        material_balance(df)
-    elif view == "Pivot Table Per Product":
-        for product in instance.selected_products:
-            st.markdown(f"Product: {product}")
-            material_balance(df[df["Product"] == product])
-    elif view == "Pivot Table Per Location":
-        for location in instance.selected_locations:
-            st.markdown(f"Location: {location}")
-            material_balance(df[df["Location"] == location])
-    else:
-        st.dataframe(df, hide_index=True)
+    reports = Reports(instance, ampl)
+    reports.demand_report()
+    reports.material_balance_report()
