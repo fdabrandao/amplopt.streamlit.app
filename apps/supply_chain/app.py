@@ -275,7 +275,7 @@ class Reports:
         )
 
         if view == "Planning View":
-            demand_planning_view(demand_df, "Average")
+            demand_planning_view(demand_df, "Total")
         elif view == "Planning View Per Product":
             for product in self.instance.selected_products:
                 st.markdown(f"Product: {product}")
@@ -327,29 +327,20 @@ class Reports:
 
             df = pivot_table.T
             fig, ax = plt.subplots(figsize=(12, 3))
-            # Stacking 'Met Demand' on top of 'Demand' and 'Unmet Demand' on top of 'Met Demand'
-            # ax.bar(
-            #     df.columns,
-            #     df.loc["MetDemand", :],
-            #     label="MetDemand",
-            #     edgecolor="black",
-            #     linewidth=1.5,
-            #     facecolor="none",
-            # )
-            starting_bars = ax.bar(
+            ax.bar(
                 df.columns,
                 df.loc["StartingInventory", :],
                 label="StartingInventory",
                 color="green",
             )
-            production_bars = ax.bar(
+            ax.bar(
                 df.columns,
                 df.loc["Production", :],
                 bottom=df.loc["StartingInventory", :],
                 label="Production",
                 color="blue",
             )
-            ending_bars = ax.bar(
+            ax.bar(
                 df.columns,
                 df.loc["EndingInventory", :],
                 bottom=df.loc["StartingInventory", :] + df.loc["Production", :],
@@ -366,7 +357,7 @@ class Reports:
             st.pyplot(plt)
 
         if view == "Planning View":
-            material_balance(material_df, "Average")
+            material_balance(material_df, "Total")
         elif view == "Planning View Per Product":
             for product in self.instance.selected_products:
                 st.markdown(f"Product: {product}")
