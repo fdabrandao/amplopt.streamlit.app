@@ -21,7 +21,7 @@ from apps import (
 
 st.set_page_config(
     page_title="AMPL on Streamlit Cloud",
-    page_icon="👋",
+    page_icon="./static/images/cropped-favicon-raw-192x192.png",
 )
 
 
