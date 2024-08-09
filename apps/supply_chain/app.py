@@ -275,7 +275,7 @@ class Reports:
         )
 
         if view == "Planning View":
-            demand_planning_view(demand_df, "Total")
+            demand_planning_view(demand_df, "Aggregated")
         elif view == "Planning View Per Product":
             for product in self.instance.selected_products:
                 st.markdown(f"Product: {product}")
@@ -357,7 +357,7 @@ class Reports:
             st.pyplot(plt)
 
         if view == "Planning View":
-            material_balance(material_df, "Total")
+            material_balance(material_df, "Aggregated")
         elif view == "Planning View Per Product":
             for product in self.instance.selected_products:
                 st.markdown(f"Product: {product}")
