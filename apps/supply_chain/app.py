@@ -474,7 +474,7 @@ def main():
     ampl.param["InitialInventory"] = starting_inventory["Quantity"]
 
     def exercise(name, constraint, needs, help=""):
-        if st.checkbox(f"Skip {name} exercise", value=True):
+        if st.checkbox(f"Skip exercise", key=f"Skip {name}", value=True):
             ampl.eval(constraint)
         else:
             constraint = constraint[constraint.find("s.t.") :]
@@ -520,14 +520,14 @@ def main():
                         output = output[output.find(":") + 1 :].strip()
                     st.error(f"❌ Error: {output}")
 
-    st.markdown("### Exercise 1: Demand Balance Constraint")
+    st.markdown("### Exercise #1: Demand Balance Constraint")
     exercise(
         "Demand Balance Constraint",
         demand_fulfillment,
         ["Demand[p, l, t]", "MetDemand[p, l, t]", "UnmetDemand[p, l, t]", "="],
     )
 
-    st.markdown("### Exercise 2: Inventory Carryover Constraint")
+    st.markdown("### Exercise #2: Inventory Carryover Constraint")
     exercise(
         "Inventory Carryover Constraint",
         inventory_balance,
@@ -548,7 +548,7 @@ def main():
         """,
     )
 
-    st.markdown("### Exercise 3: Material Balance Constraint")
+    st.markdown("### Exercise #3: Material Balance Constraint")
     exercise(
         "Material Balance Constraint",
         stock_balance,
