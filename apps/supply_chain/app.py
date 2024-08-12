@@ -62,7 +62,7 @@ class InputData:
         cols = st.columns(3)
         with cols[0]:
             self.selected_products = st.multiselect(
-                "Products:", self.all_products, default=self.all_products
+                "PRODUCTS:", self.all_products, default=self.all_products
             )
             # Filter products
             self.demand = self.demand[
@@ -79,7 +79,7 @@ class InputData:
             # FIXME: Nothing to filter yet
         with cols[2]:
             self.selected_locations = st.multiselect(
-                "Locations:", self.all_locations, default=self.all_locations
+                "LOCATIONS:", self.all_locations, default=self.all_locations
             )
             # Filter locations
             self.demand = self.demand[
@@ -394,51 +394,51 @@ def main():
         instance.edit_data()
 
     model = r"""
-        set Products;  # Set of products
-        set Locations;  # Set of distribution or production locations
-        set TimePeriods ordered;  # Ordered set of time periods for planning
+        set PRODUCTS;  # Set of products
+        set LOCATIONS;  # Set of distribution or production locations
+        set PERIODS ordered;  # Ordered set of time periods for planning
 
-        param Demand{p in Products, l in Locations, t in TimePeriods} >= 0 default 0;
+        param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
                 # Demand for each product at each location during each time period
                 
-        var UnmetDemand{p in Products, l in Locations, t in TimePeriods} >= 0;
+        var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Quantity of demand that is not met for a product at a location in a time period
-        var MetDemand{p in Products, l in Locations, t in TimePeriods} >= 0;
+        var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Quantity of demand that is met for a product at a location in a time period
 
-        param InitialInventory{p in Products, l in Locations} >= 0 default 0;
+        param InitialInventory{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
                 # Initial inventory levels for each product at each location
-        var StartingInventory{p in Products, l in Locations, t in TimePeriods} >= 0;
+        var StartingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Inventory at the beginning of each time period
-        var EndingInventory{p in Products, l in Locations, t in TimePeriods} >= 0;
+        var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Inventory at the end of each time period
 
-        var Production{p in Products, l in Locations, t in TimePeriods} >= 0;
+        var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Production volume for each product at each location during each time period
 
         minimize TotalCost:
-            sum {p in Products, l in Locations, t in TimePeriods}
+            sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS}
                 (10 * UnmetDemand[p, l, t] + 5 * EndingInventory[p, l, t]);
                 # Objective function to minimize total costs associated with unmet demand and leftover inventory
     
-        # s.t. DemandBalance{p in Products, l in Locations, t in TimePeriods}:
+        # s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
         # ... Exercise 1
 
-        # s.t. InventoryCarryover{p in Products, l in Locations, t in TimePeriods}:
+        # s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
         # ... Exercise 2
 
-        # s.t. MaterialBalance{p in Products, l in Locations, t in TimePeriods}:
+        # s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
         # ... Exercise 3
     """
 
     demand_fulfillment = r"""
-        s.t. DemandBalance{p in Products, l in Locations, t in TimePeriods}:
+        s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             Demand[p, l, t] = MetDemand[p, l, t] + UnmetDemand[p, l, t];
                 # Ensure that all demand is accounted for either as met or unmet
     """
 
     inventory_balance = r"""         
-        s.t. InventoryCarryover{p in Products, l in Locations, t in TimePeriods}:
+        s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             StartingInventory[p, l, t] =
                 if ord(t) > 1 then
                     EndingInventory[p, l, prev(t)]
@@ -448,7 +448,7 @@ def main():
     """
 
     stock_balance = r"""       
-        s.t. MaterialBalance{p in Products, l in Locations, t in TimePeriods}:
+        s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             StartingInventory[p, l, t] + Production[p, l, t] - Demand[p, l, t] = EndingInventory[p, l, t];
                 # Balance starting inventory and production against demand to determine ending inventory
     """
@@ -467,9 +467,9 @@ def main():
 
     ampl = AMPL()
     ampl.eval(model)
-    ampl.set["Products"] = instance.selected_products
-    ampl.set["Locations"] = instance.selected_locations
-    ampl.set["TimePeriods"] = periods
+    ampl.set["PRODUCTS"] = instance.selected_products
+    ampl.set["LOCATIONS"] = instance.selected_locations
+    ampl.set["PERIODS"] = periods
     ampl.param["Demand"] = demand["Quantity"]
     ampl.param["InitialInventory"] = starting_inventory["Quantity"]
 
@@ -541,7 +541,7 @@ def main():
             "=",
         ],
         help="""
-        The set `TimePeriods` is an ordered set (declared as `set TimePeriods ordered;`).
+        The set `PERIODS` is an ordered set (declared as `set PERIODS ordered;`).
         This allows checking the order of a set element `t` with `ord(t)` (starting at 1),
         and access the previous and following elements with `prev(t)` and `next(t)`, respectively.
         Learn more about this in Chapter 5 of [The AMPL Book](https://ampl.com/ampl-book/).              
