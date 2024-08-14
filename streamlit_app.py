@@ -14,6 +14,7 @@ from apps import (
     aircrew_training_scheduling,
     risk_return,
     nqueens,
+    sudoku,
     tips,
     python,
     reformulation_explorer,
@@ -114,6 +115,7 @@ pages = {
     ],
     "Puzzles & Games": [
         app_page(nqueens.main, "👑", "N-Queens"),
+        app_page(sudoku.main, "🔢", "Sudoku"),
         app_page(bistro_game.main, "🍽️", "Bistro Game"),
         app_page(global_optimization.main, "🎅", "Global Optimization"),
     ],
