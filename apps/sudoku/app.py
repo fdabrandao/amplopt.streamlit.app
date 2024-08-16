@@ -173,6 +173,9 @@ def main():
         """
     # 🔢 Sudoku Solver
 
+    Simple sudoku model with two formulations: as a **Constraint Programmin (CP)** problem using the `alldiff`
+    operator and as **Mixed Integer Programming (MIP)**. Note that the CP formulation is more natural but it needs a solver supporting
+    logical constraints or a MIP solver with [automatic reformulation support](https://mp.ampl.com/model-guide.html).
     """
     )
 
