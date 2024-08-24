@@ -513,7 +513,9 @@ def main():
                     ).strip()
                     st.error(f"❌ Syntax Error: {output}")
                 else:
-                    st.success("Great! No syntax errors!")
+                    st.success(
+                        "Great! No syntax errors! Check the results below to confirm if it is correct!"
+                    )
                 output = ampl.get_output("write 0;")
                 if output != "" and not output.startswith("No files written"):
                     if "Error executing " in output:
@@ -569,6 +571,41 @@ def main():
         solver = "cplexmp"
     output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
     st.write(f"```\n{output}\n```")
+
+    ampl.option["display_width"] = 1000
+    model = ampl.export_model()
+    model = model[: model.find("###model-end")] + "###model-end"
+
+    st.markdown(
+        "Download the model, data, or a complete session snapshot to run elsewhere 👇"
+    )
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.download_button(
+            label="📥 Download Model",
+            data=model,
+            file_name="prodopt.mod",
+            mime="text/plain",
+            use_container_width=True,
+        )
+    with col2:
+        st.download_button(
+            label="📥 Download Data",
+            data=ampl.export_data(),
+            file_name="prodopt.dat",
+            mime="text/plain",
+            use_container_width=True,
+        )
+    with col3:
+        st.download_button(
+            label="📥 Download Snapshot",
+            help="Download a run file that allows reproducing the session state elsewhere",
+            data=ampl.snapshot(),
+            file_name="session.run",
+            mime="text/plain",
+            use_container_width=True,
+        )
 
     # Reports
     st.markdown("## Reports")
