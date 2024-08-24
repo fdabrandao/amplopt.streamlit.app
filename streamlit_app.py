@@ -83,8 +83,9 @@ def home():
     )
 
 
-def app_page(app, icon, title):
-    url_path = title.replace(" ", "_")
+def app_page(app, icon, title, url_path=None):
+    if url_path is None:
+        url_path = title.replace(" ", "_")
     if title == "Home":
         url_path = ""
 
@@ -104,7 +105,6 @@ def app_page(app, icon, title):
 pages = {
     "AMPL Streamlit Apps": [
         app_page(home, "🏠", "Home"),
-        app_page(risk_return.main, "📈", "Risk Return"),
         app_page(tips.main, "💡", "Modeling Tips"),
     ],
     "Real applications": [
@@ -112,6 +112,7 @@ pages = {
         app_page(batch_process.main, "⚙️", "Batch Process Optimization"),
         app_page(facility_location.main, "🏭", "Stochastic Facility Location"),
         app_page(supply_chain.main, "📦", "Supply Chain Optimization"),
+        app_page(risk_return.main, "📈", "Portfolio Optimization", "Risk_Return"),
     ],
     "Puzzles & Games": [
         app_page(nqueens.main, "👑", "N-Queens"),
