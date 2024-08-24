@@ -3,22 +3,21 @@ from amplpy import AMPL
 
 
 def main():
+    st.title("👑 N-Queens")
     st.markdown(
         """
-    # N-Queens
-    
-    **How can $n$ queens be placed on an $n \\times n$ chessboard so that no two of them attack each other?**
+        **How can $n$ queens be placed on an $n \\times n$ chessboard so that no two of them attack each other?**
 
-    Constraint `alldiff` enforces a set of integer variables to take distinct values. Using `alldiff`, we can model N-Queens as follows:
+        Constraint `alldiff` enforces a set of integer variables to take distinct values. Using `alldiff`, we can model N-Queens as follows:
 
-    ```ampl
-    param n integer > 0; # N-queens
-    var Row {1..n} integer >= 1 <= n;
-    s.t. row_attacks: alldiff ({j in 1..n} Row[j]);
-    s.t. diag_attacks: alldiff ({j in 1..n} Row[j]+j);
-    s.t. rdiag_attacks: alldiff ({j in 1..n} Row[j]-j);
-    ```
-    """
+        ```ampl
+        param n integer > 0; # N-queens
+        var Row {1..n} integer >= 1 <= n;
+        s.t. row_attacks: alldiff ({j in 1..n} Row[j]);
+        s.t. diag_attacks: alldiff ({j in 1..n} Row[j]+j);
+        s.t. rdiag_attacks: alldiff ({j in 1..n} Row[j]-j);
+        ```
+        """
     )
 
     ampl = AMPL()

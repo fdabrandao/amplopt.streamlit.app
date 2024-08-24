@@ -417,10 +417,11 @@ def configure_nextmv():
 
 
 def main():
+    st.title(
+        "⚙️ Scheduling Multipurpose Batch Processes using State-Task Networks in Python"
+    )
     st.markdown(
         r"""
-        # ⚙️ Scheduling Multipurpose Batch Processes using State-Task Networks in Python
-
         The State-Task Network (STN) is an approach to modeling multipurpose batch process for the purpose of short term scheduling. It was first developed by Kondili, et al., in 1993, and subsequently developed and extended by others.
         Learn more with our notebooks on Google Colab: [Batch Process Optimization Notebooks](https://ampl.com/colab/tags/batch-processes.html)
         """

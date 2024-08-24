@@ -35,10 +35,9 @@ def load_data(tickers, start, end):
 
 
 def main():
+    st.title("📈 Risk Return")
     st.markdown(
         f"""
-        # Risk Return
-
         **A portfolio that gives maximum return for a given risk, or minimum risk for given return is an efficient portfolio.**
 
         Mean-variance optimization is based on Harry Markowitz’s 1952 paper,

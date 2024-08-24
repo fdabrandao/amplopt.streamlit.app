@@ -375,13 +375,7 @@ class Reports:
 
 
 def main():
-    st.markdown(
-        """
-    # 📦 Supply Chain Optimization
-    
-    
-    """
-    )
+    st.title("📦 Supply Chain Optimization")
 
     instance = InputData(
         os.path.join(os.path.dirname(__file__), "InputDataProductionSolver.xlsx")

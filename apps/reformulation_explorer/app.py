@@ -325,28 +325,28 @@ def read_explorer_model(uploader):
 
 
 def main():
-    st.header("AMPL MP Reformulation Explorer")
+    st.title("🔍 MP Reformulation Explorer")
     st.write(
         """
-    Documentation: https://mp.ampl.com/modeling-tools.html#reformulation-graph
-             
-    Usage example:
-    - Step 1: Export reformulation graph as follows:
-    ```ampl
-    param n integer > 0; # N-queens
-    var Row {1..n} integer >= 1 <= n;
-    s.t. row_attacks: alldiff ({j in 1..n} Row[j]);
-    s.t. diag_attacks: alldiff ({j in 1..n} Row[j]+j);
-    s.t. rdiag_attacks: alldiff ({j in 1..n} Row[j]-j);
+        Documentation: https://mp.ampl.com/modeling-tools.html#reformulation-graph
+                
+        Usage example:
+        - Step 1: Export reformulation graph as follows:
+        ```ampl
+        param n integer > 0; # N-queens
+        var Row {1..n} integer >= 1 <= n;
+        s.t. row_attacks: alldiff ({j in 1..n} Row[j]);
+        s.t. diag_attacks: alldiff ({j in 1..n} Row[j]+j);
+        s.t. rdiag_attacks: alldiff ({j in 1..n} Row[j]-j);
 
-    let n := 5;
-    option solver gurobi;
-    option gurobi_auxfiles rc; # export row/col names
-    option gurobi_options 'writegraph=model.jsonl lim:time=0'; # export graph to model.jsonl 
-    solve;
-    ```
-    - Step 2: Upload the reformulation graph:    
-    """
+        let n := 5;
+        option solver gurobi;
+        option gurobi_auxfiles rc; # export row/col names
+        option gurobi_options 'writegraph=model.jsonl lim:time=0'; # export graph to model.jsonl 
+        solve;
+        ```
+        - Step 2: Upload the reformulation graph:    
+        """
     )
 
     # To work with local files in st 1.30.1, see

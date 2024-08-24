@@ -186,27 +186,26 @@ def decorate_tree(
 
 
 def main():
+    st.title("🎅 Global Non-Linear Optimization")
     st.markdown(
         r"""
-    # 🎅 Global Non-Linear Optimization
+        Global non-linear optimization involves finding the optimal solution for a
+        problem with multiple variables, where the objective function and constraints 
+        are non-linear, and the aim is to discover the global maximum or minimum across 
+        the entire feasible space. Unlike local optimization, which seeks the best 
+        solution within a limited region, global optimization seeks the overall best
+        solution within the entire feasible domain, often requiring extensive exploration 
+        of the solution space. 
 
-    Global non-linear optimization involves finding the optimal solution for a
-    problem with multiple variables, where the objective function and constraints 
-    are non-linear, and the aim is to discover the global maximum or minimum across 
-    the entire feasible space. Unlike local optimization, which seeks the best 
-    solution within a limited region, global optimization seeks the overall best
-    solution within the entire feasible domain, often requiring extensive exploration 
-    of the solution space. 
-
-    ## Christmas 🎄 Problem
-    
-    Optimize the placement of ornaments on a tree 🎄 so that
-    we maximize the minimum Euclidean or Manhattan distance between consecutive
-    ornaments. The following AMPL model optimizes the placement of ornaments on 
-    a sinusoidal line in such a way that we maximize the minimum distance
-    between each of them. It can be solved for multiple lines in order to 
-    decorate an entire tree.
-    """
+        ## Christmas 🎄 Problem
+        
+        Optimize the placement of ornaments on a tree 🎄 so that
+        we maximize the minimum Euclidean or Manhattan distance between consecutive
+        ornaments. The following AMPL model optimizes the placement of ornaments on 
+        a sinusoidal line in such a way that we maximize the minimum distance
+        between each of them. It can be solved for multiple lines in order to 
+        decorate an entire tree.
+        """
     )
     social_media = " ".join(
         [

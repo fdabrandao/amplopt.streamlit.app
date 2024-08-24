@@ -642,7 +642,7 @@ def present_solution(ampl: AMPL, inst: Instance):
 
 
 def main():
-    st.header("✈️ Aircrew training scheduling with seniority constraints")
+    st.title("✈️ Aircrew training scheduling with seniority constraints")
 
     st.markdown(
         """

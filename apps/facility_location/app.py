@@ -90,7 +90,7 @@ def configure_nextmv():
 
 def main():
     # Streamlit app
-    st.header("🏭 Stochastic Facility Location")
+    st.title("🏭 Stochastic Facility Location")
 
     st.markdown(
         r"""

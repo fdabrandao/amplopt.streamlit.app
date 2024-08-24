@@ -9,7 +9,7 @@ def main():
     def update_params():
         st.query_params["tip"] = tip_titles.index(st.session_state.title) + 1
 
-    st.markdown("# AMPL Modeling Tips")
+    st.title("💡 AMPL Modeling Tips")
 
     tip_index = len(tip_titles) - 1
     if "tip" in st.query_params and st.query_params["tip"].isnumeric():
