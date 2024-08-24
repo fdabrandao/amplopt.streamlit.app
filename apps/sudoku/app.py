@@ -178,8 +178,8 @@ def main():
     )
     st.info(
         f"""
-        The `alldiff` operator needs a solver supporting logical constraints or a MIP solver with
-        automatic reformulation support](https://mp.ampl.com/model-guide.html) such as: {MP_SOLVERS_LINKS}.
+        The `alldiff` operator needs a solver supporting logical constraints or a MIP solver with  
+        [AMPL's Automatic Reformulation Support](https://mp.ampl.com/model-guide.html) such as: {MP_SOLVERS_LINKS}.
         """
     )
 
