@@ -6,6 +6,7 @@ import time
 import json
 import os
 import io
+from ..common import solver_selector
 
 
 @st.cache_data()
@@ -439,10 +440,14 @@ def main():
 
     # Pick the solver to use
     if worker_location != "locally":
-        solvers = ["highs", "gurobi"]
+        solvers = ["highs", "gurobi", "xpress"]
+        default = "highs"
     else:
-        solvers = ["gurobi", "cplex", "highs"]
-    solver = st.selectbox("Pick the solver to use 👇", solvers, key="solver")
+        solvers = None
+        default = "HiGHS"
+
+    # Select the solver to use
+    solver, _ = solver_selector(mp_only=True, solvers=solvers, default=default)
 
     # Pick approach
     approaches = [

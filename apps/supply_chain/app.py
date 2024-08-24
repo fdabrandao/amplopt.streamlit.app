@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import re
+from ..common import solver_selector
 
 
 class InputData:
@@ -394,7 +395,6 @@ def main():
 
         param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
                 # Demand for each product at each location during each time period
-                
         var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Quantity of demand that is not met for a product at a location in a time period
         var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
@@ -416,19 +416,19 @@ def main():
                 # Objective function to minimize total costs associated with unmet demand and leftover inventory
     
         # s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-        # ... Exercise 1
+        # ... Exercise 1: Ensure that all demand is accounted for either as met or unmet.
 
         # s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-        # ... Exercise 2
+        # ... Exercise 2: Define how inventory is carried over from one period to the next.
 
         # s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-        # ... Exercise 3
+        # ... Exercise 3: Balance starting inventory and production against demand to determine ending inventory.
     """
 
     demand_fulfillment = r"""
         s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             Demand[p, l, t] = MetDemand[p, l, t] + UnmetDemand[p, l, t];
-                # Ensure that all demand is accounted for either as met or unmet
+                # Ensure that all demand is accounted for either as met or unmet.
     """
 
     inventory_balance = r"""         
@@ -438,13 +438,13 @@ def main():
                     EndingInventory[p, l, prev(t)]
                 else
                     InitialInventory[p, l];
-                # Define how inventory is carried over from one period to the next
+                # Define how inventory is carried over from one period to the next.
     """
 
     stock_balance = r"""       
         s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             StartingInventory[p, l, t] + Production[p, l, t] - Demand[p, l, t] = EndingInventory[p, l, t];
-                # Balance starting inventory and production against demand to determine ending inventory
+                # Balance starting inventory and production against demand to determine ending inventory.
     """
 
     st.markdown("## Production Optimization")
@@ -516,14 +516,26 @@ def main():
                         output = output[output.find(":") + 1 :].strip()
                     st.error(f"❌ Error: {output}")
 
-    st.markdown("### Exercise #1: Demand Balance Constraint")
+    st.markdown(
+        """
+        ### Exercise #1: Demand Balance Constraint
+        
+        🧑‍🏫 Ensure that all demand is accounted for either as met or unmet.
+        """
+    )
     exercise(
         "Demand Balance Constraint",
         demand_fulfillment,
         ["Demand[p, l, t]", "MetDemand[p, l, t]", "UnmetDemand[p, l, t]", "="],
     )
 
-    st.markdown("### Exercise #2: Inventory Carryover Constraint")
+    st.markdown(
+        """
+        ### Exercise #2: Inventory Carryover Constraint
+        
+        🧑‍🏫 Ensure that all demand is accounted for either as met or unmet.
+        """
+    )
     exercise(
         "Inventory Carryover Constraint",
         inventory_balance,
@@ -544,7 +556,13 @@ def main():
         """,
     )
 
-    st.markdown("### Exercise #3: Material Balance Constraint")
+    st.markdown(
+        """
+        ### Exercise #3: Material Balance Constraint
+        
+        🧑‍🏫 Balance starting inventory and production against demand to determine ending inventory.
+        """
+    )
     exercise(
         "Material Balance Constraint",
         stock_balance,
@@ -557,12 +575,12 @@ def main():
         ],
     )
 
-    # Solve the problem
     st.markdown("## MIP solver output")
-    solvers = ["gurobi", "xpress", "cplex", "mosek", "copt", "highs", "scip", "cbc"]
-    solver = st.selectbox("Pick the MIP solver to use 👇", solvers, key="solver")
-    if solver == "cplex":
-        solver = "cplexmp"
+
+    # Select the solver to use
+    solver, _ = solver_selector(mp_only=True)
+
+    # Solve the problem
     output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
     st.write(f"```\n{output}\n```")
 

@@ -1,5 +1,6 @@
 import streamlit as st
 from amplpy import AMPL
+from ..common import solver_selector, MP_SOLVERS_LINKS
 
 
 def main():
@@ -20,6 +21,13 @@ def main():
         """
     )
 
+    st.info(
+        f"""
+        The `alldiff` operator needs a solver supporting logical constraints or a MIP solver with
+        [automatic reformulation support](https://mp.ampl.com/model-guide.html) such as: {MP_SOLVERS_LINKS}.
+        """
+    )
+
     ampl = AMPL()
     ampl.eval(
         """
@@ -30,8 +38,9 @@ def main():
     s.t. rdiag_attacks: alldiff ({j in 1..n} Row[j]-j);
     """
     )
-    ampl.option["solver"] = "highs"
-    ampl.option["highs_options"] = "outlev=1"
+    solver, solver_label = solver_selector(mp_only=True, default="HiGHS")
+    ampl.option["solver"] = solver
+    ampl.option["mp_options"] = "outlev=1"
 
     n = st.slider("How many queens?", 2, 25, 8)
 
@@ -49,7 +58,7 @@ def main():
     solution += "#" + " # " * (n) + "#\n"
     st.write(f"```\n{solution}\n```")
 
-    st.write("# HiGHS output")
+    st.write(f"# {solver_label} output")
     st.write(f"```\n{output}\n```")
 
     st.markdown(

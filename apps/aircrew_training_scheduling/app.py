@@ -8,6 +8,7 @@ import json
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from ..common import solver_selector
 
 
 # pyplot_show = lambda plt: plt.show()
@@ -700,10 +701,8 @@ def main():
     if not load_imbalance:
         ampl.obj["LoadImbalance"].drop()
 
-    solvers = ["highs", "scip", "cbc", "gurobi", "xpress", "cplex", "mosek", "copt"]
-    solver = st.selectbox("Pick the solver to use 👇", solvers, key="solver")
-    if solver == "cplex":
-        solver = "cplexmp"
+    # Select the solver to use
+    solver, _ = solver_selector(mp_only=True, default="HiGHS")
 
     output = ampl.solve(
         solver=solver,

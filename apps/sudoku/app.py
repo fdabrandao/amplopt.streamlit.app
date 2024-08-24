@@ -5,7 +5,7 @@ import itertools
 import os
 from amplpy import AMPL
 from .solutions import solutions
-
+from ..common import solver_selector, MP_SOLVERS_LINKS
 
 BASE_MODEL = r"""
 # The base number of this sudoku; 3 is the default (9 numbers game)
@@ -15,10 +15,10 @@ param BaseNumber default 3;
 param GridSize := BaseNumber * BaseNumber;
 
 # Set of all Rows
-set Rows := {1..GridSize};
+set Rows := 1..GridSize;
 
 # Set of all Columns
-set Columns := {1..GridSize};
+set Columns := 1..GridSize;
 
 # This indexed set memorizes the tuples of coordinates for each 
 # sub-grid making up the sudoku grid
@@ -48,24 +48,24 @@ MIP_MODEL = r"""
 var NumberPresence{Number in 1..GridSize, Columns, Rows} binary;
 
 # Each position in the grid must have only one number
-MIPUniqueNumberPerPosition{row in Rows, col in Columns}: 
+subject to MIPUniqueNumberPerPosition{row in Rows, col in Columns}: 
     sum{num in 1..GridSize} NumberPresence[num, col, row] = 1;
 
 # Each number must appear exactly once in each row
-MIPUniqueNumberPerRow{row in Rows, num in 1..GridSize}: 
+subject to MIPUniqueNumberPerRow{row in Rows, num in 1..GridSize}: 
     sum{col in Columns} NumberPresence[num, col, row] = 1;
 
 # Each number must appear exactly once in each column
-MIPUniqueNumberPerColumn{col in Columns, num in 1..GridSize}: 
+subject to MIPUniqueNumberPerColumn{col in Columns, num in 1..GridSize}: 
     sum{row in Rows} NumberPresence[num, col, row] = 1;
 
 # Each number must appear exactly once in each sub-grid
-MIPUniqueNumberPerSubGrid{num in 1..GridSize, SubGridRow in 1..BaseNumber, SubGridCol in 1..BaseNumber}: 
+subject to MIPUniqueNumberPerSubGrid{num in 1..GridSize, SubGridRow in 1..BaseNumber, SubGridCol in 1..BaseNumber}: 
     sum{(row, col) in SubGridCoordinates[SubGridRow, SubGridCol]}
     NumberPresence[num, col, row] = 1;
 
 # Link to the SudokuGrid variable
-MIPLinkToSudokuGrid{row in Rows, col in Columns}: 
+subject to MIPLinkToSudokuGrid{row in Rows, col in Columns}: 
     sum{num in 1..GridSize} NumberPresence[num, col, row] * num = SudokuGrid[row, col];
 """
 
@@ -173,8 +173,13 @@ def main():
     st.markdown(
         """
         Simple sudoku model with two formulations: as a **Constraint Programmin (CP)** problem using the `alldiff`
-        operator and as **Mixed Integer Programming (MIP)**. Note that the CP formulation is more natural but it needs a solver supporting
-        logical constraints or a MIP solver with [automatic reformulation support](https://mp.ampl.com/model-guide.html).
+        operator and as **Mixed Integer Programming (MIP)**.
+        """
+    )
+    st.info(
+        f"""
+        The `alldiff` operator needs a solver supporting logical constraints or a MIP solver with
+        automatic reformulation support](https://mp.ampl.com/model-guide.html) such as: {MP_SOLVERS_LINKS}.
         """
     )
 
@@ -237,10 +242,8 @@ def main():
     else:
         model_type = "mip"
 
-    solvers = ["gurobi", "xpress", "cplex", "mosek", "copt", "highs", "scip", "cbc"]
-    solver = st.selectbox("Pick the MIP solver to use 👇", solvers, key="solver")
-    if solver == "cplex":
-        solver = "cplexmp"
+    # Select the solver to use
+    solver, _ = solver_selector(mp_only=True)
 
     # Solve
     output, solve_time, solution = solve_sudoku(
