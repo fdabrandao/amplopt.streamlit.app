@@ -105,7 +105,7 @@ def main():
         """
     )
 
-    with st.expander("Mixed Integer Programming model"):
+    with st.expander("Mathematical model", expanded=False):
         st.markdown(
             r"""
             ## Mixed integer program
@@ -148,10 +148,12 @@ def main():
             \end{array} \tag{1}
             \end{equation}
             $$
+            """
+        )
 
-            ### Capacitated Facility Location in AMPL
-
-            ```python
+    with st.expander("AMPL model for Capacitated Facility Location", expanded=True):
+        st.code(
+            r"""
             # Sets and indices
             set Facilities;  # potential locations for opening facilities
             set Customers;  # customers to be served
@@ -183,11 +185,14 @@ def main():
             # Logical constraint linking shipment to facility status
             subject to ActivateFacility{Facility in Facilities, Customer in Customers}: 
                 Shipment[Facility, Customer] <= FacilityCapacity[Facility] * IsOpen[Facility];
-            ```
+            """
+        )
 
-            ### Stochastic Capacitated Facility Location in AMPL
-
-            ```python
+    with st.expander(
+        "AMPL model for Stochastic Capacitated Facility Location", expanded=True
+    ):
+        st.code(
+            r"""
             # Sets
             set Facilities;        # locations to potentially open facilities
             set Customers;         # customers to be served
@@ -222,7 +227,6 @@ def main():
             # Logical constraint linking shipment to facility status (not scenario-dependent)
             subject to ActivateFacility{Facility in Facilities, Customer in Customers, Scenario in Scenarios}: 
                 Shipment[Facility, Customer, Scenario] <= FacilityCapacity[Facility] * IsOpen[Facility];
-            ```
             """
         )
 

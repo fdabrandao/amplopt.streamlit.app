@@ -419,42 +419,29 @@ def configure_nextmv():
 def main():
     st.markdown(
         r"""
-    # ⚙️ Scheduling Multipurpose Batch Processes using State-Task Networks in Python
+        # ⚙️ Scheduling Multipurpose Batch Processes using State-Task Networks in Python
 
-    The State-Task Network (STN) is an approach to modeling multipurpose batch process for the purpose of short term scheduling. It was first developed by Kondili, et al., in 1993, and subsequently developed and extended by others.
-    
-    Learn more with our notebooks on Google Colab: [Batch Process Optimization Notebooks](https://ampl.com/colab/tags/batch-processes.html)
+        The State-Task Network (STN) is an approach to modeling multipurpose batch process for the purpose of short term scheduling. It was first developed by Kondili, et al., in 1993, and subsequently developed and extended by others.
+        Learn more with our notebooks on Google Colab: [Batch Process Optimization Notebooks](https://ampl.com/colab/tags/batch-processes.html)
         """
     )
-
-    st.markdown(
-        """
-        This App can be configured to run the optimization jobs on [Nextmv](https://www.nextmv.io/videos/optimization-modeling-with-ampl-streamlit-and-nextmv-a-stochastic-facility-location-example?utm_campaign=AMPL%20integration&utm_source=AMPL) in order to be able to solve
-        bigger instances in isolated environments 👇
-        """
-    )
-    with st.expander("Configure Nextmv Backend"):
-        configure_nextmv()
 
     st.markdown(
         r"""
-    ## Example (Kondili, et al., 1993)
+        A state-task network is a graphical representation of the activities in a multi-product batch process. The representation includes the minimum details needed for short term scheduling of batch operations. A well-studied example due to Kondili (1993) is shown below. Other examples are available in the references cited above.
 
-    A state-task network is a graphical representation of the activities in a multi-product batch process. The representation includes the minimum details needed for short term scheduling of batch operations.
+        ![Kondili_1993.png](https://github.com/jckantor/ND-Pyomo-Cookbook/blob/master/notebooks/figures/Kondili_1993.png?raw=1)
 
-    A well-studied example due to Kondili (1993) is shown below. Other examples are available in the references cited above.
+        Each circular node in the diagram designates material in a particular state.  The materials are generally held in suitable vessels with a known capacity. The relevant information for each state is the initial inventory, storage capacity, and the unit price of the material in each state. The price of materials in intermediate states may be assigned penalties in order to minimize the amount of work in progress.
 
-    ![Kondili_1993.png](https://github.com/jckantor/ND-Pyomo-Cookbook/blob/master/notebooks/figures/Kondili_1993.png?raw=1)
+        The rectangular nodes denote process tasks. When scheduled for execution, each task is assigned an appropriate piece of equipment, and assigned a batch of material according to the incoming arcs. Each incoming arc begins at a state where the associated label indicates the mass fraction of the batch coming from that particular state. Outgoing arcs indicate the disposition of the batch to product states. The outgoing are labels indicate the fraction of the batch assigned to each product state, and the time necessary to produce that product.
 
-    Each circular node in the diagram designates material in a particular state.  The materials are generally held in suitable vessels with a known capacity. The relevant information for each state is the initial inventory, storage capacity, and the unit price of the material in each state. The price of materials in intermediate states may be assigned penalties in order to minimize the amount of work in progress.
-
-    The rectangular nodes denote process tasks. When scheduled for execution, each task is assigned an appropriate piece of equipment, and assigned a batch of material according to the incoming arcs. Each incoming arc begins at a state where the associated label indicates the mass fraction of the batch coming from that particular state. Outgoing arcs indicate the disposition of the batch to product states. The outgoing are labels indicate the fraction of the batch assigned to each product state, and the time necessary to produce that product.
-
-    Not shown in the diagram is the process equipment used to execute the tasks. A separate list of process units is available, each characterized by a capacity and list of tasks which can be performed in that unit.
+        Not shown in the diagram is the process equipment used to execute the tasks. A separate list of process units is available, each characterized by a capacity and list of tasks which can be performed in that unit.
         """
     )
     with st.expander(
-        "AMPL model for Multipurpose Batch Processes using State-Task Networks"
+        "AMPL model for Multipurpose Batch Processes using State-Task Networks",
+        expanded=True,
     ):
         st.code(
             open(
@@ -463,9 +450,9 @@ def main():
         )
     st.markdown(
         r"""
-    ## Encoding the STN data
+        ## Encoding the STN data
 
-    The basic data structure specifies the states, tasks, and units comprising a state-task network. The intention is for all relevant problem data to be contained in the following tables.
+        The basic data structure specifies the states, tasks, and units comprising a state-task network. The intention is for all relevant problem data to be contained in the following tables.
         """
     )
 
@@ -527,6 +514,15 @@ def main():
     stnutils.draw_graph(full_stn, full_graph, with_labels=True, verbose=False)
 
     st.write("## Let's optimize!")
+
+    with st.expander("Configure Nextmv Backend"):
+        st.markdown(
+            """
+            This App can be configured to run the optimization jobs on [Nextmv](https://www.nextmv.io/videos/optimization-modeling-with-ampl-streamlit-and-nextmv-a-stochastic-facility-location-example?utm_campaign=AMPL%20integration&utm_source=AMPL) in order to be able to solve
+            bigger instances in isolated environments 👇
+            """
+        )
+        configure_nextmv()
 
     # Pick the location to solve the problems
     NEXTMV_API_KEY, NEXTMV_APP_ID, NEXTMV_INSTANCE_ID = "", "", ""
