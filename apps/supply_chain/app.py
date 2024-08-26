@@ -406,7 +406,6 @@ def main():
                 # Inventory at the beginning of each time period
         var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Inventory at the end of each time period
-
         var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Production volume for each product at each location during each time period
 
@@ -443,7 +442,7 @@ def main():
 
     stock_balance = r"""       
         s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-            StartingInventory[p, l, t] + Production[p, l, t] - Demand[p, l, t] = EndingInventory[p, l, t];
+            StartingInventory[p, l, t] + Production[p, l, t] - MetDemand[p, l, t] = EndingInventory[p, l, t];
                 # Balance starting inventory and production against demand to determine ending inventory.
     """
 
@@ -569,7 +568,7 @@ def main():
         [
             "StartingInventory[p, l, t]",
             "Production[p, l, t]",
-            "Demand[p, l, t]",
+            "MetDemand[p, l, t]",
             "EndingInventory[p, l, t]",
             "=",
         ],
