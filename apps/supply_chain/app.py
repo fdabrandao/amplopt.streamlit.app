@@ -63,7 +63,7 @@ class InputData:
         cols = st.columns(3)
         with cols[0]:
             self.selected_products = st.multiselect(
-                "PRODUCTS:", self.all_products, default=self.all_products
+                "Products:", self.all_products, default=self.all_products
             )
             # Filter products
             self.demand = self.demand[
@@ -80,7 +80,7 @@ class InputData:
             # FIXME: Nothing to filter yet
         with cols[2]:
             self.selected_locations = st.multiselect(
-                "LOCATIONS:", self.all_locations, default=self.all_locations
+                "Locations:", self.all_locations, default=self.all_locations
             )
             # Filter locations
             self.demand = self.demand[
@@ -409,9 +409,14 @@ def main():
         var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Production volume for each product at each location during each time period
 
+        param UnmetDemandPenalty default 10;
+                # Penalty cost per unit for unmet demand (impacts decision to meet demand)
+        param EndingInventoryPenalty default 5;
+                # Penalty cost per unit for ending inventory (reflects carrying cost)
+
         minimize TotalCost:
             sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS}
-                (10 * UnmetDemand[p, l, t] + 5 * EndingInventory[p, l, t]);
+                (UnmetDemandPenalty * UnmetDemand[p, l, t] + EndingInventoryPenalty * EndingInventory[p, l, t]);
                 # Objective function to minimize total costs associated with unmet demand and leftover inventory
     
         # s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
@@ -574,7 +579,25 @@ def main():
         ],
     )
 
-    st.markdown("## MIP solver output")
+    st.markdown("## Solve")
+
+    with st.expander("Adjust objective penalties"):
+        col1, col2 = st.columns(2)
+        with col1:
+            ampl.param["UnmetDemandPenalty"] = st.slider(
+                "UnmetDemandPenalty:",
+                min_value=0,
+                max_value=20,
+                value=10,
+            )
+
+        with col2:
+            ampl.param["EndingInventoryPenalty"] = st.slider(
+                "EndingInventoryPenalty:",
+                min_value=0,
+                max_value=20,
+                value=5,
+            )
 
     # Select the solver to use
     solver, _ = solver_selector(mp_only=True)
