@@ -533,7 +533,7 @@ def main():
         """
         ### Exercise #2: Inventory Carryover Constraint
         
-        🧑‍🏫 Ensure that all demand is accounted for either as met or unmet.
+        🧑‍🏫 Define how inventory is carried over from one period to the next.
         """
     )
     exercise(

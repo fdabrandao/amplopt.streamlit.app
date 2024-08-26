@@ -172,7 +172,7 @@ def main():
     st.title("🔢 Sudoku Solver")
     st.markdown(
         """
-        Simple sudoku model with two formulations: as a **Constraint Programmin (CP)** problem using the `alldiff`
+        Simple sudoku model with two formulations: as a **Constraint Programming (CP)** problem using the `alldiff`
         operator and as **Mixed Integer Programming (MIP)**.
         """
     )
