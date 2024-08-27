@@ -636,7 +636,16 @@ def main():
         The set `PERIODS` is an ordered set (declared as `set PERIODS ordered;`).
         This allows checking the order of a set element `t` with `ord(t)` (starting at 1),
         and access the previous and following elements with `prev(t)` and `next(t)`, respectively.
-        Learn more about this in Chapter 5 of [The AMPL Book](https://ampl.com/ampl-book/).              
+        Learn more about this in Chapter 5 of [The AMPL Book](https://ampl.com/ampl-book/).
+
+        You will also be using an `if-then-else` statement. Its syntax as follows:
+        `if <condition> then <value or expression> else <value or expression>`.
+        Learn more about this in Chapter 7 of [The AMPL Book](https://ampl.com/ampl-book/).
+
+        Note that the [The AMPL Book](https://ampl.com/ampl-book/) is a good reference to learn
+        AMPL syntax but it is not up to date in terms of how AMPL should be used in production.
+        For more modern usage examples see https://ampl.com/mo-book/ and https://ampl.com/colab/ where
+        AMPL is used integrated with Python just like in this Streamlit app.
         """,
     )
 
