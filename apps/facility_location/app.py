@@ -440,10 +440,10 @@ def main():
 
     # Pick the solver to use
     if worker_location != "locally":
-        solvers = ["highs", "gurobi", "xpress"]
-        default = "highs"
+        solvers = ["HiGHS", "Gurobi", "XPRESS"]
+        default = "HiGHS"
     else:
-        solvers = None
+        solvers = ["Gurobi", "CPLEX", "HiGHS"]
         default = "HiGHS"
 
     # Select the solver to use

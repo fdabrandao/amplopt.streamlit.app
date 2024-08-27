@@ -30,6 +30,4 @@ def solver_selector(mp_only=True, default=None, solvers=None):
     solver = st.selectbox(
         "Pick the solver to use 👇", solvers, index=index, key="solver"
     )
-    if solver.lower() == "cplex":
-        solver = "cplexmp"
     return solver.lower(), solver

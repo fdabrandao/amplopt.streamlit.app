@@ -6,7 +6,7 @@
 option presolve 0;
 # Solver options
 #option solver gurobi;
-option cplex_options 'presolve=0 dualopt';
+option cplex_options 'presolve=0 outlev=0 alg:rays=1';
 option gurobi_options 'presolve=0 outlev=0 alg:rays=1';
 option highs_options 'pre:solve=off alg:simplex=1';
 # Display optoins
