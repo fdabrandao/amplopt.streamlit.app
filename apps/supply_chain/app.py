@@ -103,6 +103,7 @@ class InputData:
         )
         # FIXME: Nothing to filter yet
 
+        # FIXME: this will be needed later
         # self.selected_resources = st.multiselect(
         #     "Resources:", self.all_resources, default=self.all_resources
         # )
@@ -187,6 +188,7 @@ class InputData:
         st.write("StartingInventory:")
         self.starting_inventory = data_editor(self.starting_inventory, ["Quantity"])
 
+        # FIXME: this will be needed later
         # st.write("Rate:")
         # self.rate = data_editor(self.rate, ["Rate"])
 
@@ -369,25 +371,20 @@ class Reports:
 
             df = pivot_table.T
             fig, ax = plt.subplots(figsize=(12, 3))
-            ax.bar(
+
+            # Plot lines for Starting Inventory, Production, and Ending Inventory
+            ax.plot(
                 df.columns,
                 df.loc["StartingInventory", :],
                 label="StartingInventory",
-                color="green",
+                marker="o",
             )
-            ax.bar(
-                df.columns,
-                df.loc["Production", :],
-                bottom=df.loc["StartingInventory", :],
-                label="Production",
-                color="blue",
-            )
-            ax.bar(
+            ax.plot(df.columns, df.loc["Production", :], label="Production", marker="o")
+            ax.plot(
                 df.columns,
                 df.loc["EndingInventory", :],
-                bottom=df.loc["StartingInventory", :] + df.loc["Production", :],
                 label="EndingInventory",
-                color="orange",
+                marker="o",
             )
 
             # Adding labels and title
@@ -517,7 +514,7 @@ def main():
 
     st.markdown("## Production Optimization")
 
-    use_restrict_table = st.checkbox("Restrict table Product x Locations")
+    use_restrict_table = st.checkbox("Use restrict table Product x Locations")
     if use_restrict_table:
 
         def apply_restrict_table(m):
