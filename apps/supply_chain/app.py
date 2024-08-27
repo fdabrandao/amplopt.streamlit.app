@@ -204,7 +204,6 @@ class Reports:
                 values=columns,  # Specify the columns to aggregate
                 aggfunc="sum",  # Use sum as the aggregation function
             )[columns]
-            st.dataframe(pivot_table.T)
 
             df = pivot_table.T
             fig, ax = plt.subplots(figsize=(12, 3))
@@ -264,6 +263,8 @@ class Reports:
 
             # Show the plot
             st.pyplot(plt)
+            # Show the table
+            st.dataframe(pivot_table.T)
 
         view = st.selectbox(
             "Demand Report",
@@ -271,6 +272,7 @@ class Reports:
                 "Planning View",
                 "Planning View Per Product",
                 "Planning View Per Location",
+                "Planning View Per Product & Location",
                 "Full Report",
             ],
         )
@@ -278,17 +280,37 @@ class Reports:
         if view == "Planning View":
             demand_planning_view(demand_df, "Aggregated")
         elif view == "Planning View Per Product":
-            for product in self.instance.selected_products:
-                st.markdown(f"Product: {product}")
-                demand_planning_view(
-                    demand_df[demand_df["Product"] == product], product
-                )
+            product = st.selectbox(
+                "Pick the product 👇",
+                self.instance.selected_products,
+                key="demand_view_product",
+            )
+            demand_planning_view(demand_df[demand_df["Product"] == product], product)
         elif view == "Planning View Per Location":
-            for location in self.instance.selected_locations:
-                st.markdown(f"Location: {location}")
-                demand_planning_view(
-                    demand_df[demand_df["Location"] == location], location
-                )
+            location = st.selectbox(
+                "Pick the location 👇",
+                self.instance.selected_locations,
+                key="demand_view_location",
+            )
+            demand_planning_view(demand_df[demand_df["Location"] == location], location)
+        elif view == "Planning View Per Product & Location":
+            product = st.selectbox(
+                "Pick the product 👇",
+                self.instance.selected_products,
+                key="demand_view_view_product",
+            )
+            location = st.selectbox(
+                "Pick the location 👇",
+                self.instance.selected_locations,
+                key="demand_view_view_location",
+            )
+            demand_planning_view(
+                demand_df[
+                    (demand_df["Location"] == location)
+                    & (demand_df["Product"] == product)
+                ],
+                f"{product} at {location}",
+            )
         else:
             st.dataframe(demand_df, hide_index=True)
 
@@ -307,6 +329,7 @@ class Reports:
                 "Planning View",
                 "Planning View Per Product",
                 "Planning View Per Location",
+                "Planning View Per Product & Location",
                 "Full Report",
             ],
         )
@@ -324,7 +347,6 @@ class Reports:
                 values=columns,  # Specify the columns to aggregate
                 aggfunc="sum",  # Use sum as the aggregation function
             )[columns]
-            st.dataframe(pivot_table.T)
 
             df = pivot_table.T
             fig, ax = plt.subplots(figsize=(12, 3))
@@ -356,21 +378,43 @@ class Reports:
 
             # Show the plot
             st.pyplot(plt)
+            # Show the table
+            st.dataframe(pivot_table.T)
 
         if view == "Planning View":
             material_balance(material_df, "Aggregated")
         elif view == "Planning View Per Product":
-            for product in self.instance.selected_products:
-                st.markdown(f"Product: {product}")
-                material_balance(
-                    material_df[material_df["Product"] == product], product
-                )
+            product = st.selectbox(
+                "Pick the product 👇",
+                self.instance.selected_products,
+                key="material_balance_view_product",
+            )
+            material_balance(material_df[material_df["Product"] == product], product)
         elif view == "Planning View Per Location":
-            for location in self.instance.selected_locations:
-                st.markdown(f"Location: {location}")
-                material_balance(
-                    material_df[material_df["Location"] == location], location
-                )
+            location = st.selectbox(
+                "Pick the location 👇",
+                self.instance.selected_locations,
+                key="material_balance_view_location",
+            )
+            material_balance(material_df[material_df["Location"] == location], location)
+        elif view == "Planning View Per Product & Location":
+            product = st.selectbox(
+                "Pick the product 👇",
+                self.instance.selected_products,
+                key="material_balance_view_product",
+            )
+            location = st.selectbox(
+                "Pick the location 👇",
+                self.instance.selected_locations,
+                key="material_balance_view_location",
+            )
+            material_balance(
+                material_df[
+                    (material_df["Location"] == location)
+                    & (material_df["Product"] == product)
+                ],
+                f"{product} at {location}",
+            )
         else:
             st.dataframe(material_df, hide_index=True)
 
@@ -587,7 +631,7 @@ def main():
             ampl.param["UnmetDemandPenalty"] = st.slider(
                 "UnmetDemandPenalty:",
                 min_value=0,
-                max_value=20,
+                max_value=50,
                 value=10,
             )
 
@@ -595,7 +639,7 @@ def main():
             ampl.param["EndingInventoryPenalty"] = st.slider(
                 "EndingInventoryPenalty:",
                 min_value=0,
-                max_value=20,
+                max_value=50,
                 value=5,
             )
 
