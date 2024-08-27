@@ -103,35 +103,35 @@ class InputData:
         )
         # FIXME: Nothing to filter yet
 
-        self.selected_resources = st.multiselect(
-            "Resources:", self.all_resources, default=self.all_resources
-        )
-        # FIXME: Nothing to filter yet
+        # self.selected_resources = st.multiselect(
+        #     "Resources:", self.all_resources, default=self.all_resources
+        # )
+        # # FIXME: Nothing to filter yet
 
-        cols = st.columns(len(self.all_locations))
-        resources_at = {}
-        for i, location in enumerate(self.selected_locations):
-            with cols[i]:
-                resources_at[location] = st.multiselect(
-                    f"Resources at {location}:",
-                    self.all_resources,
-                    default=self.all_resources_at.get(location, []),
-                )
-        # Filter resources at each location
-        pairs = [
-            (resource, location)
-            for location in resources_at
-            for resource in resources_at[location]
-        ]
-        self.rate = self.rate[
-            self.rate["Resource"].isin(
-                [f"{resource}_{location}" for (resource, location) in pairs]
-            )
-        ]
-        mask = self.available_capacity.apply(
-            lambda row: (row["Resource"], row["Location"]) in pairs, axis=1
-        )
-        self.available_capacity = self.available_capacity[mask]
+        # cols = st.columns(len(self.all_locations))
+        # resources_at = {}
+        # for i, location in enumerate(self.selected_locations):
+        #     with cols[i]:
+        #         resources_at[location] = st.multiselect(
+        #             f"Resources at {location}:",
+        #             self.all_resources,
+        #             default=self.all_resources_at.get(location, []),
+        #         )
+        # # Filter resources at each location
+        # pairs = [
+        #     (resource, location)
+        #     for location in resources_at
+        #     for resource in resources_at[location]
+        # ]
+        # self.rate = self.rate[
+        #     self.rate["Resource"].isin(
+        #         [f"{resource}_{location}" for (resource, location) in pairs]
+        #     )
+        # ]
+        # mask = self.available_capacity.apply(
+        #     lambda row: (row["Resource"], row["Location"]) in pairs, axis=1
+        # )
+        # self.available_capacity = self.available_capacity[mask]
 
         date_range = (
             min(self.all_periods).to_pydatetime(),
