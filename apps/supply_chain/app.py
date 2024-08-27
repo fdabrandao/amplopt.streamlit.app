@@ -187,13 +187,13 @@ class InputData:
         st.write("StartingInventory:")
         self.starting_inventory = data_editor(self.starting_inventory, ["Quantity"])
 
-        st.write("Rate:")
-        self.rate = data_editor(self.rate, ["Rate"])
+        # st.write("Rate:")
+        # self.rate = data_editor(self.rate, ["Rate"])
 
-        st.write("AvailableCapacity:")
-        self.available_capacity = data_editor(
-            self.available_capacity, ["TotalCapacity"]
-        )
+        # st.write("AvailableCapacity:")
+        # self.available_capacity = data_editor(
+        #     self.available_capacity, ["TotalCapacity"]
+        # )
 
         st.write("TransportationCosts:")
         self.transportation_costs = data_editor(self.transportation_costs, ["Cost"])
