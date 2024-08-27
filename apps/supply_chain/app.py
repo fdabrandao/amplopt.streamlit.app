@@ -1,6 +1,7 @@
 import streamlit as st
 from amplpy import AMPL
 import matplotlib.pyplot as plt
+from collections import defaultdict
 import pandas as pd
 import os
 import re
@@ -154,6 +155,24 @@ class InputData:
         )
         # FIXME: Nothing to filter yet
 
+        # Restrict table
+        self.products_locations = list(
+            sorted(
+                set(zip(self.demand["Product"], self.demand["Location"]))
+                | set(
+                    zip(
+                        self.starting_inventory["Product"],
+                        self.starting_inventory["Location"],
+                    )
+                )
+            )
+        )
+        self.products_at = defaultdict(lambda: [])
+        self.locations_with = defaultdict(lambda: [])
+        for product, location in self.products_locations:
+            self.products_at[location].append(product)
+            self.locations_with[product].append(location)
+
     def edit_data(self):
         def data_editor(df, columns):
             return st.data_editor(
@@ -301,7 +320,7 @@ class Reports:
             )
             location = st.selectbox(
                 "Pick the location 👇",
-                self.instance.selected_locations,
+                self.instance.locations_with[product],
                 key="demand_view_view_location",
             )
             demand_planning_view(
@@ -405,7 +424,7 @@ class Reports:
             )
             location = st.selectbox(
                 "Pick the location 👇",
-                self.instance.selected_locations,
+                self.instance.locations_with[product],
                 key="material_balance_view_location",
             )
             material_balance(
@@ -435,6 +454,7 @@ def main():
     model = r"""
         set PRODUCTS;  # Set of products
         set LOCATIONS;  # Set of distribution or production locations
+        set PRODUCTS_LOCATIONS within {PRODUCTS, LOCATIONS};  # Restrict table
         set PERIODS ordered;  # Ordered set of time periods for planning
 
         param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
@@ -496,6 +516,21 @@ def main():
     """
 
     st.markdown("## Production Optimization")
+
+    use_restrict_table = st.checkbox("Restrict table Product x Locations")
+    if use_restrict_table:
+
+        def apply_restrict_table(m):
+            m = m.replace(
+                "p in PRODUCTS, l in LOCATIONS", "(p, l) in PRODUCTS_LOCATIONS"
+            )
+            return m
+
+        model = apply_restrict_table(model)
+        demand_fulfillment = apply_restrict_table(demand_fulfillment)
+        inventory_balance = apply_restrict_table(inventory_balance)
+        stock_balance = apply_restrict_table(stock_balance)
+
     st.code(model)
 
     demand = instance.demand[["Product", "Location", "Period", "Quantity"]].copy()
@@ -511,6 +546,7 @@ def main():
     ampl.eval(model)
     ampl.set["PRODUCTS"] = instance.selected_products
     ampl.set["LOCATIONS"] = instance.selected_locations
+    ampl.set["PRODUCTS_LOCATIONS"] = instance.products_locations
     ampl.set["PERIODS"] = periods
     ampl.param["Demand"] = demand["Quantity"]
     ampl.param["InitialInventory"] = starting_inventory["Quantity"]
