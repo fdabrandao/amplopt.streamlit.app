@@ -206,7 +206,7 @@ class Reports:
         self.instance = instance
         self.ampl = ampl
 
-    def planning_view(
+    def _planning_view(
         self, key, df, view_func, all_products=False, all_locations=False
     ):
         if all_products:
@@ -336,13 +336,13 @@ class Reports:
         )
 
         if view == "Planning View":
-            self.planning_view("demand", demand_df, demand_planning_view)
+            self._planning_view("demand", demand_df, demand_planning_view)
         elif view == "Planning View Per Product":
-            self.planning_view(
+            self._planning_view(
                 "demand", demand_df, demand_planning_view, all_locations=True
             )
         elif view == "Planning View Per Location":
-            self.planning_view(
+            self._planning_view(
                 "demand", demand_df, demand_planning_view, all_products=True
             )
         else:
@@ -410,13 +410,13 @@ class Reports:
             st.dataframe(pivot_table.T)
 
         if view == "Planning View":
-            self.planning_view("material", material_df, material_balance)
+            self._planning_view("material", material_df, material_balance)
         elif view == "Planning View Per Product":
-            self.planning_view(
+            self._planning_view(
                 "material", material_df, material_balance, all_locations=True
             )
         elif view == "Planning View Per Location":
-            self.planning_view(
+            self._planning_view(
                 "material", material_df, material_balance, all_products=True
             )
         else:
