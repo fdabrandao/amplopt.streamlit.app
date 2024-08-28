@@ -206,6 +206,44 @@ class Reports:
         self.instance = instance
         self.ampl = ampl
 
+    def planning_view(
+        self, key, df, view_func, all_products=False, all_locations=False
+    ):
+        if all_products:
+            product = ""
+        else:
+            product = st.selectbox(
+                "Pick the product 👇",
+                [""] + self.instance.selected_products,
+                key=f"{key}_view_product",
+            )
+        if all_locations:
+            location = ""
+        else:
+            location = st.selectbox(
+                "Pick the location 👇",
+                [""]
+                + self.instance.locations_with.get(
+                    product, self.instance.selected_locations
+                ),
+                key=f"{key}_view_location",
+            )
+        label = ""
+        filter = True
+        if product != "":
+            filter = df["Product"] == product
+            label = product
+        if location != "":
+            filter = (df["Location"] == location) & filter
+            if label == "":
+                label = location
+            else:
+                label = f"{product} at {location}"
+        if filter is True:
+            view_func(df, label)
+        else:
+            view_func(df[filter], label)
+
     def demand_report(self):
         demand_df = self.ampl.get_data("Demand", "MetDemand", "UnmetDemand").to_pandas()
         demand_df.reset_index(inplace=True)
@@ -293,44 +331,19 @@ class Reports:
                 "Planning View",
                 "Planning View Per Product",
                 "Planning View Per Location",
-                "Planning View Per Product & Location",
                 "Full Report",
             ],
         )
 
         if view == "Planning View":
-            demand_planning_view(demand_df, "Aggregated")
+            self.planning_view("demand", demand_df, demand_planning_view)
         elif view == "Planning View Per Product":
-            product = st.selectbox(
-                "Pick the product 👇",
-                self.instance.selected_products,
-                key="demand_view_product",
+            self.planning_view(
+                "demand", demand_df, demand_planning_view, all_locations=True
             )
-            demand_planning_view(demand_df[demand_df["Product"] == product], product)
         elif view == "Planning View Per Location":
-            location = st.selectbox(
-                "Pick the location 👇",
-                self.instance.selected_locations,
-                key="demand_view_location",
-            )
-            demand_planning_view(demand_df[demand_df["Location"] == location], location)
-        elif view == "Planning View Per Product & Location":
-            product = st.selectbox(
-                "Pick the product 👇",
-                self.instance.selected_products,
-                key="demand_view_view_product",
-            )
-            location = st.selectbox(
-                "Pick the location 👇",
-                self.instance.locations_with[product],
-                key="demand_view_view_location",
-            )
-            demand_planning_view(
-                demand_df[
-                    (demand_df["Location"] == location)
-                    & (demand_df["Product"] == product)
-                ],
-                f"{product} at {location}",
+            self.planning_view(
+                "demand", demand_df, demand_planning_view, all_products=True
             )
         else:
             st.dataframe(demand_df, hide_index=True)
@@ -350,7 +363,6 @@ class Reports:
                 "Planning View",
                 "Planning View Per Product",
                 "Planning View Per Location",
-                "Planning View Per Product & Location",
                 "Full Report",
             ],
         )
@@ -398,38 +410,14 @@ class Reports:
             st.dataframe(pivot_table.T)
 
         if view == "Planning View":
-            material_balance(material_df, "Aggregated")
+            self.planning_view("material", material_df, material_balance)
         elif view == "Planning View Per Product":
-            product = st.selectbox(
-                "Pick the product 👇",
-                self.instance.selected_products,
-                key="material_balance_view_product",
+            self.planning_view(
+                "material", material_df, material_balance, all_locations=True
             )
-            material_balance(material_df[material_df["Product"] == product], product)
         elif view == "Planning View Per Location":
-            location = st.selectbox(
-                "Pick the location 👇",
-                self.instance.selected_locations,
-                key="material_balance_view_location",
-            )
-            material_balance(material_df[material_df["Location"] == location], location)
-        elif view == "Planning View Per Product & Location":
-            product = st.selectbox(
-                "Pick the product 👇",
-                self.instance.selected_products,
-                key="material_balance_view_product",
-            )
-            location = st.selectbox(
-                "Pick the location 👇",
-                self.instance.locations_with[product],
-                key="material_balance_view_location",
-            )
-            material_balance(
-                material_df[
-                    (material_df["Location"] == location)
-                    & (material_df["Product"] == product)
-                ],
-                f"{product} at {location}",
+            self.planning_view(
+                "material", material_df, material_balance, all_products=True
             )
         else:
             st.dataframe(material_df, hide_index=True)
