@@ -718,5 +718,9 @@ def main():
     # Reports
     st.markdown("## Reports")
     reports = Reports(instance, ampl)
+
+    st.markdown("### Demand Report")
     reports.demand_report()
+
+    st.markdown("### Material Balance Report")
     reports.material_balance_report()
