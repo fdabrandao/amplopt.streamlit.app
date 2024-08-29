@@ -185,7 +185,7 @@ class InputData:
         st.write("Demand:")
         self.demand = data_editor(self.demand, ["Quantity"])
 
-        st.write("StartingInventory:")
+        st.write("InitialInventory:")
         self.starting_inventory = data_editor(self.starting_inventory, ["Quantity"])
 
         # FIXME: this will be needed later
@@ -197,8 +197,8 @@ class InputData:
         #     self.available_capacity, ["TotalCapacity"]
         # )
 
-        st.write("TransportationCosts:")
-        self.transportation_costs = data_editor(self.transportation_costs, ["Cost"])
+        # st.write("TransportationCosts:")
+        # self.transportation_costs = data_editor(self.transportation_costs, ["Cost"])
 
 
 class Reports:
@@ -443,7 +443,7 @@ def main():
         set PERIODS ordered;  # Ordered set of time periods for planning
 
         param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
-                # Demand for each product at each location during each time period
+                # Input demand for each product at each location during each time period
         var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Quantity of demand that is not met for a product at a location in a time period
         var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
