@@ -92,6 +92,9 @@ def app_page(app, icon, title, url_path=None):
     def page():
         common_header(url_path)
         app()
+        st.markdown(
+            "[AMPL Website](https://ampl.com) | [Follow us on LinkedIn](https://www.linkedin.com/company/ampl) | [Documentation](https://dev.ampl.com) | [Colab Notebooks](https://ampl.com/colab) | [MO-Book](https://ampl.com/mo-book)"
+        )
 
     return st.Page(
         page,
