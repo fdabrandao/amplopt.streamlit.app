@@ -582,12 +582,20 @@ def main():
     )
 
     demand_fulfillment = r"""
+        ##################
+        # Demand Balance # 
+        ##################
+
         s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             Demand[p, l, t] = MetDemand[p, l, t] + UnmetDemand[p, l, t];
                 # Ensure that all demand is accounted for either as met or unmet.
     """
 
-    inventory_carryover = r"""         
+    inventory_carryover = r"""
+        #######################
+        # Inventory Carryover # 
+        #######################
+
         s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             StartingInventory[p, l, t] =
                 if ord(t) > 1 then
@@ -597,7 +605,11 @@ def main():
                 # Define how inventory is carried over from one period to the next.
     """
 
-    material_balance = r"""       
+    material_balance = r"""
+        ####################
+        # Material Balance # 
+        ####################
+
         s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             StartingInventory[p, l, t] + Production[p, l, t] - MetDemand[p, l, t] = EndingInventory[p, l, t];
                 # Balance starting inventory and production against demand to determine ending inventory.
@@ -608,38 +620,23 @@ def main():
         + demand_fulfillment
         + inventory_carryover
         # + material_balance
-        + r"""
-        set RESOURCES;  # Set of production resources
-        """
     )
 
     class2_model += r"""
-        ###################################
-        # Part 1: Production and Capacity #
-        ###################################
+        ###########################################
+        # Part 1: Production and Production Hours #
+        ###########################################
 
-        var ProductionHours{p in PRODUCTS, l in LOCATIONS, r in RESOURCES, t in PERIODS} >= 0;  # Production hours for each product, location, resource, and period
-        param AvailableCapacity{r in RESOURCES, l in LOCATIONS} >= 0 default 0;  # Available capacity for each resource at each location
-        param ProductionRate{p in PRODUCTS, l in LOCATIONS, r in RESOURCES} >= 0 default 0;  # Production rate for each product at each location and resource
-    """
-
-    production_capacity = r"""
-        # Exercise 1: Add production capacity constraint
-        s.t. ProductionCapacity{l in LOCATIONS, r in RESOURCES, t in PERIODS}:
-            sum{p in PRODUCTS} ProductionHours[p,l,r,t] <= AvailableCapacity[r,l];
-    """
-
-    if show_complete_model:
-        class2_model += production_capacity
-    else:
-        class2_model += r"""
-        # Add production capacity constraint
-        # s.t. ProductionCapacity{l in LOCATIONS, r in RESOURCES, t in PERIODS}:
-        # ... Exercise 1:
-    """
+        set RESOURCES;  # Set of production resources
+        
+        var ProductionHours{p in PRODUCTS, l in LOCATIONS, r in RESOURCES, t in PERIODS} >= 0; 
+            # Production hours for each product, location, resource, and period
+        param ProductionRate{p in PRODUCTS, l in LOCATIONS, r in RESOURCES} >= 0 default 0;
+            # Production rate for each product at each location and resource
+        """
 
     production_rate = r"""
-        # Exercise 2: Relating production quantity to production hours and rate
+        # Exercise 1: Relating production quantity to production hours and rate
         s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             Production[p,l,t] == sum{r in RESOURCES} ProductionHours[p,l,r,t] * ProductionRate[p,l,r];
     """
@@ -651,16 +648,43 @@ def main():
         # Relating production quantity to production hours and rate
         # s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
         # ... Exercise 2
+        """
+
+    class2_model += r"""
+        #############################
+        # Part 2: Resource capacity #
+        #############################
     """
+
+    resource_capacity = r"""
+        param AvailableCapacity{r in RESOURCES, l in LOCATIONS} >= 0 default 0; 
+            # Available capacity for each resource at each location
+
+        # Exercise 2: Add production capacity constraint
+        s.t. ProductionCapacity{l in LOCATIONS, r in RESOURCES, t in PERIODS}:
+            sum{p in PRODUCTS} ProductionHours[p,l,r,t] <= AvailableCapacity[r,l];
+    """
+
+    if show_complete_model:
+        class2_model += resource_capacity
+    else:
+        class2_model += r"""
+        # Add production capacity constraint
+        # s.t. ProductionCapacity{l in LOCATIONS, r in RESOURCES, t in PERIODS}:
+        # ... Exercise 2:
+        """
 
     class2_model += r"""
         #####################
-        # Part 2: Transfers #
+        # Part 3: Transfers #
         #####################
     
-        set TRANSFER_LANES within {PRODUCTS, LOCATIONS, LOCATIONS};  # Valid transfer lanes (From_Location, To_Location)
-        var TransfersIN{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;  # Transfers of product 'p' arriving at location 'j' from location 'i'
-        var TransfersOUT{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;  # Transfers of product 'p' leaving from location 'i' to location 'j'
+        set TRANSFER_LANES within {PRODUCTS, LOCATIONS, LOCATIONS};
+            # Valid transfer lanes (From_Location, To_Location)
+        var TransfersIN{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;
+            # Transfers of product 'p' arriving at location 'j' from location 'i'
+        var TransfersOUT{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;
+            # Transfers of product 'p' leaving from location 'i' to location 'j'
     """
 
     material_balance_with_transfers = r"""
@@ -681,12 +705,15 @@ def main():
 
     class2_model += r"""
         #########################
-        # Part 3: Target Stocks # 
+        # Part 4: Target Stocks # 
         #########################
 
-        param TargetStock{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;  # Target stock level for each product and location
-        var AboveTarget{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;    # Amount above target stock
-        var BelowTarget{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;    # Amount below target stock
+        param TargetStock{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
+            # Target stock level for each product and location
+        var AboveTarget{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+            # Amount above target stock
+        var BelowTarget{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+            # Amount below target stock
     """
 
     target_stock_constraint = r"""
@@ -705,10 +732,11 @@ def main():
 
     class2_model += r"""
         ############################
-        # Part 4: Storage Capacity #
+        # Part 5: Storage Capacity #
         ############################
 
-        param MaxCapacity{l in LOCATIONS} >= 0;  # Maximum storage capacity for each location and period
+        param MaxCapacity{l in LOCATIONS} >= 0;
+            # Maximum storage capacity for each location and period
     """
 
     storage_capacity_constraint = r"""
