@@ -507,10 +507,10 @@ class Reports:
 def main():
     st.title("📦 Supply Chain Optimization")
 
-    if os.environ["DEV"]:
+    if os.environ.get("DEV", False):
         options = [
             "Class 1: Demand balance + inventory carryover + material balance + restrict tables",
-            "Class 2: Capacity + Production Hours + transfers + targets + storage constraints + restrict tables (in progress)",
+            "Class 2: Capacity + Production Hours + transfers + targets + storage constraints + restrict tables",
         ]
         class_number = (
             options.index(
