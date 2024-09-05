@@ -507,14 +507,19 @@ class Reports:
 def main():
     st.title("📦 Supply Chain Optimization")
 
-    options = [
-        "Class 1: Demand balance + inventory carryover + material balance + restrict tables",
-        "Class 2: Capacity + Production Hours + transfers + targets + storage constraints + restrict tables",
-    ]
-    class_number = (
-        options.index(st.selectbox("Production Optimization Class", options, index=1))
-        + 1
-    )
+    if os.environ["DEV"]:
+        options = [
+            "Class 1: Demand balance + inventory carryover + material balance + restrict tables",
+            "Class 2: Capacity + Production Hours + transfers + targets + storage constraints + restrict tables (in progress)",
+        ]
+        class_number = (
+            options.index(
+                st.selectbox("Production Optimization Class", options, index=1)
+            )
+            + 1
+        )
+    else:
+        class_number = 1
 
     instance = InputData(
         os.path.join(os.path.dirname(__file__), "InputDataProductionSolver.xlsx"),
@@ -527,7 +532,7 @@ def main():
     with st.expander("Data"):
         instance.edit_data()
 
-    show_complete_model = st.checkbox("Show exercise solutions")
+    show_complete_model = st.checkbox("Show exercise solutions", value=True)
 
     base_model = r"""
         set PRODUCTS;  # Set of products
@@ -615,7 +620,7 @@ def main():
     """
 
     production_capacity = r"""
-        # Add production capacity constraint
+        # Exercise 1: Add production capacity constraint
         s.t. ProductionCapacity{l in LOCATIONS, r in RESOURCES, t in PERIODS}:
             sum{p in PRODUCTS} ProductionHours[p,l,r,t] <= AvailableCapacity[r,l];
     """
@@ -630,7 +635,7 @@ def main():
     """
 
     production_rate = r"""
-        # Relating production quantity to production hours and rate
+        # Exercise 2: Relating production quantity to production hours and rate
         s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             Production[p,l,t] == sum{r in RESOURCES} ProductionHours[p,l,r,t] * ProductionRate[p,l,r];
     """
@@ -651,6 +656,7 @@ def main():
     """
 
     material_balance_with_transfers = r"""
+        # Exercise 3:
         s.t. MaterialBalanceWithTransfers{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             StartingInventory[p,l,t] + Production[p,l,t] + sum{i in LOCATIONS: (p, i, l) in TRANSFER_LANES} TransfersIN[p,i,l,t]
             - MetDemand[p,l,t] - sum{j in LOCATIONS: (p, l, j) in TRANSFER_LANES} TransfersOUT[p,l,j,t]
@@ -672,6 +678,7 @@ def main():
     """
 
     target_stock_constraint = r"""
+        # Exercise 4:
         s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             TargetStock[p, l] == EndingInventory[p, l, t] + BelowTarget[p, l, t] - AboveTarget[p, l, t];
     """
@@ -689,6 +696,7 @@ def main():
     """
 
     storage_capacity_constraint = r"""
+        # Exercise 5:
         subject to StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
             sum{p in PRODUCTS} EndingInventory[p, l, t] <= MaxCapacity[l];
     """
