@@ -8,14 +8,30 @@ import re
 from ..common import solver_selector
 
 
+def data_editor(df, columns):
+    return st.data_editor(
+        df,
+        disabled=[c for c in df.columns if c not in columns],
+        hide_index=True,
+    )
+
+
 class InputData:
     DEMAND_COLUMNS = ["Product", "Location", "Period", "Quantity", "DemandType"]
     STARTING_INVENTORY_COLUMNS = ["Product", "Location", "Quantity"]
-    RATE_COLUMNS = ["Product", "Resource", "Rate", "Location", "Details"]
-    AVAILABLE_CAPACITY_COLUMNS = ["Resource", "Location", "TotalCapacity", "Unit"]
+    PRODUCTION_RATE_COLUMNS = ["Product", "Resource", "Location", "Rate"]
+    AVAILABLE_CAPACITY_COLUMNS = [
+        "Resource",
+        "Location",
+        "TotalCapacityPerPeriod",
+    ]
     TRANSPORTATION_COSTS_COLUMNS = ["FromLocation", "ToLocation", "Allowed?", "Cost"]
+    TRANSFER_LANES_COLUMNS = ["Product", "FromLocation", "ToLocation"]
+    TARGET_STOCK_COLUMNS = ["Product", "Location", "TargetStock"]
+    LOCATION_CAPACITY_COLUMNS = ["Location", "MaxCapacity"]
 
-    def __init__(self, xlsx_fname):
+    def __init__(self, xlsx_fname, class_number):
+        self.class_number = class_number
         self.dfs = pd.read_excel(
             xlsx_fname,
             sheet_name=None,
@@ -26,19 +42,27 @@ class InputData:
             if set(columns) - set(self.dfs[name].columns) != set():
                 st.error(f"{name} sheet needs columns: {columns}")
                 st.stop()
-            return self.dfs[name][columns].copy()
+            return self.dfs[name][columns].dropna().copy()
 
         # Data
         self.demand = load_sheet("Demand", self.DEMAND_COLUMNS)
         self.starting_inventory = load_sheet(
             "StartingInventory", self.STARTING_INVENTORY_COLUMNS
         )
-        self.rate = load_sheet("Rate", self.RATE_COLUMNS)
+        self.production_rate = load_sheet("Rate", self.PRODUCTION_RATE_COLUMNS)
+        self.production_rate["Resource"] = self.production_rate["Resource"].apply(
+            lambda r: r.split("_")[0]
+        )
         self.available_capacity = load_sheet(
             "AvailableCapacity", self.AVAILABLE_CAPACITY_COLUMNS
         )
         self.transportation_costs = load_sheet(
             "TransportationCosts", self.TRANSPORTATION_COSTS_COLUMNS
+        )
+        self.transfer_lanes = load_sheet("TransferLanes", self.TRANSFER_LANES_COLUMNS)
+        self.target_stocks = load_sheet("TargetStocks", self.TARGET_STOCK_COLUMNS)
+        self.location_capacity = load_sheet(
+            "LocationCapacity", self.LOCATION_CAPACITY_COLUMNS
         )
 
         # Dimensions
@@ -46,12 +70,11 @@ class InputData:
         self.all_components = ["Flour", "Sugar", "Chocolate"]
         self.all_locations = list(sorted(set(self.demand["Location"])))
         self.all_customers = ["Supermarket", "Restaurant", "Bulk"]
-        self.all_resources = list(
-            sorted(set([pair.split("_")[0] for pair in self.rate["Resource"]]))
-        )
+        self.all_resources = list(set(self.production_rate["Resource"]))
         self.all_resources_at = {l: set() for l in self.all_locations}
-        for pair in self.rate["Resource"]:
-            resource, location = pair.split("_")
+        for resource, location in zip(
+            self.production_rate["Resource"], self.production_rate["Location"]
+        ):
             self.all_resources_at[location].add(resource)
         for location in self.all_resources_at:
             self.all_resources_at[location] = list(
@@ -61,6 +84,28 @@ class InputData:
         self.all_suppliers = ["Flour Shop", "Chocolate Shop"]
 
     def filter_dimensions(self):
+        self._filter_dimensions_class1()
+        if self.class_number <= 1:
+            return
+
+        self._filter_dimensions_class2()
+        if self.class_number <= 2:
+            return
+
+    def edit_data(self):
+        self._edit_data_class1()
+        if self.class_number <= 1:
+            return
+
+        self._edit_data_class2()
+        if self.class_number <= 2:
+            return
+
+        self._edit_data_class3()
+        if self.class_number <= 3:
+            return
+
+    def _filter_dimensions_class1(self):
         cols = st.columns(3)
         with cols[0]:
             self.selected_products = st.multiselect(
@@ -73,7 +118,9 @@ class InputData:
             self.starting_inventory = self.starting_inventory[
                 self.starting_inventory["Product"].isin(self.selected_products)
             ]
-            self.rate = self.rate[self.rate["Product"].isin(self.selected_products)]
+            self.production_rate = self.production_rate[
+                self.production_rate["Product"].isin(self.selected_products)
+            ]
         with cols[1]:
             self.selected_components = st.multiselect(
                 "Components:", self.all_components, default=self.all_components
@@ -90,7 +137,9 @@ class InputData:
             self.starting_inventory = self.starting_inventory[
                 self.starting_inventory["Location"].isin(self.selected_locations)
             ]
-            self.rate = self.rate[self.rate["Location"].isin(self.selected_locations)]
+            self.production_rate = self.production_rate[
+                self.production_rate["Location"].isin(self.selected_locations)
+            ]
             self.available_capacity = self.available_capacity[
                 self.available_capacity["Location"].isin(self.selected_locations)
             ]
@@ -102,37 +151,6 @@ class InputData:
             "Customers:", self.all_customers, default=self.all_customers
         )
         # FIXME: Nothing to filter yet
-
-        # FIXME: this will be needed later
-        # self.selected_resources = st.multiselect(
-        #     "Resources:", self.all_resources, default=self.all_resources
-        # )
-        # # FIXME: Nothing to filter yet
-
-        # cols = st.columns(len(self.all_locations))
-        # resources_at = {}
-        # for i, location in enumerate(self.selected_locations):
-        #     with cols[i]:
-        #         resources_at[location] = st.multiselect(
-        #             f"Resources at {location}:",
-        #             self.all_resources,
-        #             default=self.all_resources_at.get(location, []),
-        #         )
-        # # Filter resources at each location
-        # pairs = [
-        #     (resource, location)
-        #     for location in resources_at
-        #     for resource in resources_at[location]
-        # ]
-        # self.rate = self.rate[
-        #     self.rate["Resource"].isin(
-        #         [f"{resource}_{location}" for (resource, location) in pairs]
-        #     )
-        # ]
-        # mask = self.available_capacity.apply(
-        #     lambda row: (row["Resource"], row["Location"]) in pairs, axis=1
-        # )
-        # self.available_capacity = self.available_capacity[mask]
 
         date_range = (
             min(self.all_periods).to_pydatetime(),
@@ -174,31 +192,94 @@ class InputData:
             self.products_at[location].append(product)
             self.locations_with[product].append(location)
 
-    def edit_data(self):
-        def data_editor(df, columns):
-            return st.data_editor(
-                df,
-                disabled=[c for c in df.columns if c not in columns],
-                hide_index=True,
-            )
-
+    def _edit_data_class1(self):
         st.write("Demand:")
         self.demand = data_editor(self.demand, ["Quantity"])
 
         st.write("InitialInventory:")
         self.starting_inventory = data_editor(self.starting_inventory, ["Quantity"])
 
-        # FIXME: this will be needed later
-        # st.write("Rate:")
-        # self.rate = data_editor(self.rate, ["Rate"])
+    def _filter_dimensions_class2(self):
+        self.selected_resources = st.multiselect(
+            "Resources:", self.all_resources, default=self.all_resources
+        )
 
-        # st.write("AvailableCapacity:")
-        # self.available_capacity = data_editor(
-        #     self.available_capacity, ["TotalCapacity"]
-        # )
+        cols = st.columns(len(self.all_locations))
+        self.resources_at = {}
+        for i, location in enumerate(self.selected_locations):
+            with cols[i]:
+                self.resources_at[location] = st.multiselect(
+                    f"Resources at {location}:",
+                    self.all_resources,
+                    default=self.all_resources_at.get(location, []),
+                )
+        # Filter resources at each location
+        self.resource_location_pairs = [
+            (resource, location)
+            for location in self.resources_at
+            for resource in self.resources_at[location]
+        ]
+        self.production_rate = self.production_rate[
+            self.production_rate.apply(
+                lambda row: (row["Resource"], row["Location"])
+                in self.resource_location_pairs,
+                axis=1,
+            )
+        ]
 
-        # st.write("TransportationCosts:")
-        # self.transportation_costs = data_editor(self.transportation_costs, ["Cost"])
+        mask = self.available_capacity.apply(
+            lambda row: (row["Resource"], row["Location"])
+            in self.resource_location_pairs,
+            axis=1,
+        )
+        self.available_capacity = self.available_capacity[mask]
+
+        mask = self.transfer_lanes.apply(
+            lambda row: row["Product"] in self.selected_products
+            and row["FromLocation"] in self.selected_locations
+            and row["ToLocation"] in self.selected_locations,
+            axis=1,
+        )
+        self.transfer_lanes = self.transfer_lanes[mask]
+
+    def _edit_data_class2(self):
+        st.write("ProductionRate:")
+        self.production_rate = data_editor(self.production_rate, ["Rate"])
+
+        st.write("AvailableCapacity:")
+        self.available_capacity = data_editor(
+            self.available_capacity, ["TotalCapacityPerPeriod"]
+        )
+
+        st.write("TransferLanes:")
+        self.transfer_lanes = st.data_editor(
+            self.transfer_lanes,
+            hide_index=True,
+            column_config={
+                "Product": st.column_config.SelectboxColumn(
+                    options=self.selected_products,
+                    default="",
+                ),
+                "FromLocation": st.column_config.SelectboxColumn(
+                    options=self.selected_locations,
+                    default="",
+                ),
+                "ToLocation": st.column_config.SelectboxColumn(
+                    options=self.selected_locations,
+                    default="",
+                ),
+            },
+        )
+
+        st.write("TargetStock:")
+        self.target_stocks = data_editor(self.target_stocks, ["TargetStock"])
+
+    def _filter_dimensions_class3(self):
+        pass
+
+    def _edit_data_class3(self):
+        st.write("TransportationCosts:")
+        self.transportation_costs = data_editor(self.transportation_costs, ["Cost"])
 
 
 class Reports:
@@ -426,8 +507,18 @@ class Reports:
 def main():
     st.title("📦 Supply Chain Optimization")
 
+    options = [
+        "Class 1: Demand balance + inventory carryover + material balance + restrict tables",
+        "Class 2: Capacity + Production Hours + transfers + targets + storage constraints + restrict tables",
+    ]
+    class_number = (
+        options.index(st.selectbox("Production Optimization Class", options, index=1))
+        + 1
+    )
+
     instance = InputData(
-        os.path.join(os.path.dirname(__file__), "InputDataProductionSolver.xlsx")
+        os.path.join(os.path.dirname(__file__), "InputDataProductionSolver.xlsx"),
+        class_number,
     )
 
     with st.expander("Dimensions"):
@@ -436,12 +527,14 @@ def main():
     with st.expander("Data"):
         instance.edit_data()
 
-    model = r"""
+    show_complete_model = st.checkbox("Show exercise solutions")
+
+    base_model = r"""
         set PRODUCTS;  # Set of products
         set LOCATIONS;  # Set of distribution or production locations
         set PRODUCTS_LOCATIONS within {PRODUCTS, LOCATIONS};  # Restrict table
         set PERIODS ordered;  # Ordered set of time periods for planning
-
+        
         param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
                 # Input demand for each product at each location during each time period
         var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
@@ -457,17 +550,21 @@ def main():
                 # Inventory at the end of each time period
         var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Production volume for each product at each location during each time period
+    """
 
+    class1_model = (
+        base_model
+        + r"""
         param UnmetDemandPenalty default 10;
-                # Penalty cost per unit for unmet demand (impacts decision to meet demand)
+            # Penalty cost per unit for unmet demand (impacts decision to meet demand)
         param EndingInventoryPenalty default 5;
-                # Penalty cost per unit for ending inventory (reflects carrying cost)
+            # Penalty cost per unit for ending inventory (reflects carrying cost)
 
         minimize TotalCost:
             sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS}
                 (UnmetDemandPenalty * UnmetDemand[p, l, t] + EndingInventoryPenalty * EndingInventory[p, l, t]);
                 # Objective function to minimize total costs associated with unmet demand and leftover inventory
-    
+
         # s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
         # ... Exercise 1: Ensure that all demand is accounted for either as met or unmet.
 
@@ -477,6 +574,7 @@ def main():
         # s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
         # ... Exercise 3: Balance starting inventory and production against demand to determine ending inventory.
     """
+    )
 
     demand_fulfillment = r"""
         s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
@@ -499,6 +597,140 @@ def main():
             StartingInventory[p, l, t] + Production[p, l, t] - MetDemand[p, l, t] = EndingInventory[p, l, t];
                 # Balance starting inventory and production against demand to determine ending inventory.
     """
+
+    class2_model = (
+        base_model
+        + demand_fulfillment
+        + inventory_balance
+        + stock_balance
+        + r"""
+        set RESOURCES;  # Set of production resources
+        """
+    )
+
+    class2_model += r"""
+        var ProductionHours{p in PRODUCTS, l in LOCATIONS, r in RESOURCES, t in PERIODS} >= 0;  # Production hours for each product, location, resource, and period
+        param AvailableCapacity{r in RESOURCES, l in LOCATIONS} >= 0 default 0;  # Available capacity for each resource at each location
+        param ProductionRate{p in PRODUCTS, l in LOCATIONS, r in RESOURCES} >= 0 default 0;  # Production rate for each product at each location and resource
+    """
+
+    production_capacity = r"""
+        # Add production capacity constraint
+        s.t. ProductionCapacity{l in LOCATIONS, r in RESOURCES, t in PERIODS}:
+            sum{p in PRODUCTS} ProductionHours[p,l,r,t] <= AvailableCapacity[r,l];
+    """
+
+    if show_complete_model:
+        class2_model += production_capacity
+    else:
+        class2_model += r"""
+        # Add production capacity constraint
+        # s.t. ProductionCapacity{l in LOCATIONS, r in RESOURCES, t in PERIODS}:
+        # ... Exercise 1:
+    """
+
+    production_rate = r"""
+        # Relating production quantity to production hours and rate
+        s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+            Production[p,l,t] == sum{r in RESOURCES} ProductionHours[p,l,r,t] * ProductionRate[p,l,r];
+    """
+
+    if show_complete_model:
+        class2_model += production_rate
+    else:
+        class2_model += r"""
+        # Relating production quantity to production hours and rate
+        # s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+        # ... Exercise 2
+    """
+
+    class2_model += r"""
+        set TRANSFER_LANES within {PRODUCTS, LOCATIONS, LOCATIONS};  # Valid transfer lanes (From_Location, To_Location)
+        var TransfersIN{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;  # Transfers of product 'p' arriving at location 'j' from location 'i'
+        var TransfersOUT{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;  # Transfers of product 'p' leaving from location 'i' to location 'j'
+    """
+
+    material_balance_with_transfers = r"""
+        s.t. MaterialBalanceWithTransfers{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+            StartingInventory[p,l,t] + Production[p,l,t] + sum{i in LOCATIONS: (p, i, l) in TRANSFER_LANES} TransfersIN[p,i,l,t]
+            - MetDemand[p,l,t] - sum{j in LOCATIONS: (p, l, j) in TRANSFER_LANES} TransfersOUT[p,l,j,t]
+            == EndingInventory[p,l,t];
+    """
+
+    if show_complete_model:
+        class2_model += material_balance_with_transfers
+    else:
+        class2_model += r"""
+        # s.t. MaterialBalanceWithTransfers{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+        # ... Exercise 3
+    """
+
+    class2_model += r"""
+        param TargetStock{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;  # Target stock level for each product and location
+        var AboveTarget{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;    # Amount above target stock
+        var BelowTarget{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;    # Amount below target stock
+    """
+
+    target_stock_constraint = r"""
+        s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+            TargetStock[p, l] == EndingInventory[p, l, t] + BelowTarget[p, l, t] - AboveTarget[p, l, t];
+    """
+
+    if show_complete_model:
+        class2_model += target_stock_constraint
+    else:
+        class2_model += r"""
+        # s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+        # ... Exercise 4
+    """
+
+    class2_model += r"""
+        param MaxCapacity{l in LOCATIONS} >= 0;  # Maximum storage capacity for each location and period
+    """
+
+    storage_capacity_constraint = r"""
+        subject to StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
+            sum{p in PRODUCTS} EndingInventory[p, l, t] <= MaxCapacity[l];
+    """
+
+    if show_complete_model:
+        class2_model += storage_capacity_constraint
+    else:
+        class2_model += r"""
+        # s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
+        # ... Exercise 5
+    """
+
+    class2_model += r"""
+        param AboveTargetPenalty default 2;
+            # Penalty for having inventory above target
+        param BelowTargetPenalty default 3;
+            # Penalty for having inventory below target
+        param UnmetDemandPenalty default 10;
+            # Penalty cost per unit for unmet demand (impacts decision to meet demand)
+        param EndingInventoryPenalty default 5;
+            # Penalty cost per unit for ending inventory (reflects carrying cost)
+        param TransferPenalty default 1;
+            # Penalty for each unit transferred
+
+        minimize TotalCost:
+            sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
+                UnmetDemandPenalty * UnmetDemand[p, l, t] 
+                + EndingInventoryPenalty * EndingInventory[p, l, t] 
+                + AboveTargetPenalty * AboveTarget[p, l, t] 
+                + BelowTargetPenalty * BelowTarget[p, l, t]
+            )
+            + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
+                TransferPenalty * TransfersOUT[p, i, j, t]
+            );
+    """
+
+    if class_number == 1:
+        model = class1_model
+    elif class_number == 2:
+        model = class2_model
+    else:
+        assert False
 
     st.markdown("## Production Optimization")
 
@@ -535,6 +767,21 @@ def main():
     ampl.set["PERIODS"] = periods
     ampl.param["Demand"] = demand["Quantity"]
     ampl.param["InitialInventory"] = starting_inventory["Quantity"]
+    if class_number >= 2:
+        ampl.set["RESOURCES"] = instance.all_resources
+        ampl.param["ProductionRate"] = instance.production_rate.set_index(
+            ["Product", "Location", "Resource"]
+        )[["Rate"]]
+        ampl.param["AvailableCapacity"] = instance.available_capacity.set_index(
+            ["Resource", "Location"]
+        )
+        ampl.set["TRANSFER_LANES"] = list(
+            instance.transfer_lanes.itertuples(index=False, name=None)
+        )
+        ampl.param["TargetStock"] = instance.target_stocks.set_index(
+            ["Product", "Location"]
+        )
+        ampl.param["MaxCapacity"] = instance.location_capacity.set_index(["Location"])
 
     def exercise(name, constraint, needs, help=""):
         if st.checkbox(f"Skip exercise", key=f"Skip {name}", value=True):
@@ -585,73 +832,74 @@ def main():
                         output = output[output.find(":") + 1 :].strip()
                     st.error(f"❌ Error: {output}")
 
-    st.markdown(
-        """
-        ### Exercise #1: Demand Balance Constraint
-        
-        🧑‍🏫 Ensure that all demand is accounted for either as met or unmet.
-        """
-    )
-    exercise(
-        "Demand Balance Constraint",
-        demand_fulfillment,
-        ["Demand[p, l, t]", "MetDemand[p, l, t]", "UnmetDemand[p, l, t]", "="],
-    )
+    if class_number == 1:
+        st.markdown(
+            """
+            ### Exercise #1: Demand Balance Constraint
+            
+            🧑‍🏫 Ensure that all demand is accounted for either as met or unmet.
+            """
+        )
+        exercise(
+            "Demand Balance Constraint",
+            demand_fulfillment,
+            ["Demand[p, l, t]", "MetDemand[p, l, t]", "UnmetDemand[p, l, t]", "="],
+        )
 
-    st.markdown(
-        """
-        ### Exercise #2: Inventory Carryover Constraint
-        
-        🧑‍🏫 Define how inventory is carried over from one period to the next.
-        """
-    )
-    exercise(
-        "Inventory Carryover Constraint",
-        inventory_balance,
-        [
-            "StartingInventory[p, l, t]",
-            "EndingInventory[p, l, prev(t)]",
-            "InitialInventory[p, l]",
-            "if",
-            "ord(t)",
-            "then",
-            "=",
-        ],
-        help="""
-        The set `PERIODS` is an ordered set (declared as `set PERIODS ordered;`).
-        This allows checking the order of a set element `t` with `ord(t)` (starting at 1),
-        and access the previous and following elements with `prev(t)` and `next(t)`, respectively.
-        Learn more about this in Chapter 5 of [The AMPL Book](https://ampl.com/ampl-book/).
+        st.markdown(
+            """
+            ### Exercise #2: Inventory Carryover Constraint
+            
+            🧑‍🏫 Define how inventory is carried over from one period to the next.
+            """
+        )
+        exercise(
+            "Inventory Carryover Constraint",
+            inventory_balance,
+            [
+                "StartingInventory[p, l, t]",
+                "EndingInventory[p, l, prev(t)]",
+                "InitialInventory[p, l]",
+                "if",
+                "ord(t)",
+                "then",
+                "=",
+            ],
+            help="""
+            The set `PERIODS` is an ordered set (declared as `set PERIODS ordered;`).
+            This allows checking the order of a set element `t` with `ord(t)` (starting at 1),
+            and access the previous and following elements with `prev(t)` and `next(t)`, respectively.
+            Learn more about this in Chapter 5 of [The AMPL Book](https://ampl.com/ampl-book/).
 
-        You will also be using an `if-then-else` statement. Its syntax as follows:
-        `if <condition> then <value or expression> else <value or expression>`.
-        Learn more about this in Chapter 7 of [The AMPL Book](https://ampl.com/ampl-book/).
+            You will also be using an `if-then-else` statement. Its syntax as follows:
+            `if <condition> then <value or expression> else <value or expression>`.
+            Learn more about this in Chapter 7 of [The AMPL Book](https://ampl.com/ampl-book/).
 
-        Note that the [The AMPL Book](https://ampl.com/ampl-book/) is a good reference to learn
-        AMPL syntax but it is not up to date in terms of how AMPL should be used in production.
-        For more modern usage examples see https://ampl.com/mo-book/ and https://ampl.com/colab/ where
-        AMPL is used integrated with Python just like in this Streamlit app.
-        """,
-    )
+            Note that the [The AMPL Book](https://ampl.com/ampl-book/) is a good reference to learn
+            AMPL syntax but it is not up to date in terms of how AMPL should be used in production.
+            For more modern usage examples see https://ampl.com/mo-book/ and https://ampl.com/colab/ where
+            AMPL is used integrated with Python just like in this Streamlit app.
+            """,
+        )
 
-    st.markdown(
-        """
-        ### Exercise #3: Material Balance Constraint
-        
-        🧑‍🏫 Balance starting inventory and production against demand to determine ending inventory.
-        """
-    )
-    exercise(
-        "Material Balance Constraint",
-        stock_balance,
-        [
-            "StartingInventory[p, l, t]",
-            "Production[p, l, t]",
-            "MetDemand[p, l, t]",
-            "EndingInventory[p, l, t]",
-            "=",
-        ],
-    )
+        st.markdown(
+            """
+            ### Exercise #3: Material Balance Constraint
+            
+            🧑‍🏫 Balance starting inventory and production against demand to determine ending inventory.
+            """
+        )
+        exercise(
+            "Material Balance Constraint",
+            stock_balance,
+            [
+                "StartingInventory[p, l, t]",
+                "Production[p, l, t]",
+                "MetDemand[p, l, t]",
+                "EndingInventory[p, l, t]",
+                "=",
+            ],
+        )
 
     st.markdown("## Solve")
 
@@ -677,6 +925,7 @@ def main():
     solver, _ = solver_selector(mp_only=True)
 
     # Solve the problem
+    ampl.snapshot("session.run")
     output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
     st.write(f"```\n{output}\n```")
 
