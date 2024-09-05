@@ -587,7 +587,7 @@ def main():
                 # Ensure that all demand is accounted for either as met or unmet.
     """
 
-    inventory_balance = r"""         
+    inventory_carryover = r"""         
         s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             StartingInventory[p, l, t] =
                 if ord(t) > 1 then
@@ -597,7 +597,7 @@ def main():
                 # Define how inventory is carried over from one period to the next.
     """
 
-    stock_balance = r"""       
+    material_balance = r"""       
         s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             StartingInventory[p, l, t] + Production[p, l, t] - MetDemand[p, l, t] = EndingInventory[p, l, t];
                 # Balance starting inventory and production against demand to determine ending inventory.
@@ -606,14 +606,18 @@ def main():
     class2_model = (
         base_model
         + demand_fulfillment
-        + inventory_balance
-        + stock_balance
+        + inventory_carryover
+        # + material_balance
         + r"""
         set RESOURCES;  # Set of production resources
         """
     )
 
     class2_model += r"""
+        ###################################
+        # Part 1: Production and Capacity #
+        ###################################
+
         var ProductionHours{p in PRODUCTS, l in LOCATIONS, r in RESOURCES, t in PERIODS} >= 0;  # Production hours for each product, location, resource, and period
         param AvailableCapacity{r in RESOURCES, l in LOCATIONS} >= 0 default 0;  # Available capacity for each resource at each location
         param ProductionRate{p in PRODUCTS, l in LOCATIONS, r in RESOURCES} >= 0 default 0;  # Production rate for each product at each location and resource
@@ -650,6 +654,10 @@ def main():
     """
 
     class2_model += r"""
+        #####################
+        # Part 2: Transfers #
+        #####################
+    
         set TRANSFER_LANES within {PRODUCTS, LOCATIONS, LOCATIONS};  # Valid transfer lanes (From_Location, To_Location)
         var TransfersIN{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;  # Transfers of product 'p' arriving at location 'j' from location 'i'
         var TransfersOUT{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;  # Transfers of product 'p' leaving from location 'i' to location 'j'
@@ -672,6 +680,10 @@ def main():
     """
 
     class2_model += r"""
+        #########################
+        # Part 3: Target Stocks # 
+        #########################
+
         param TargetStock{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;  # Target stock level for each product and location
         var AboveTarget{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;    # Amount above target stock
         var BelowTarget{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;    # Amount below target stock
@@ -692,6 +704,10 @@ def main():
     """
 
     class2_model += r"""
+        ############################
+        # Part 4: Storage Capacity #
+        ############################
+
         param MaxCapacity{l in LOCATIONS} >= 0;  # Maximum storage capacity for each location and period
     """
 
@@ -753,8 +769,8 @@ def main():
 
         model = apply_restrict_table(model)
         demand_fulfillment = apply_restrict_table(demand_fulfillment)
-        inventory_balance = apply_restrict_table(inventory_balance)
-        stock_balance = apply_restrict_table(stock_balance)
+        inventory_carryover = apply_restrict_table(inventory_carryover)
+        material_balance = apply_restrict_table(material_balance)
 
     st.code(model)
 
@@ -863,7 +879,7 @@ def main():
         )
         exercise(
             "Inventory Carryover Constraint",
-            inventory_balance,
+            inventory_carryover,
             [
                 "StartingInventory[p, l, t]",
                 "EndingInventory[p, l, prev(t)]",
@@ -899,7 +915,7 @@ def main():
         )
         exercise(
             "Material Balance Constraint",
-            stock_balance,
+            material_balance,
             [
                 "StartingInventory[p, l, t]",
                 "Production[p, l, t]",
