@@ -507,19 +507,33 @@ class Reports:
 def main():
     st.title("📦 Supply Chain Optimization")
 
-    if os.environ.get("DEV", False):
-        options = [
-            "Class 1: Demand balance + inventory carryover + material balance + restrict tables",
-            "Class 2: Capacity + Production Hours + transfers + targets + storage constraints + restrict tables",
-        ]
-        class_number = (
-            options.index(
-                st.selectbox("Production Optimization Class", options, index=1)
+    options = [
+        "Homework 1: Demand Balance + Inventory Carryover + Material Balance",
+        "Homework 2: Production Hours + Resource Capacity + Transfers + Target Stocks + Storage Capacity",
+    ]
+    try:
+        default_option = max(0, int(st.query_params.get("homework", 1)) - 1)
+    except:
+        default_option = 0
+
+    def update_params():
+        if "homework" in st.session_state:
+            st.query_params["homework"] = (
+                options.index(st.session_state["homework"]) + 1
             )
-            + 1
+
+    class_number = (
+        options.index(
+            st.selectbox(
+                "Production Optimization Class",
+                options,
+                key="homework",
+                index=default_option,
+                on_change=update_params(),
+            )
         )
-    else:
-        class_number = 1
+        + 1
+    )
 
     instance = InputData(
         os.path.join(os.path.dirname(__file__), "InputDataProductionSolver.xlsx"),
@@ -532,7 +546,10 @@ def main():
     with st.expander("Data"):
         instance.edit_data()
 
-    show_complete_model = st.checkbox("Show exercise solutions", value=True)
+    if class_number == 2:
+        show_complete_model = st.checkbox("Show exercise solutions", value=True)
+    else:
+        show_complete_model = False
 
     base_model = r"""
         set PRODUCTS;  # Set of products
@@ -541,7 +558,7 @@ def main():
         set PERIODS ordered;  # Ordered set of time periods for planning
         
         param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
-                # Input demand for each product at each location during each time period
+                # Demand for each product at each location during each time period
         var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Quantity of demand that is not met for a product at a location in a time period
         var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
@@ -588,7 +605,7 @@ def main():
 
         s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             Demand[p, l, t] = MetDemand[p, l, t] + UnmetDemand[p, l, t];
-                # Ensure that all demand is accounted for either as met or unmet.
+            # Ensure that all demand is accounted for either as met or unmet.
     """
 
     inventory_carryover = r"""
@@ -612,7 +629,7 @@ def main():
 
         s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             StartingInventory[p, l, t] + Production[p, l, t] - MetDemand[p, l, t] = EndingInventory[p, l, t];
-                # Balance starting inventory and production against demand to determine ending inventory.
+            # Balance starting inventory and production against demand to determine ending inventory.
     """
 
     class2_model = (
@@ -636,42 +653,42 @@ def main():
         """
 
     production_rate = r"""
-        # Exercise 1: Relating production quantity to production hours and rate
+        # Exercise 1
         s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             Production[p,l,t] == sum{r in RESOURCES} ProductionHours[p,l,r,t] * ProductionRate[p,l,r];
+            # Ensure that the total production quantity is equal to the production hours multiplied by the production rate
     """
 
     if show_complete_model:
         class2_model += production_rate
     else:
         class2_model += r"""
-        # Relating production quantity to production hours and rate
         # s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-        # ... Exercise 2
+        # ... Exercise 2: Ensure that the total production quantity is equal to the production hours multiplied by the production rate
         """
 
     class2_model += r"""
         #############################
         # Part 2: Resource capacity #
         #############################
+
+        param AvailableCapacity{r in RESOURCES, l in LOCATIONS} >= 0 default 0; 
+            # Available capacity for each resource at each location
     """
 
     resource_capacity = r"""
-        param AvailableCapacity{r in RESOURCES, l in LOCATIONS} >= 0 default 0; 
-            # Available capacity for each resource at each location
-
-        # Exercise 2: Add production capacity constraint
+        # Exercise 2
         s.t. ProductionCapacity{l in LOCATIONS, r in RESOURCES, t in PERIODS}:
             sum{p in PRODUCTS} ProductionHours[p,l,r,t] <= AvailableCapacity[r,l];
+            # Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location
     """
 
     if show_complete_model:
         class2_model += resource_capacity
     else:
         class2_model += r"""
-        # Add production capacity constraint
         # s.t. ProductionCapacity{l in LOCATIONS, r in RESOURCES, t in PERIODS}:
-        # ... Exercise 2:
+        # ... Exercise 2: Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location
         """
 
     class2_model += r"""
@@ -690,9 +707,11 @@ def main():
     material_balance_with_transfers = r"""
         # Exercise 3:
         s.t. MaterialBalanceWithTransfers{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-            StartingInventory[p,l,t] + Production[p,l,t] + sum{i in LOCATIONS: (p, i, l) in TRANSFER_LANES} TransfersIN[p,i,l,t]
-            - MetDemand[p,l,t] - sum{j in LOCATIONS: (p, l, j) in TRANSFER_LANES} TransfersOUT[p,l,j,t]
+            StartingInventory[p,l,t] - MetDemand[p,l,t] + Production[p,l,t]
+            + sum{i in LOCATIONS: (p, i, l) in TRANSFER_LANES} TransfersIN[p,i,l,t]
+            - sum{j in LOCATIONS: (p, l, j) in TRANSFER_LANES} TransfersOUT[p,l,j,t]
             == EndingInventory[p,l,t];
+            # Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment
     """
 
     if show_complete_model:
@@ -700,7 +719,7 @@ def main():
     else:
         class2_model += r"""
         # s.t. MaterialBalanceWithTransfers{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-        # ... Exercise 3
+        # ... Exercise 3: Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment
     """
 
     class2_model += r"""
@@ -720,6 +739,7 @@ def main():
         # Exercise 4:
         s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             TargetStock[p, l] == EndingInventory[p, l, t] + BelowTarget[p, l, t] - AboveTarget[p, l, t];
+            # Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level
     """
 
     if show_complete_model:
@@ -727,7 +747,7 @@ def main():
     else:
         class2_model += r"""
         # s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-        # ... Exercise 4
+        # ... Exercise 4: Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
     """
 
     class2_model += r"""
@@ -743,6 +763,7 @@ def main():
         # Exercise 5:
         subject to StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
             sum{p in PRODUCTS} EndingInventory[p, l, t] <= MaxCapacity[l];
+            # Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
     """
 
     if show_complete_model:
@@ -750,10 +771,14 @@ def main():
     else:
         class2_model += r"""
         # s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
-        # ... Exercise 5
+        # ... Exercise 5: Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
     """
 
     class2_model += r"""
+        #############
+        # Objective #
+        #############
+
         param AboveTargetPenalty default 2;
             # Penalty for having inventory above target
         param BelowTargetPenalty default 3;
@@ -765,6 +790,7 @@ def main():
         param TransferPenalty default 1;
             # Penalty for each unit transferred
 
+        # Minimize total cost objective
         minimize TotalCost:
             sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
                 UnmetDemandPenalty * UnmetDemand[p, l, t] 
@@ -775,6 +801,7 @@ def main():
             + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
                 TransferPenalty * TransfersOUT[p, i, j, t]
             );
+            # Objective: Minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
     """
 
     if class_number == 1:
