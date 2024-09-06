@@ -504,6 +504,56 @@ class Reports:
             st.dataframe(material_df, hide_index=True)
 
 
+def exercise(ampl, name, constraint, needs, help=""):
+    if st.checkbox(f"Skip exercise", key=f"Skip {name}", value=True):
+        ampl.eval(constraint)
+    else:
+        constraint = constraint[constraint.find("s.t.") :]
+        constraint = constraint[: constraint.find("\n")] + "\n\t"
+        answer = st.text_input(f"Implement the {name} below").strip()
+        if answer != "" and not answer.endswith(";"):
+            answer += "\n;"
+
+        if answer != "":
+            st.code(constraint + answer)
+        else:
+            st.code(constraint + "\t... the equation above goes here ...;")
+        forbidden = ["model", "data", "include", "shell", "cd"]
+        validation_report = ""
+
+        answer_nospace = answer.replace(" ", "")
+        incomplete = False
+        for s in needs:
+            passed = s.replace(" ", "") in answer_nospace
+            if not passed:
+                incomplete = True
+            validation_report += f"- {'✅' if passed else '❌'} uses `{s}`\n"
+        st.markdown(validation_report)
+        if help != "":
+            st.info(help)
+
+        if answer_nospace == "":
+            st.error(f"Please write the equation above.")
+        elif incomplete or any(s in answer_nospace for s in forbidden):
+            st.error(f"Please complete the equation above.")
+        else:
+            output = ampl.get_output(constraint + answer + ";")
+            if output != "":
+                output = re.sub(
+                    r"\bfile\s*-\s*line\s+\d+\s+offset\s+\d+\b", "", output
+                ).strip()
+                st.error(f"❌ Syntax Error: {output}")
+            else:
+                st.success(
+                    "Great! No syntax errors! Check the results below to confirm if it is correct!"
+                )
+            output = ampl.get_output("write 0;")
+            if output != "" and not output.startswith("No files written"):
+                if "Error executing " in output:
+                    output = output[output.find(":") + 1 :].strip()
+                st.error(f"❌ Error: {output}")
+
+
 def main():
     st.title("📦 Supply Chain Optimization")
 
@@ -608,6 +658,14 @@ def main():
             # Ensure that all demand is accounted for either as met or unmet.
     """
 
+    def demand_fulfillment_exercise(ampl):
+        exercise(
+            ampl,
+            "Demand Balance Constraint",
+            demand_fulfillment,
+            ["Demand[p, l, t]", "MetDemand[p, l, t]", "UnmetDemand[p, l, t]", "="],
+        )
+
     inventory_carryover = r"""
         #######################
         # Inventory Carryover # 
@@ -622,6 +680,37 @@ def main():
                 # Define how inventory is carried over from one period to the next.
     """
 
+    def inventory_carryover_exercise(ampl):
+        exercise(
+            ampl,
+            "Inventory Carryover Constraint",
+            inventory_carryover,
+            [
+                "StartingInventory[p, l, t]",
+                "EndingInventory[p, l, prev(t)]",
+                "InitialInventory[p, l]",
+                "if",
+                "ord(t)",
+                "then",
+                "=",
+            ],
+            help="""
+                The set `PERIODS` is an ordered set (declared as `set PERIODS ordered;`).
+                This allows checking the order of a set element `t` with `ord(t)` (starting at 1),
+                and access the previous and following elements with `prev(t)` and `next(t)`, respectively.
+                Learn more about this in Chapter 5 of [The AMPL Book](https://ampl.com/ampl-book/).
+
+                You will also be using an `if-then-else` statement. Its syntax as follows:
+                `if <condition> then <value or expression> else <value or expression>`.
+                Learn more about this in Chapter 7 of [The AMPL Book](https://ampl.com/ampl-book/).
+
+                Note that the [The AMPL Book](https://ampl.com/ampl-book/) is a good reference to learn
+                AMPL syntax but it is not up to date in terms of how AMPL should be used in production.
+                For more modern usage examples see https://ampl.com/mo-book/ and https://ampl.com/colab/ where
+                AMPL is used integrated with Python just like in this Streamlit app.
+                """,
+        )
+
     material_balance = r"""
         ####################
         # Material Balance # 
@@ -631,6 +720,20 @@ def main():
             StartingInventory[p, l, t] + Production[p, l, t] - MetDemand[p, l, t] = EndingInventory[p, l, t];
             # Balance starting inventory and production against demand to determine ending inventory.
     """
+
+    def material_balance_exercise(ampl):
+        exercise(
+            ampl,
+            "Material Balance Constraint",
+            material_balance,
+            [
+                "StartingInventory[p, l, t]",
+                "Production[p, l, t]",
+                "MetDemand[p, l, t]",
+                "EndingInventory[p, l, t]",
+                "=",
+            ],
+        )
 
     class2_model = (
         base_model
@@ -659,6 +762,20 @@ def main():
             # Ensure that the total production quantity is equal to the production hours multiplied by the production rate
     """
 
+    def production_rate_exercise(ampl):
+        exercise(
+            ampl,
+            "Production and Production Hours",
+            production_rate,
+            [
+                "Production[p,l,t]",
+                "sum{r in RESOURCES}",
+                "ProductionHours[p,l,r,t]",
+                "*",
+                "ProductionRate[p,l,r]",
+            ],
+        )
+
     if show_complete_model:
         class2_model += production_rate
     else:
@@ -682,6 +799,19 @@ def main():
             sum{p in PRODUCTS} ProductionHours[p,l,r,t] <= AvailableCapacity[r,l];
             # Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location
     """
+
+    def resource_capacity_exercise(ampl):
+        exercise(
+            ampl,
+            "Resource capacity",
+            resource_capacity,
+            [
+                "sum{p in PRODUCTS}",
+                "ProductionHours[p,l,r,t]",
+                "<=",
+                "AvailableCapacity[r,l]",
+            ],
+        )
 
     if show_complete_model:
         class2_model += resource_capacity
@@ -714,6 +844,23 @@ def main():
             # Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment
     """
 
+    def material_balance_with_transfers_exercise(ampl):
+        exercise(
+            ampl,
+            "Transfers",
+            material_balance_with_transfers,
+            [
+                "StartingInventory[p,l,t]",
+                "MetDemand[p,l,t]",
+                "Production[p,l,t]",
+                "sum{i in LOCATIONS: (p, i, l) in TRANSFER_LANES}",
+                "TransfersIN[p,i,l,t]",
+                "sum{j in LOCATIONS: (p, l, j) in TRANSFER_LANES}",
+                "TransfersOUT[p,l,j,t]",
+                "EndingInventory[p,l,t]",
+            ],
+        )
+
     if show_complete_model:
         class2_model += material_balance_with_transfers
     else:
@@ -742,6 +889,19 @@ def main():
             # Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level
     """
 
+    def target_stock_constraint_exercise(ampl):
+        exercise(
+            ampl,
+            "Target Stocks",
+            target_stock_constraint,
+            [
+                "TargetStock[p, l]",
+                "EndingInventory[p, l, t]",
+                "BelowTarget[p, l, t]",
+                "AboveTarget[p, l, t]",
+            ],
+        )
+
     if show_complete_model:
         class2_model += target_stock_constraint
     else:
@@ -765,6 +925,14 @@ def main():
             sum{p in PRODUCTS} EndingInventory[p, l, t] <= MaxCapacity[l];
             # Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
     """
+
+    def storage_capacity_constraint_exercise(ampl):
+        exercise(
+            ampl,
+            "Storage Capacity",
+            storage_capacity_constraint,
+            ["sum{p in PRODUCTS}", "EndingInventory[p, l, t]", "<=", "MaxCapacity[l]"],
+        )
 
     if show_complete_model:
         class2_model += storage_capacity_constraint
@@ -862,56 +1030,9 @@ def main():
         )
         ampl.param["MaxCapacity"] = instance.location_capacity.set_index(["Location"])
 
-    def exercise(name, constraint, needs, help=""):
-        if st.checkbox(f"Skip exercise", key=f"Skip {name}", value=True):
-            ampl.eval(constraint)
-        else:
-            constraint = constraint[constraint.find("s.t.") :]
-            constraint = constraint[: constraint.find("\n")] + "\n\t"
-            answer = st.text_input(f"Implement the {name} below").strip()
-            if answer != "" and not answer.endswith(";"):
-                answer += "\n;"
-
-            if answer != "":
-                st.code(constraint + answer)
-            else:
-                st.code(constraint + "\t... the equation above goes here ...;")
-            forbidden = ["model", "data", "include", "shell", "cd"]
-            validation_report = ""
-
-            answer_nospace = answer.replace(" ", "")
-            incomplete = False
-            for s in needs:
-                passed = s.replace(" ", "") in answer_nospace
-                if not passed:
-                    incomplete = True
-                validation_report += f"- {'✅' if passed else '❌'} uses `{s}`\n"
-            st.markdown(validation_report)
-            if help != "":
-                st.info(help)
-
-            if answer_nospace == "":
-                st.error(f"Please write the equation above.")
-            elif incomplete or any(s in answer_nospace for s in forbidden):
-                st.error(f"Please complete the equation above.")
-            else:
-                output = ampl.get_output(constraint + answer + ";")
-                if output != "":
-                    output = re.sub(
-                        r"\bfile\s*-\s*line\s+\d+\s+offset\s+\d+\b", "", output
-                    ).strip()
-                    st.error(f"❌ Syntax Error: {output}")
-                else:
-                    st.success(
-                        "Great! No syntax errors! Check the results below to confirm if it is correct!"
-                    )
-                output = ampl.get_output("write 0;")
-                if output != "" and not output.startswith("No files written"):
-                    if "Error executing " in output:
-                        output = output[output.find(":") + 1 :].strip()
-                    st.error(f"❌ Error: {output}")
-
-    if class_number == 1:
+    if show_complete_model:
+        pass
+    elif class_number == 1:
         st.markdown(
             """
             ### Exercise #1: Demand Balance Constraint
@@ -919,11 +1040,7 @@ def main():
             🧑‍🏫 Ensure that all demand is accounted for either as met or unmet.
             """
         )
-        exercise(
-            "Demand Balance Constraint",
-            demand_fulfillment,
-            ["Demand[p, l, t]", "MetDemand[p, l, t]", "UnmetDemand[p, l, t]", "="],
-        )
+        demand_fulfillment_exercise(ampl)
 
         st.markdown(
             """
@@ -932,34 +1049,7 @@ def main():
             🧑‍🏫 Define how inventory is carried over from one period to the next.
             """
         )
-        exercise(
-            "Inventory Carryover Constraint",
-            inventory_carryover,
-            [
-                "StartingInventory[p, l, t]",
-                "EndingInventory[p, l, prev(t)]",
-                "InitialInventory[p, l]",
-                "if",
-                "ord(t)",
-                "then",
-                "=",
-            ],
-            help="""
-            The set `PERIODS` is an ordered set (declared as `set PERIODS ordered;`).
-            This allows checking the order of a set element `t` with `ord(t)` (starting at 1),
-            and access the previous and following elements with `prev(t)` and `next(t)`, respectively.
-            Learn more about this in Chapter 5 of [The AMPL Book](https://ampl.com/ampl-book/).
-
-            You will also be using an `if-then-else` statement. Its syntax as follows:
-            `if <condition> then <value or expression> else <value or expression>`.
-            Learn more about this in Chapter 7 of [The AMPL Book](https://ampl.com/ampl-book/).
-
-            Note that the [The AMPL Book](https://ampl.com/ampl-book/) is a good reference to learn
-            AMPL syntax but it is not up to date in terms of how AMPL should be used in production.
-            For more modern usage examples see https://ampl.com/mo-book/ and https://ampl.com/colab/ where
-            AMPL is used integrated with Python just like in this Streamlit app.
-            """,
-        )
+        inventory_carryover_exercise(ampl)
 
         st.markdown(
             """
@@ -968,17 +1058,53 @@ def main():
             🧑‍🏫 Balance starting inventory and production against demand to determine ending inventory.
             """
         )
-        exercise(
-            "Material Balance Constraint",
-            material_balance,
-            [
-                "StartingInventory[p, l, t]",
-                "Production[p, l, t]",
-                "MetDemand[p, l, t]",
-                "EndingInventory[p, l, t]",
-                "=",
-            ],
+        material_balance_exercise(ampl)
+
+    elif class_number == 2:
+        st.markdown(
+            """
+            ### Exercise #1: Production and Production Hours
+            
+            🧑‍🏫 Ensure that the total production quantity is equal to the production hours multiplied by the production rate.
+            """
         )
+        production_rate_exercise(ampl)
+
+        st.markdown(
+            """
+            ### Exercise #2: Resource capacity
+            
+            🧑‍🏫 Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location.
+            """
+        )
+        resource_capacity_exercise(ampl)
+
+        st.markdown(
+            """
+            ### Exercise #3: Transfers
+            
+            🧑‍🏫 Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment.
+            """
+        )
+        material_balance_with_transfers_exercise(ampl)
+
+        st.markdown(
+            """
+            ### Exercise #4: Target Stocks
+            
+            🧑‍🏫 Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level.
+            """
+        )
+        target_stock_constraint_exercise(ampl)
+
+        st.markdown(
+            """
+            ### Exercise #5: Storage Capacity
+            
+            🧑‍🏫 Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location.
+            """
+        )
+        storage_capacity_constraint_exercise(ampl)
 
     st.markdown("## Solve")
 
