@@ -659,6 +659,13 @@ def main():
     """
 
     def demand_fulfillment_exercise(ampl):
+        st.markdown(
+            """
+            ### Exercise #1: Demand Balance Constraint
+            
+            🧑‍🏫 Ensure that all demand is accounted for either as met or unmet.
+            """
+        )
         exercise(
             ampl,
             "Demand Balance Constraint",
@@ -681,6 +688,13 @@ def main():
     """
 
     def inventory_carryover_exercise(ampl):
+        st.markdown(
+            """
+            ### Exercise #2: Inventory Carryover Constraint
+            
+            🧑‍🏫 Define how inventory is carried over from one period to the next.
+            """
+        )
         exercise(
             ampl,
             "Inventory Carryover Constraint",
@@ -722,6 +736,13 @@ def main():
     """
 
     def material_balance_exercise(ampl):
+        st.markdown(
+            """
+            ### Exercise #3: Material Balance Constraint
+            
+            🧑‍🏫 Balance starting inventory and production against demand to determine ending inventory.
+            """
+        )
         exercise(
             ampl,
             "Material Balance Constraint",
@@ -763,6 +784,13 @@ def main():
     """
 
     def production_rate_exercise(ampl):
+        st.markdown(
+            """
+            ### Exercise #1: Production and Production Hours
+            
+            🧑‍🏫 Ensure that the total production quantity is equal to the production hours multiplied by the production rate.
+            """
+        )
         exercise(
             ampl,
             "Production and Production Hours",
@@ -801,6 +829,13 @@ def main():
     """
 
     def resource_capacity_exercise(ampl):
+        st.markdown(
+            """
+            ### Exercise #2: Resource capacity
+            
+            🧑‍🏫 Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location.
+            """
+        )
         exercise(
             ampl,
             "Resource capacity",
@@ -845,6 +880,13 @@ def main():
     """
 
     def material_balance_with_transfers_exercise(ampl):
+        st.markdown(
+            """
+            ### Exercise #3: Transfers
+            
+            🧑‍🏫 Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment.
+            """
+        )
         exercise(
             ampl,
             "Transfers",
@@ -882,18 +924,25 @@ def main():
             # Amount below target stock
     """
 
-    target_stock_constraint = r"""
+    target_stock = r"""
         # Exercise 4:
         s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             TargetStock[p, l] == EndingInventory[p, l, t] + BelowTarget[p, l, t] - AboveTarget[p, l, t];
             # Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level
     """
 
-    def target_stock_constraint_exercise(ampl):
+    def target_stock_exercise(ampl):
+        st.markdown(
+            """
+            ### Exercise #4: Target Stocks
+            
+            🧑‍🏫 Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level.
+            """
+        )
         exercise(
             ampl,
             "Target Stocks",
-            target_stock_constraint,
+            target_stock,
             [
                 "TargetStock[p, l]",
                 "EndingInventory[p, l, t]",
@@ -903,7 +952,7 @@ def main():
         )
 
     if show_complete_model:
-        class2_model += target_stock_constraint
+        class2_model += target_stock
     else:
         class2_model += r"""
         # s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
@@ -919,23 +968,30 @@ def main():
             # Maximum storage capacity for each location and period
     """
 
-    storage_capacity_constraint = r"""
+    storage_capacity = r"""
         # Exercise 5:
         subject to StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
             sum{p in PRODUCTS} EndingInventory[p, l, t] <= MaxCapacity[l];
             # Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
     """
 
-    def storage_capacity_constraint_exercise(ampl):
+    def storage_capacity_exercise(ampl):
+        st.markdown(
+            """
+            ### Exercise #5: Storage Capacity
+            
+            🧑‍🏫 Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location.
+            """
+        )
         exercise(
             ampl,
             "Storage Capacity",
-            storage_capacity_constraint,
+            storage_capacity,
             ["sum{p in PRODUCTS}", "EndingInventory[p, l, t]", "<=", "MaxCapacity[l]"],
         )
 
     if show_complete_model:
-        class2_model += storage_capacity_constraint
+        class2_model += storage_capacity
     else:
         class2_model += r"""
         # s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
@@ -1033,78 +1089,15 @@ def main():
     if show_complete_model:
         pass
     elif class_number == 1:
-        st.markdown(
-            """
-            ### Exercise #1: Demand Balance Constraint
-            
-            🧑‍🏫 Ensure that all demand is accounted for either as met or unmet.
-            """
-        )
         demand_fulfillment_exercise(ampl)
-
-        st.markdown(
-            """
-            ### Exercise #2: Inventory Carryover Constraint
-            
-            🧑‍🏫 Define how inventory is carried over from one period to the next.
-            """
-        )
         inventory_carryover_exercise(ampl)
-
-        st.markdown(
-            """
-            ### Exercise #3: Material Balance Constraint
-            
-            🧑‍🏫 Balance starting inventory and production against demand to determine ending inventory.
-            """
-        )
         material_balance_exercise(ampl)
-
     elif class_number == 2:
-        st.markdown(
-            """
-            ### Exercise #1: Production and Production Hours
-            
-            🧑‍🏫 Ensure that the total production quantity is equal to the production hours multiplied by the production rate.
-            """
-        )
         production_rate_exercise(ampl)
-
-        st.markdown(
-            """
-            ### Exercise #2: Resource capacity
-            
-            🧑‍🏫 Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location.
-            """
-        )
         resource_capacity_exercise(ampl)
-
-        st.markdown(
-            """
-            ### Exercise #3: Transfers
-            
-            🧑‍🏫 Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment.
-            """
-        )
         material_balance_with_transfers_exercise(ampl)
-
-        st.markdown(
-            """
-            ### Exercise #4: Target Stocks
-            
-            🧑‍🏫 Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level.
-            """
-        )
-        target_stock_constraint_exercise(ampl)
-
-        st.markdown(
-            """
-            ### Exercise #5: Storage Capacity
-            
-            🧑‍🏫 Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location.
-            """
-        )
-        storage_capacity_constraint_exercise(ampl)
+        target_stock_exercise(ampl)
+        storage_capacity_exercise(ampl)
 
     st.markdown("## Solve")
 
