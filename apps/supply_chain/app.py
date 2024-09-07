@@ -1284,12 +1284,12 @@ class ModelBuilder:
     def class2_objective(self):
         return self._transform(
             r"""
-            param AboveTargetPenalty default 2;
-                # Penalty for having inventory above target
             param BelowTargetPenalty default 3;
                 # Penalty for having inventory below target
             param UnmetDemandPenalty default 10;
                 # Penalty cost per unit for unmet demand (impacts decision to meet demand)
+            param AboveTargetPenalty default 2;
+                # Penalty for having inventory above target
             param EndingInventoryPenalty default 5;
                 # Penalty cost per unit for ending inventory (reflects carrying cost)
             param TransferPenalty default 1;
@@ -1433,6 +1433,31 @@ def main():
                 max_value=50,
                 value=5,
             )
+
+        if class_number >= 2:
+            with col1:
+                ampl.param["AboveTargetPenalty"] = st.slider(
+                    "AboveTargetPenalty:",
+                    min_value=0,
+                    max_value=50,
+                    value=2,
+                )
+
+            with col2:
+                ampl.param["BelowTargetPenalty"] = st.slider(
+                    "BelowTargetPenalty:",
+                    min_value=0,
+                    max_value=50,
+                    value=3,
+                )
+
+            with col1:
+                ampl.param["TransferPenalty"] = st.slider(
+                    "TransferPenalty:",
+                    min_value=0,
+                    max_value=50,
+                    value=1,
+                )
 
     # Select the solver to use
     solver, _ = solver_selector(mp_only=True)
