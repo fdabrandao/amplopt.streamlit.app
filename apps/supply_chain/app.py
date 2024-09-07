@@ -896,7 +896,7 @@ class ModelBuilder:
             r"""
             # Exercise 2
             s.t. ProductionCapacity{l in LOCATIONS, r in RESOURCES, t in PERIODS}:
-                sum{p in PRODUCTS: (p, l) in PRODUCTS_LOCATIONS} ProductionHours[p,l,r,t] <= AvailableCapacity[r,l];
+                sum{(p, l) in PRODUCTS_LOCATIONS} ProductionHours[p,l,r,t] <= AvailableCapacity[r,l];
                 # Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location
             """
         )
@@ -926,7 +926,7 @@ class ModelBuilder:
             "Resource capacity",
             self.resource_capacity,
             [
-                "sum{p in PRODUCTS: (p, l) in PRODUCTS_LOCATIONS}",
+                "sum{(p, l) in PRODUCTS_LOCATIONS}",
                 "ProductionHours[p,l,r,t]",
                 "<=",
                 "AvailableCapacity[r,l]",
@@ -1058,7 +1058,7 @@ class ModelBuilder:
             r"""
             # Exercise 5:
             subject to StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
-                sum{p in PRODUCTS: (p, l) in PRODUCTS_LOCATIONS} EndingInventory[p, l, t] <= MaxCapacity[l];
+                sum{(p, l) in PRODUCTS_LOCATIONS} EndingInventory[p, l, t] <= MaxCapacity[l];
                 # Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
             """
         )
@@ -1088,7 +1088,7 @@ class ModelBuilder:
             "Storage Capacity",
             self.storage_capacity,
             [
-                "sum{p in PRODUCTS: (p, l) in PRODUCTS_LOCATIONS}",
+                "sum{(p, l) in PRODUCTS_LOCATIONS}",
                 "EndingInventory[p, l, t]",
                 "<=",
                 "MaxCapacity[l]",
