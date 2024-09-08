@@ -4,9 +4,17 @@ import platform
 
 def badge(url_path=""):
     if platform.system() != "Linux":
-        return ""
-    # return f"[![Hits](https://h.ampl.com/https://amplopt.streamlit.app/{url_path})](https://github.com/fdabrandao/amplopt.streamlit.app)"
-    return f"<img src='https://h.ampl.com/https://amplopt.streamlit.app/{url_path}' style='float:right;'>"
+        badge_html = ""
+    else:
+        badge_html = """<img src="https://h.ampl.com/https://amplopt.streamlit.app/{url_path}">"""
+    return f"""
+        <div style="float:right;">
+        {badge_html}
+        <a href="https://ampl.com/colab" target="_blank" style="text-decoration:none">ampl.com/colab</a>&nbsp;|&nbsp;
+        <a href="https://ampl.com/mo-book" target="_blank" style="text-decoration:none">ampl.com/mo-book</a>&nbsp;|&nbsp;
+        <a href="https://www.linkedin.com/company/ampl" target="_blank" style="text-decoration:none">Follow us on LinkedIn</a>
+        </div>
+    """
 
 
 def common_header(url_path):
