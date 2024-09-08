@@ -843,20 +843,20 @@ class ModelBuilder:
             set PERIODS ordered;  # Ordered set of time periods for planning
             
             param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
-                    # Demand for each product at each location during each time period
+                # Demand for each product at each location during each time period
             var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                    # Quantity of demand that is not met for a product at a location in a time period
+                # Quantity of demand that is not met for a product at a location in a time period
             var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                    # Quantity of demand that is met for a product at a location in a time period
+                # Quantity of demand that is met for a product at a location in a time period
 
             param InitialInventory{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
-                    # Initial inventory levels for each product at each location
+                # Initial inventory levels for each product at each location
             var StartingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                    # Inventory at the beginning of each time period
+                # Inventory at the beginning of each time period
             var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                    # Inventory at the end of each time period
+                # Inventory at the end of each time period
             var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                    # Production volume for each product at each location during each time period
+                # Production volume for each product at each location during each time period
             """
         )
 
@@ -865,14 +865,14 @@ class ModelBuilder:
             """
             s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
                 Demand[p, l, t] = MetDemand[p, l, t] + UnmetDemand[p, l, t];
-                # Ensure that all demand is accounted for either as met or unmet.
+                # Ensure that all demand is accounted for either as met or unmet
             """
         )
 
         self.demand_fulfillment_placeholder = self._transform(
             r"""
             # s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-            # ... Exercise 1: Ensure that all demand is accounted for either as met or unmet.
+            # ... Exercise 1: Ensure that all demand is accounted for either as met or unmet
             """
         )
 
@@ -905,14 +905,14 @@ class ModelBuilder:
                         EndingInventory[p, l, prev(t)]
                     else
                         InitialInventory[p, l];
-                    # Define how inventory is carried over from one period to the next.
+                # Define how inventory is carried over from one period to the next
             """
         )
 
         self.inventory_carryover_placeholder = self._transform(
             r"""
             # s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-            # ... Exercise 2: Define how inventory is carried over from one period to the next.
+            # ... Exercise 2: Define how inventory is carried over from one period to the next
             """
         )
 
@@ -964,14 +964,14 @@ class ModelBuilder:
             r"""
             s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
                 StartingInventory[p, l, t] + Production[p, l, t] - MetDemand[p, l, t] = EndingInventory[p, l, t];
-                # Balance starting inventory and production against demand to determine ending inventory.
+                # Balance starting inventory and production against demand to determine ending inventory
             """
         )
 
         self.material_balance_placeholder = self._transform(
             r"""
             # s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-            # ... Exercise 3: Balance starting inventory and production against demand to determine ending inventory.
+            # ... Exercise 3: Balance starting inventory and production against demand to determine ending inventory
             """
         )
 
@@ -1277,7 +1277,7 @@ class ModelBuilder:
             minimize TotalCost:
                 sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS}
                     (UnmetDemandPenalty * UnmetDemand[p, l, t] + EndingInventoryPenalty * EndingInventory[p, l, t]);
-                    # Objective function to minimize total costs associated with unmet demand and leftover inventory
+                # Objective function to minimize total costs associated with unmet demand and leftover inventory
             """
         )
 
