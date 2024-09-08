@@ -10,6 +10,7 @@ def badge(url_path=""):
     return f"""
         <div style="float:right;">
         {badge_html}
+        <a href="https://ampl.com/streamlit" target="_blank" style="text-decoration:none">ampl.com/streamlit</a>&nbsp;|&nbsp;
         <a href="https://ampl.com/colab" target="_blank" style="text-decoration:none">ampl.com/colab</a>&nbsp;|&nbsp;
         <a href="https://ampl.com/mo-book" target="_blank" style="text-decoration:none">ampl.com/mo-book</a>&nbsp;|&nbsp;
         <a href="https://www.linkedin.com/company/ampl" target="_blank" style="text-decoration:none">Follow us on LinkedIn</a>
