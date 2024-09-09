@@ -14,10 +14,11 @@ def main():
         "Homework 1: Demand Balance + Inventory Carryover + Material Balance",
         "Homework 2: Production Hours + Resource Capacity + Transfers + Target Stocks + Storage Capacity",
     ]
-    try:
-        default_option = max(0, int(st.query_params.get("homework", 1)) - 1)
-    except:
-        default_option = 1
+
+    if "homework" not in st.query_params:
+        st.query_params["homework"] = 2
+
+    default_option = max(0, int(st.query_params["homework"]) - 1)
 
     def update_params():
         if "homework" in st.session_state:
