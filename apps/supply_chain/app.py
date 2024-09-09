@@ -1,7 +1,6 @@
 import streamlit as st
 from amplpy import AMPL
 import os
-import re
 from ..common import solver_selector
 from .data import InputData
 from .reports import Reports
@@ -18,7 +17,7 @@ def main():
     try:
         default_option = max(0, int(st.query_params.get("homework", 1)) - 1)
     except:
-        default_option = 0
+        default_option = 1
 
     def update_params():
         if "homework" in st.session_state:
@@ -157,61 +156,61 @@ def main():
                 )
 
     # Select the solver to use
-    solver, _ = solver_selector(mp_only=True)
+    solver, _ = solver_selector(mp_only=True, default="")
+    if solver != "":
+        # Solve the problem
+        output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
+        st.write(f"```\n{output}\n```")
 
-    # Solve the problem
-    ampl.snapshot("session.run")
-    output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
-    st.write(f"```\n{output}\n```")
+        if ampl.solve_result == "solved":
+            ampl.option["display_width"] = 1000
+            model = ampl.export_model()
+            model = model[: model.find("###model-end")] + "###model-end"
 
-    ampl.option["display_width"] = 1000
-    model = ampl.export_model()
-    model = model[: model.find("###model-end")] + "###model-end"
+            st.markdown(
+                "Download the model, data, or a complete session snapshot to run elsewhere 👇"
+            )
 
-    st.markdown(
-        "Download the model, data, or a complete session snapshot to run elsewhere 👇"
-    )
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.download_button(
+                    label="📥 Download Model",
+                    data=model,
+                    file_name="prodopt.mod",
+                    mime="text/plain",
+                    use_container_width=True,
+                )
+            with col2:
+                st.download_button(
+                    label="📥 Download Data",
+                    data=ampl.export_data(),
+                    file_name="prodopt.dat",
+                    mime="text/plain",
+                    use_container_width=True,
+                )
+            with col3:
+                st.download_button(
+                    label="📥 Download Snapshot",
+                    help="Download a run file that allows reproducing the session state elsewhere",
+                    data=ampl.snapshot(),
+                    file_name="session.run",
+                    mime="text/plain",
+                    use_container_width=True,
+                )
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.download_button(
-            label="📥 Download Model",
-            data=model,
-            file_name="prodopt.mod",
-            mime="text/plain",
-            use_container_width=True,
-        )
-    with col2:
-        st.download_button(
-            label="📥 Download Data",
-            data=ampl.export_data(),
-            file_name="prodopt.dat",
-            mime="text/plain",
-            use_container_width=True,
-        )
-    with col3:
-        st.download_button(
-            label="📥 Download Snapshot",
-            help="Download a run file that allows reproducing the session state elsewhere",
-            data=ampl.snapshot(),
-            file_name="session.run",
-            mime="text/plain",
-            use_container_width=True,
-        )
+            # Reports
+            st.markdown("## Reports")
+            reports = Reports(instance, ampl)
 
-    # Reports
-    st.markdown("## Reports")
-    reports = Reports(instance, ampl)
+            st.markdown("### Demand Report")
+            reports.demand_report()
 
-    st.markdown("### Demand Report")
-    reports.demand_report()
+            st.markdown("### Material Balance Report")
+            reports.material_balance_report()
 
-    st.markdown("### Material Balance Report")
-    reports.material_balance_report()
-
-    if class_number >= 2:
-        st.markdown("### Resource Utilization Report")
-        reports.resource_utilization_report()
+            if class_number >= 2:
+                st.markdown("### Resource Utilization Report")
+                reports.resource_utilization_report()
 
     st.markdown(
         """#### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/supply_chain)]"""

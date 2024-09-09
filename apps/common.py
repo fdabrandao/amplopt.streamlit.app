@@ -23,6 +23,8 @@ def solver_selector(mp_only=True, default=None, solvers=None):
     assert mp_only == True
     if solvers is None:
         solvers = MP_SOLVERS
+    if default == "":
+        solvers = [""] + solvers
     index = 0
     if default is not None:
         assert default in solvers

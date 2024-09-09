@@ -135,7 +135,7 @@ class Reports:
                 ax.text(
                     bar.get_x() + bar.get_width() / 2,
                     bar.get_height() / 2,
-                    f"{yval}",
+                    f"{yval:.1f}",
                     ha="center",
                     va="center",
                     color="white",
@@ -148,7 +148,7 @@ class Reports:
                     ax.text(
                         bar.get_x() + bar.get_width() / 2,
                         bar.get_height() + bar.get_y() - yval / 2,
-                        f"{yval}",
+                        f"{yval:.1f}",
                         ha="center",
                         va="center",
                         color="white",
