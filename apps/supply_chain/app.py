@@ -44,12 +44,6 @@ def main():
         class_number,
     )
 
-    with st.expander("Dimensions"):
-        instance.filter_dimensions()
-
-    with st.expander("Data"):
-        instance.edit_data()
-
     st.markdown("## Production Optimization")
 
     col1, col2 = st.columns(2)
@@ -65,6 +59,30 @@ def main():
 
     st.code(model)
 
+    ampl = AMPL()
+    ampl.eval(model)
+
+    if show_complete_model:
+        pass
+    elif class_number == 1:
+        mb.demand_fulfillment_exercise(ampl)
+        mb.inventory_carryover_exercise(ampl)
+        mb.material_balance_exercise(ampl)
+    elif class_number == 2:
+        mb.production_rate_exercise(ampl)
+        mb.resource_capacity_exercise(ampl)
+        mb.material_balance_with_transfers_exercise(ampl)
+        mb.target_stock_exercise(ampl)
+        mb.storage_capacity_exercise(ampl)
+
+    st.markdown("## Solve")
+
+    with st.expander("Dimensions"):
+        instance.filter_dimensions()
+
+    with st.expander("Data"):
+        instance.edit_data()
+
     demand = instance.demand[["Product", "Location", "Period", "Quantity"]].copy()
     starting_inventory = instance.starting_inventory[
         ["Product", "Location", "Quantity"]
@@ -74,8 +92,6 @@ def main():
     demand.set_index(["Product", "Location", "Period"], inplace=True)
     starting_inventory.set_index(["Product", "Location"], inplace=True)
 
-    ampl = AMPL()
-    ampl.eval(model)
     ampl.set["PRODUCTS"] = instance.selected_products
     ampl.set["LOCATIONS"] = instance.selected_locations
     ampl.set["PRODUCTS_LOCATIONS"] = instance.products_locations
@@ -97,21 +113,6 @@ def main():
             ["Product", "Location"]
         )
         ampl.param["MaxCapacity"] = instance.location_capacity.set_index(["Location"])
-
-    if show_complete_model:
-        pass
-    elif class_number == 1:
-        mb.demand_fulfillment_exercise(ampl)
-        mb.inventory_carryover_exercise(ampl)
-        mb.material_balance_exercise(ampl)
-    elif class_number == 2:
-        mb.production_rate_exercise(ampl)
-        mb.resource_capacity_exercise(ampl)
-        mb.material_balance_with_transfers_exercise(ampl)
-        mb.target_stock_exercise(ampl)
-        mb.storage_capacity_exercise(ampl)
-
-    st.markdown("## Solve")
 
     with st.expander("Adjust objective penalties"):
         col1, col2 = st.columns(2)
@@ -157,7 +158,7 @@ def main():
                 )
 
     # Select the solver to use
-    solver, _ = solver_selector(mp_only=True, default="")
+    solver, _ = solver_selector(mp_only=True)
     if solver != "":
         # Solve the problem
         output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)

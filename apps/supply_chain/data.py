@@ -100,22 +100,27 @@ class InputData:
         if self.class_number <= 3:
             return
 
+    @property
+    def products_locations(self):
+        return self._products_locations
+
+    @products_locations.setter
+    def products_locations(self, value):
+        if not isinstance(value, list):
+            raise ValueError("products_locations must be a list")
+        self._products_locations = value
+        self.products_at = defaultdict(lambda: [])
+        self.locations_with = defaultdict(lambda: [])
+        for product, location in self._products_locations:
+            self.products_at[location].append(product)
+            self.locations_with[product].append(location)
+
     def _filter_dimensions_class1(self):
         cols = st.columns(3)
         with cols[0]:
             self.selected_products = st.multiselect(
                 "Products:", self.all_products, default=self.all_products
             )
-            # Filter products
-            self.demand = self.demand[
-                self.demand["Product"].isin(self.selected_products)
-            ]
-            self.starting_inventory = self.starting_inventory[
-                self.starting_inventory["Product"].isin(self.selected_products)
-            ]
-            self.production_rate = self.production_rate[
-                self.production_rate["Product"].isin(self.selected_products)
-            ]
         with cols[1]:
             self.selected_components = st.multiselect(
                 "Components:", self.all_components, default=self.all_components
@@ -125,22 +130,20 @@ class InputData:
             self.selected_locations = st.multiselect(
                 "Locations:", self.all_locations, default=self.all_locations
             )
-            # Filter locations
-            self.demand = self.demand[
-                self.demand["Location"].isin(self.selected_locations)
-            ]
-            self.starting_inventory = self.starting_inventory[
-                self.starting_inventory["Location"].isin(self.selected_locations)
-            ]
-            self.production_rate = self.production_rate[
-                self.production_rate["Location"].isin(self.selected_locations)
-            ]
-            self.available_capacity = self.available_capacity[
-                self.available_capacity["Location"].isin(self.selected_locations)
-            ]
-            self.transportation_costs = self.transportation_costs[
-                self.transportation_costs["ToLocation"].isin(self.selected_locations)
-            ]
+
+        mask = self.demand.apply(
+            lambda row: row["Product"] in self.selected_products
+            and row["Location"] in self.selected_locations,
+            axis=1,
+        )
+        self.demand = self.demand[mask]
+
+        mask = self.starting_inventory.apply(
+            lambda row: row["Product"] in self.selected_products
+            and row["Location"] in self.selected_locations,
+            axis=1,
+        )
+        self.starting_inventory = self.starting_inventory[mask]
 
         self.selected_customers = st.multiselect(
             "Customers:", self.all_customers, default=self.all_customers
@@ -179,19 +182,8 @@ class InputData:
                         self.starting_inventory["Location"],
                     )
                 )
-                | set(
-                    zip(
-                        self.production_rate["Product"],
-                        self.production_rate["Location"],
-                    )
-                )
             )
         )
-        self.products_at = defaultdict(lambda: [])
-        self.locations_with = defaultdict(lambda: [])
-        for product, location in self.products_locations:
-            self.products_at[location].append(product)
-            self.locations_with[product].append(location)
 
     def _edit_data_class1(self):
         st.write("Demand:")
@@ -220,13 +212,25 @@ class InputData:
             for location in self.resources_at
             for resource in self.resources_at[location]
         ]
-        self.production_rate = self.production_rate[
-            self.production_rate.apply(
-                lambda row: (row["Resource"], row["Location"])
-                in self.resource_location_pairs,
-                axis=1,
+
+        mask = self.production_rate.apply(
+            lambda row: (row["Resource"], row["Location"])
+            in self.resource_location_pairs
+            and row["Product"] in self.selected_products,
+            axis=1,
+        )
+        self.production_rate = self.production_rate[mask]
+
+        # Expand products_locations
+        self.products_locations = list(
+            set(self.products_locations)
+            | set(
+                zip(
+                    self.production_rate["Product"],
+                    self.production_rate["Location"],
+                )
             )
-        ]
+        )
 
         mask = self.available_capacity.apply(
             lambda row: (row["Resource"], row["Location"])
@@ -242,6 +246,17 @@ class InputData:
             axis=1,
         )
         self.transfer_lanes = self.transfer_lanes[mask]
+
+        mask = self.target_stocks.apply(
+            lambda row: row["Product"] in self.selected_products
+            and row["Location"] in self.selected_locations,
+            axis=1,
+        )
+        self.target_stocks = self.target_stocks[mask]
+
+        self.location_capacity = self.location_capacity[
+            self.location_capacity["Location"].isin(self.selected_locations)
+        ]
 
     def _edit_data_class2(self):
         st.write("ProductionRate:")
@@ -274,6 +289,9 @@ class InputData:
 
         st.write("TargetStock:")
         self.target_stocks = data_editor(self.target_stocks, ["TargetStock"])
+
+        st.write("MaxCapacity:")
+        self.location_capacity = data_editor(self.location_capacity, ["MaxCapacity"])
 
     def _filter_dimensions_class3(self):
         pass
