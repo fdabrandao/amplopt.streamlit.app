@@ -39,10 +39,11 @@ def main():
         + 1
     )
 
-    instance = InputData(
+    st.session_state.instance = InputData(
         os.path.join(os.path.dirname(__file__), "InputDataProductionSolver.xlsx"),
         class_number,
     )
+    instance = st.session_state.instance
 
     st.markdown("## Production Optimization")
 
