@@ -55,13 +55,15 @@ def main():
     with col2:
         show_complete_model = st.checkbox("Show complete model", value=False)
 
-    mb = ModelBuilder(class_number, use_restrict_table, show_complete_model)
-    model = mb.model
+    st.session_state.mb = ModelBuilder(
+        class_number, use_restrict_table, show_complete_model
+    )
+    mb = st.session_state.mb
 
-    st.code(model)
+    st.code(mb.model)
 
     ampl = AMPL()
-    ampl.eval(model)
+    ampl.eval(mb.model)
 
     if show_complete_model:
         pass
