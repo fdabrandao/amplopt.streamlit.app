@@ -315,14 +315,31 @@ class Reports:
         else:
             st.dataframe(resource_df, hide_index=True)
 
-    def material_balance_report(self):
-        material_df = self.ampl.get_data(
-            "StartingInventory", "MetDemand", "Production", "EndingInventory"
-        ).to_pandas()
+    def material_balance_report(self, include_target_stock=False):
+        columns = [
+            "StartingInventory",
+            "MetDemand",
+            "Production",
+            "EndingInventory",
+        ]
+        material_df = self.ampl.get_data(*columns).to_pandas()
         material_df.reset_index(inplace=True)
         material_df.columns = ["Product", "Location", "Period"] + list(
             material_df.columns[3:]
         )
+        if include_target_stock:
+            columns = columns + ["TargetStock"]
+            target_stock = self.ampl.get_data(
+                "{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} TargetStock[p, l]"
+            ).to_dict()
+            material_df["TargetStock"] = [
+                target_stock.get((p, l, t), 0)
+                for p, l, t in zip(
+                    material_df["Product"],
+                    material_df["Location"],
+                    material_df["Period"],
+                )
+            ]
 
         view = st.selectbox(
             "Material Balance Report",
@@ -335,12 +352,6 @@ class Reports:
         )
 
         def material_balance(df, label):
-            columns = [
-                "StartingInventory",
-                "MetDemand",
-                "Production",
-                "EndingInventory",
-            ]
             pivot_table = pd.pivot_table(
                 df,
                 index="Period",  # Use 'Period' as the index
@@ -365,6 +376,14 @@ class Reports:
                 label="EndingInventory",
                 marker="o",
             )
+
+            if include_target_stock:
+                ax.plot(
+                    df.columns,
+                    df.loc["TargetStock", :],
+                    label="TargetStock",
+                    marker="o",
+                )
 
             # Adding labels and title
             ax.set_ylabel("Units")
