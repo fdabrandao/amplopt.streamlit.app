@@ -68,15 +68,83 @@ def main():
     if show_complete_model:
         pass
     elif class_number == 1:
-        mb.demand_fulfillment_exercise(ampl)
-        mb.inventory_carryover_exercise(ampl)
-        mb.material_balance_exercise(ampl)
+        st.markdown("## 🧑‍🏫 Exercises")
+        exercises = [
+            "",
+            "All",
+            "Exercise #1: Demand Balance",
+            "Exercise #2: Inventory Carryover",
+            "Exercise #3: Material Balance",
+        ]
+        selected_exercise = (
+            exercises.index(
+                st.selectbox(
+                    "Select the exercise(s) you want to complete 👇",
+                    exercises,
+                    key="exercise",
+                    index=0,
+                )
+            )
+            - 1
+        )
+        skip = selected_exercise == -1
+        mb.demand_fulfillment_exercise(
+            ampl, allow_skipping=selected_exercise != 1, skip=skip
+        )
+        mb.inventory_carryover_exercise(
+            ampl, allow_skipping=selected_exercise != 2, skip=skip
+        )
+        mb.material_balance_exercise(
+            ampl, allow_skipping=selected_exercise != 3, skip=skip
+        )
     elif class_number == 2:
-        mb.production_rate_exercise(ampl)
-        mb.resource_capacity_exercise(ampl)
-        mb.material_balance_with_transfers_exercise(ampl)
-        mb.target_stock_exercise(ampl)
-        mb.storage_capacity_exercise(ampl)
+        st.markdown("## 🧑‍🏫 Exercises")
+        exercises = [
+            "",
+            "All",
+            "Exercise #1: Production Hours",
+            "Exercise #2: Resource Capacity",
+            "Exercise #3: Transfers",
+            "Exercise #4: Target Stocks",
+            "Exercise #5: Storage Capacity",
+        ]
+        selected_exercise = (
+            exercises.index(
+                st.selectbox(
+                    "Select the exercise(s) you want to complete 👇",
+                    exercises,
+                    key="exercise",
+                    index=0,
+                )
+            )
+            - 1
+        )
+        skip = selected_exercise == -1
+        mb.production_rate_exercise(
+            ampl,
+            allow_skipping=selected_exercise != 1,
+            skip=skip,
+        )
+        mb.resource_capacity_exercise(
+            ampl,
+            allow_skipping=selected_exercise != 2,
+            skip=skip,
+        )
+        mb.material_balance_with_transfers_exercise(
+            ampl,
+            allow_skipping=selected_exercise != 3,
+            skip=skip,
+        )
+        mb.target_stock_exercise(
+            ampl,
+            allow_skipping=selected_exercise != 4,
+            skip=skip,
+        )
+        mb.storage_capacity_exercise(
+            ampl,
+            allow_skipping=selected_exercise != 5,
+            skip=skip,
+        )
 
     st.markdown("## Solve")
 
