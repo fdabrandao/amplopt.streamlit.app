@@ -3,7 +3,10 @@ import re
 
 
 class ModelBuilder:
-    def __init__(self, class_number, use_restrict_table, show_complete_model):
+    def __init__(
+        self, class_number, use_restrict_table, show_complete_model, on_change=None
+    ):
+        self.on_change = on_change
         self.class_number = class_number
         self.use_restrict_table = use_restrict_table
         self.show_complete_model = show_complete_model
@@ -110,13 +113,21 @@ class ModelBuilder:
     ):
         if skip or (
             allow_skipping
-            and st.checkbox(f"Skip exercise", key=f"Skip {name}", value=True)
+            and st.checkbox(
+                f"Skip exercise",
+                key=f"Skip {name}",
+                value=True,
+                on_change=self.on_change,
+            )
         ):
             ampl.eval(constraint)
         else:
             constraint = constraint[constraint.find("s.t.") :]
             constraint = constraint[: constraint.find("\n")] + "\n\t"
-            answer = st.text_input(f"Implement the {name} below").strip()
+            answer = st.text_input(
+                f"Implement the {name} below",
+                on_change=self.on_change,
+            ).strip()
             if answer != "" and not answer.endswith(";"):
                 answer += "\n;"
 

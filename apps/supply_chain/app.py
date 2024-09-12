@@ -10,6 +10,9 @@ from .model import ModelBuilder
 def main():
     st.title("📦 Supply Chain Optimization")
 
+    def require_rerun():
+        st.session_state["needs_rerun"] = True
+
     options = [
         "Homework 1: Demand Balance + Inventory Carryover + Material Balance",
         "Homework 2: Production Hours + Resource Capacity + Transfers + Target Stocks + Storage Capacity",
@@ -42,6 +45,7 @@ def main():
     st.session_state.instance = InputData(
         os.path.join(os.path.dirname(__file__), "InputDataProductionSolver.xlsx"),
         class_number,
+        on_change=require_rerun,
     )
     instance = st.session_state.instance
 
@@ -56,7 +60,10 @@ def main():
         show_complete_model = st.checkbox("Show complete model", value=False)
 
     st.session_state.mb = ModelBuilder(
-        class_number, use_restrict_table, show_complete_model
+        class_number,
+        use_restrict_table,
+        show_complete_model,
+        on_change=require_rerun,
     )
     mb = st.session_state.mb
 
@@ -83,6 +90,7 @@ def main():
                     exercises,
                     key="exercise",
                     index=0,
+                    on_change=require_rerun,
                 )
             )
             - 1
@@ -108,6 +116,7 @@ def main():
                     exercises,
                     key="exercise",
                     index=0,
+                    on_change=require_rerun,
                 )
             )
             - 1
@@ -167,6 +176,7 @@ def main():
                 min_value=0,
                 max_value=50,
                 value=10,
+                on_change=require_rerun,
             )
 
         with col2:
@@ -175,6 +185,7 @@ def main():
                 min_value=0,
                 max_value=50,
                 value=5,
+                on_change=require_rerun,
             )
 
         if class_number >= 2:
@@ -184,6 +195,7 @@ def main():
                     min_value=0,
                     max_value=50,
                     value=2,
+                    on_change=require_rerun,
                 )
 
             with col2:
@@ -192,6 +204,7 @@ def main():
                     min_value=0,
                     max_value=50,
                     value=3,
+                    on_change=require_rerun,
                 )
 
             with col1:
@@ -200,11 +213,15 @@ def main():
                     min_value=0,
                     max_value=50,
                     value=1,
+                    on_change=require_rerun,
                 )
 
-    # Select the solver to use
-    solver, _ = solver_selector(mp_only=True)
-    if solver != "":
+    if not st.session_state.get("needs_rerun", False) or st.button(
+        "Re-run to update the results"
+    ):
+        st.session_state["needs_rerun"] = False
+        # Select the solver to use
+        solver, _ = solver_selector(mp_only=True)
         # Solve the problem
         output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
         st.write(f"```\n{output}\n```")
