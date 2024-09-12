@@ -65,11 +65,6 @@ def main():
     ampl = AMPL()
     ampl.eval(mb.model)
 
-    def skip_flag(selected_exercise, exercise_number):
-        if selected_exercise == 0:
-            return False
-        return selected_exercise == -1 or selected_exercise != exercise_number
-
     if show_complete_model:
         pass
     elif class_number == 1:
@@ -92,21 +87,9 @@ def main():
             )
             - 1
         )
-        mb.demand_fulfillment_exercise(
-            ampl,
-            allow_skipping=selected_exercise != 1,
-            skip=skip_flag(selected_exercise, 1),
-        )
-        mb.inventory_carryover_exercise(
-            ampl,
-            allow_skipping=selected_exercise != 2,
-            skip=skip_flag(selected_exercise, 2),
-        )
-        mb.material_balance_exercise(
-            ampl,
-            allow_skipping=selected_exercise != 3,
-            skip=skip_flag(selected_exercise, 3),
-        )
+        mb.demand_fulfillment_exercise(ampl, selected_exercise=selected_exercise)
+        mb.inventory_carryover_exercise(ampl, selected_exercise=selected_exercise)
+        mb.material_balance_exercise(ampl, selected_exercise=selected_exercise)
     elif class_number == 2:
         st.markdown("## 🧑‍🏫 Exercises")
         exercises = [
@@ -129,31 +112,13 @@ def main():
             )
             - 1
         )
-        mb.production_rate_exercise(
-            ampl,
-            allow_skipping=selected_exercise != 1,
-            skip=skip_flag(selected_exercise, 1),
-        )
-        mb.resource_capacity_exercise(
-            ampl,
-            allow_skipping=selected_exercise != 2,
-            skip=skip_flag(selected_exercise, 2),
-        )
+        mb.production_rate_exercise(ampl, selected_exercise=selected_exercise)
+        mb.resource_capacity_exercise(ampl, selected_exercise=selected_exercise)
         mb.material_balance_with_transfers_exercise(
-            ampl,
-            allow_skipping=selected_exercise != 3,
-            skip=skip_flag(selected_exercise, 3),
+            ampl, selected_exercise=selected_exercise
         )
-        mb.target_stock_exercise(
-            ampl,
-            allow_skipping=selected_exercise != 4,
-            skip=skip_flag(selected_exercise, 4),
-        )
-        mb.storage_capacity_exercise(
-            ampl,
-            allow_skipping=selected_exercise != 5,
-            skip=skip_flag(selected_exercise, 5),
-        )
+        mb.target_stock_exercise(ampl, selected_exercise=selected_exercise)
+        mb.storage_capacity_exercise(ampl, selected_exercise=selected_exercise)
 
     st.markdown("## Solve")
 

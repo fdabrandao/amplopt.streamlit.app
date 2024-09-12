@@ -206,7 +206,15 @@ class ModelBuilder:
         else:
             return self.demand_fulfillment_placeholder
 
-    def demand_fulfillment_exercise(self, ampl, allow_skipping=True, skip=False):
+    def _skip_flag(self, selected_exercise, exercise_number):
+        allow_skipping = selected_exercise != exercise_number
+        skip = selected_exercise != 0 and (
+            selected_exercise == -1 or selected_exercise != exercise_number
+        )
+        return allow_skipping, skip
+
+    def demand_fulfillment_exercise(self, ampl, selected_exercise):
+        allow_skipping, skip = self._skip_flag(selected_exercise, 1)
         if not skip:
             st.markdown(
                 """
@@ -249,7 +257,8 @@ class ModelBuilder:
         else:
             return self.inventory_carryover_placeholder
 
-    def inventory_carryover_exercise(self, ampl, allow_skipping=True, skip=False):
+    def inventory_carryover_exercise(self, ampl, selected_exercise):
+        allow_skipping, skip = self._skip_flag(selected_exercise, 2)
         if not skip:
             st.markdown(
                 """
@@ -311,7 +320,8 @@ class ModelBuilder:
         else:
             return self.material_balance_placeholder
 
-    def material_balance_exercise(self, ampl, allow_skipping=True, skip=False):
+    def material_balance_exercise(self, ampl, selected_exercise):
+        allow_skipping, skip = self._skip_flag(selected_exercise, 3)
         if not skip:
             st.markdown(
                 """
@@ -368,7 +378,8 @@ class ModelBuilder:
         else:
             return header + self.production_rate_placeholder
 
-    def production_rate_exercise(self, ampl, allow_skipping=True, skip=False):
+    def production_rate_exercise(self, ampl, selected_exercise):
+        allow_skipping, skip = self._skip_flag(selected_exercise, 1)
         if not skip:
             st.markdown(
                 """
@@ -421,7 +432,8 @@ class ModelBuilder:
         else:
             return header + self.resource_capacity_placeholder
 
-    def resource_capacity_exercise(self, ampl, allow_skipping=True, skip=False):
+    def resource_capacity_exercise(self, ampl, selected_exercise):
+        allow_skipping, skip = self._skip_flag(selected_exercise, 2)
         if not skip:
             st.markdown(
                 """
@@ -480,9 +492,8 @@ class ModelBuilder:
         else:
             return header + self.material_balance_with_transfers_placeholder
 
-    def material_balance_with_transfers_exercise(
-        self, ampl, allow_skipping=True, skip=False
-    ):
+    def material_balance_with_transfers_exercise(self, ampl, selected_exercise):
+        allow_skipping, skip = self._skip_flag(selected_exercise, 3)
         if not skip:
             st.markdown(
                 """
@@ -542,7 +553,8 @@ class ModelBuilder:
         else:
             return header + self.target_stock_placeholder
 
-    def target_stock_exercise(self, ampl, allow_skipping=True, skip=False):
+    def target_stock_exercise(self, ampl, selected_exercise):
+        allow_skipping, skip = self._skip_flag(selected_exercise, 4)
         if not skip:
             st.markdown(
                 """
@@ -594,7 +606,8 @@ class ModelBuilder:
         else:
             return header + self.storage_capacity_placeholder
 
-    def storage_capacity_exercise(self, ampl, allow_skipping=True, skip=False):
+    def storage_capacity_exercise(self, ampl, selected_exercise):
+        allow_skipping, skip = self._skip_flag(selected_exercise, 5)
         if not skip:
             st.markdown(
                 """
