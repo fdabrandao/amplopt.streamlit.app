@@ -217,7 +217,7 @@ def main():
                 )
 
     if not st.session_state.get("needs_rerun", False) or st.button(
-        "Re-run to update the results"
+        "Rerun to update the results"
     ):
         st.session_state["needs_rerun"] = False
         # Select the solver to use
