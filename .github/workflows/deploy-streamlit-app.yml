@@ -18,6 +18,7 @@ jobs:
 
     # Step 2: Authenticate GCP
     - name: Authenticate GCP
+      id: gcp-auth
       uses: google-github-actions/auth@v2
       with:
         credentials_json: '${{ secrets.GCP_SA_KEY }}' # GCP service account JSON key
@@ -28,6 +29,14 @@ jobs:
       #with:
       #  version: 'latest'
       #  project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Docker Auth
+      id: docker-auth
+      uses: 'docker/login-action@v1'
+      with:
+        username: 'oauth2accesstoken'
+        password: '${{ steps.gcp-auth.outputs.access_token }}'
+        registry: '${{ secrets.GCP_REGION }}-docker.pkg.dev'
 
     # Step 4: Configure Docker to use Artifact Registry
     - name: Authenticate Docker to Artifact Registry
@@ -42,7 +51,7 @@ jobs:
     # Step 6: Push Docker image to Google Artifact Registry
     - name: Push Docker image to Artifact Registry
       run: |
-        gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://${{ secrets.GCP_REGION }}-docker.pkg.dev
+        # gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://${{ secrets.GCP_REGION }}-docker.pkg.dev
         docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_PROJECT_REPO }}/streamlit-app:$GITHUB_SHA
 
     # Step 7: Deploy to Cloud Run using the Artifact Registry image
