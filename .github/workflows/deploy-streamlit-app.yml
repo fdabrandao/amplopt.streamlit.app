@@ -53,7 +53,7 @@ jobs:
     - name: Push Docker image to Artifact Registry
       run: |
         # gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://${{ secrets.GCP_REGION }}-docker.pkg.dev
-        docker push us-central1-docker.pkg.dev/streamlit-app-434012/streamlit-app:$GITHUB_SHA
+        docker push us-central1-docker.pkg.dev/streamlit-app-434012/streamlit-app/streamlit-app:$GITHUB_SHA
         #docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/streamlit-app/streamlit-app:$GITHUB_SHA
 
     # Step 7: Deploy to Cloud Run using the Artifact Registry image
