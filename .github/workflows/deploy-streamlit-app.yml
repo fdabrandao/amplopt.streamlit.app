@@ -22,6 +22,7 @@ jobs:
       uses: google-github-actions/auth@v2
       with:
         credentials_json: '${{ secrets.GCP_SA_KEY }}' # GCP service account JSON key
+        token_format: 'access_token'
 
     # Step 3: Set up Google Cloud SDK
     - name: Set up Cloud SDK
