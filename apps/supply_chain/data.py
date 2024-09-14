@@ -3,6 +3,14 @@ import pandas as pd
 from collections import defaultdict
 
 
+@st.cache_data
+def read_excel(xlsx_fname):
+    return pd.read_excel(
+        xlsx_fname,
+        sheet_name=None,
+    )
+
+
 class InputData:
     DEMAND_COLUMNS = ["Product", "Location", "Period", "Quantity", "DemandType"]
     STARTING_INVENTORY_COLUMNS = ["Product", "Location", "Quantity"]
@@ -20,10 +28,7 @@ class InputData:
     def __init__(self, xlsx_fname, class_number, on_change=None):
         self.on_change = on_change
         self.class_number = class_number
-        self.dfs = pd.read_excel(
-            xlsx_fname,
-            sheet_name=None,
-        )
+        self.dfs = read_excel(xlsx_fname)
         self.dfs["Demand"]["Period"] = pd.to_datetime(self.dfs["Demand"]["Period"])
 
         def load_sheet(name, columns):
