@@ -18,7 +18,7 @@ jobs:
     steps:
     # Step 1: Checkout the repository
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     # Step 2: Authenticate GCP
     - name: Authenticate GCP
@@ -48,7 +48,7 @@ jobs:
     # Step 7: Deploy to Cloud Run using the Artifact Registry image
     - name: Deploy to Cloud Run
       run: |
-        gcloud run deploy streamlit-app-testing \
+        gcloud run deploy streamlit-app \
           --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/$REPOSITORY/$IMAGE:$GITHUB_SHA \
           --platform managed \
           --region ${{ secrets.GCP_REGION }} \
