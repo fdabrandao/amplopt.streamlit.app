@@ -1,13 +1,13 @@
 # AMPL Streamlit Apps
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/fdabrandao/amplopt.streamlit.app/)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/fdabrandao/amplopt.streamlit.app/) [![Deploy Streamlit App to Cloud Run](https://github.com/fdabrandao/amplopt.streamlit.app/actions/workflows/deploy-streamlit-app.yml/badge.svg)](https://github.com/fdabrandao/amplopt.streamlit.app/actions/workflows/deploy-streamlit-app.yml)
 
 [AMPL](https://ampl.com) is the most powerful and intuitive tool for developing and deploying
 complex optimization solutions in business & scientific applications.
 AMPL connects to most open-source and commercial solvers and allows you to switch easily between them.
 
 AMPL has APIs for several popular programming languages
-(e.g., [Python](https://amplpy.readthedocs.io/), [R](https://rampl.readthedocs.io/), etc.)
+(e.g., [Python](https://amplpy.ampl.com/), [R](https://rampl.ampl.com/), etc.)
 and it allows you to only model once in AMPL and interact with it using an API for a language 
 you are familiar with.
 
@@ -36,7 +36,7 @@ from amplpy import AMPL
 ampl = AMPL()
 ```
 
-- Python API (`amplpy`) documentation: https://amplpy.readthedocs.io/
+- Python API (`amplpy`) documentation: https://amplpy.ampl.com/
 - Python modules documentation: https://dev.ampl.com/ampl/python/
 - AMPL on Streamlit documentation: https://dev.ampl.com/ampl/python/streamlit.html
 
