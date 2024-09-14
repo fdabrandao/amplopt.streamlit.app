@@ -17,16 +17,16 @@ jobs:
       uses: actions/checkout@v3
 
     # Step 2: Set up Google Cloud SDK
+    - name: Authenticate GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}' # GCP service account JSON key
+
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
       with:
         version: 'latest'
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-    - name: Authenticate
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: '${{ secrets.GCP_SA_KEY }}' # GCP service account JSON key
 
     # Step 3: Configure Docker to use Artifact Registry
     - name: Authenticate Docker to Artifact Registry
