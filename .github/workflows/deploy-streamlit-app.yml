@@ -47,13 +47,13 @@ jobs:
     # Step 5: Build Docker Image for Streamlit app
     - name: Build Docker image
       run: |
-        docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_PROJECT_REPO }}/streamlit-app:$GITHUB_SHA .
+        docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/streamlit-app/streamlit-app:$GITHUB_SHA .
 
     # Step 6: Push Docker image to Google Artifact Registry
     - name: Push Docker image to Artifact Registry
       run: |
         # gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://${{ secrets.GCP_REGION }}-docker.pkg.dev
-        docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_PROJECT_REPO }}/streamlit-app:$GITHUB_SHA
+        docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/streamlit-app/streamlit-app:$GITHUB_SHA
 
     # Step 7: Deploy to Cloud Run using the Artifact Registry image
     #- name: Deploy to Cloud Run
