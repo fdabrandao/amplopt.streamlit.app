@@ -1,0 +1,49 @@
+name: Deploy Streamlit App to Cloud Run
+
+on:
+  push:
+    branches:
+      - master  # Triggers the action on push to the master branch
+  workflow_dispatch:  # Allows manual triggering of the workflow from GitHub Actions
+
+jobs:
+  deploy:
+    name: Deploy Streamlit to Cloud Run using Artifact Registry
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the repository
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Set up Google Cloud SDK
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        version: 'latest'
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}  # GCP service account JSON key
+
+    # Step 3: Configure Docker to use Artifact Registry
+    - name: Authenticate Docker to Artifact Registry
+      run: |
+        gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+
+    # Step 4: Build Docker Image for Streamlit app
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_PROJECT_REPO }}/streamlit-app:$GITHUB_SHA .
+
+    # Step 5: Push Docker image to Google Artifact Registry
+    - name: Push Docker image to Artifact Registry
+      run: |
+        docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_PROJECT_REPO }}/streamlit-app:$GITHUB_SHA
+
+    # Step 6: Deploy to Cloud Run using the Artifact Registry image
+    - name: Deploy to Cloud Run
+      run: |
+        gcloud run deploy streamlit-app \
+          --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_PROJECT_REPO }}/streamlit-app:$GITHUB_SHA \
+          --platform managed \
+          --region ${{ secrets.GCP_REGION }} \
+          --allow-unauthenticated
