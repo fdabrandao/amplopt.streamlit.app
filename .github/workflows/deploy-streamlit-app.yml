@@ -35,18 +35,18 @@ jobs:
       #  version: 'latest'
       #  project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-    - name: Docker Auth
-      id: docker-auth
-      uses: 'docker/login-action@v1'
-      with:
-        username: 'oauth2accesstoken'
-        password: '${{ steps.gcp-auth.outputs.access_token }}'
-        registry: '${{ secrets.GCP_REGION }}-docker.pkg.dev'
+    #- name: Docker Auth
+    #  id: docker-auth
+    #  uses: 'docker/login-action@v1'
+    #  with:
+    #    username: 'oauth2accesstoken'
+    #    password: '${{ steps.gcp-auth.outputs.access_token }}'
+    #    registry: '${{ secrets.GCP_REGION }}-docker.pkg.dev'
 
     # Step 4: Configure Docker to use Artifact Registry
-    #- name: Authenticate Docker to Artifact Registry
-    #  run: |
-    #    gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+    - name: Authenticate Docker to Artifact Registry
+      run: |
+        gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
 
     # Step 5: Build Docker Image for Streamlit app
     - name: Build Docker image
