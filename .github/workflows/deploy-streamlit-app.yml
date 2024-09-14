@@ -6,6 +6,10 @@ on:
       - master  # Triggers the action on push to the master branch
   workflow_dispatch:  # Allows manual triggering of the workflow from GitHub Actions
 
+env:
+  REPOSITORY: streamlit-app-repo
+  IMAGE: streamlit-app
+
 jobs:
   deploy:
     name: Deploy Streamlit to Cloud Run using Artifact Registry
@@ -47,18 +51,18 @@ jobs:
     # Step 5: Build Docker Image for Streamlit app
     - name: Build Docker image
       run: |
-        docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/streamlit-app-repo/streamlit-app:$GITHUB_SHA .
+        docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/$REPOSITORY/$IMAGE:$GITHUB_SHA .
 
     # Step 6: Push Docker image to Google Artifact Registry
     - name: Push Docker image to Artifact Registry
       run: |
-        docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/streamlit-app-repo/streamlit-app:$GITHUB_SHA
+        docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/$REPOSITORY/$IMAGE:$GITHUB_SHA
 
     # Step 7: Deploy to Cloud Run using the Artifact Registry image
-    #- name: Deploy to Cloud Run
-    #  run: |
-    #    gcloud run deploy streamlit-app \
-    #      --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/streamlit-app-repo/streamlit-app:$GITHUB_SHA \
-    #      --platform managed \
-    #      --region ${{ secrets.GCP_REGION }} \
-    #      --allow-unauthenticated
+    - name: Deploy to Cloud Run
+      run: |
+        gcloud run deploy streamlit-app-testing \
+          --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/$REPOSITORY/$IMAGE:$GITHUB_SHA \
+          --platform managed \
+          --region ${{ secrets.GCP_REGION }} \
+          --allow-unauthenticated
