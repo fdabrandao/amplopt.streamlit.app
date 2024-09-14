@@ -40,9 +40,9 @@ jobs:
         registry: '${{ secrets.GCP_REGION }}-docker.pkg.dev'
 
     # Step 4: Configure Docker to use Artifact Registry
-    - name: Authenticate Docker to Artifact Registry
-      run: |
-        gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+    #- name: Authenticate Docker to Artifact Registry
+    #  run: |
+    #    gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
 
     # Step 5: Build Docker Image for Streamlit app
     - name: Build Docker image
