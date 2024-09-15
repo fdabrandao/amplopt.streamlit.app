@@ -364,7 +364,7 @@ class ModelBuilder:
             var ProductionHours{p in PRODUCTS, l in LOCATIONS, r in RESOURCES, t in PERIODS} >= 0; 
                 # Production hours for each product, location, resource, and period
             param ProductionRate{p in PRODUCTS, l in LOCATIONS, r in RESOURCES} >= 0 default 0;
-                # Production rate for each product at each location and resource
+                # Production rate for each product at each location and resource (could also depend on the period)
             """
         )
 
@@ -535,7 +535,7 @@ class ModelBuilder:
         header = self._transform(
             r"""
             param TargetStock{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
-                # Target stock level for each product and location
+                # Target stock level for each product and location (could also depend on the period)
             var AboveTarget{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Amount above target stock
             var BelowTarget{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
@@ -592,7 +592,7 @@ class ModelBuilder:
         header = self._transform(
             r"""
             param MaxCapacity{l in LOCATIONS} >= 0;
-                # Maximum storage capacity for each location and period
+                # Maximum storage capacity for each location (could also depend on the period)
             """
         )
 

@@ -217,13 +217,13 @@ def main():
                 )
 
     auto_rerun = st.checkbox(
-        "Automatically rerun solve process to update the results", value=True
+        "Automatically rerun the solve process to update the results", value=True
     )
 
     if (
         auto_rerun
         or not st.session_state.get("needs_rerun", False)
-        or st.button("Rerun solve process to update the results", type="primary")
+        or st.button("Rerun the solve process to update the results", type="primary")
     ):
         st.session_state["needs_rerun"] = False
         # Select the solver to use
