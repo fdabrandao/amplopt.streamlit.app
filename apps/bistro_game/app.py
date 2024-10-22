@@ -76,28 +76,28 @@ def fetch_data(parks):
 
 
 MODEL = r"""
-    set RESTAURANTS;  # Set of restaurants
+set RESTAURANTS;  # Set of restaurants
 
-    param cost {RESTAURANTS};  # Cost to buy each restaurant
-    param rating {RESTAURANTS};  # Rating of each restaurant
-    param reviews {RESTAURANTS};  # Number of reviews for each restaurant
+param cost {RESTAURANTS};  # Cost to buy each restaurant
+param rating {RESTAURANTS};  # Rating of each restaurant
+param reviews {RESTAURANTS};  # Number of reviews for each restaurant
 
-    param Budget;  # Total budget available to buy restaurants
+param Budget;  # Total budget available to buy restaurants
 
-    var Buy {RESTAURANTS} binary;  # Decision variable: 1 if a restaurant is bought, 0 otherwise
+var Buy {RESTAURANTS} binary;  # Decision variable: 1 if a restaurant is bought, 0 otherwise
 
-    # Objective: Maximize the total number of reviews
-    maximize TotalReviews: 
-        sum {r in RESTAURANTS} reviews[r] * Buy[r];
+# Objective: Maximize the total number of reviews
+maximize TotalReviews: 
+    sum {r in RESTAURANTS} reviews[r] * Buy[r];
 
-    # Constraint: Total cost of selected restaurants must not exceed the budget
-    subject to BudgetConstraint:
-        sum {r in RESTAURANTS} cost[r] * Buy[r] <= Budget;
+# Constraint: Total cost of selected restaurants must not exceed the budget
+subject to BudgetConstraint:
+    sum {r in RESTAURANTS} cost[r] * Buy[r] <= Budget;
 
-    # Constraint: Ensure the average rating is at least 4 (simplified linear form)
-    subject to AverageRatingConstraint:
-        sum {r in RESTAURANTS} rating[r] * reviews[r] * Buy[r] >= 4 * sum {r in RESTAURANTS} reviews[r] * Buy[r];
-    """
+# Constraint: Ensure the average rating is at least 4 (simplified linear form)
+subject to AverageRatingConstraint:
+    sum {r in RESTAURANTS} rating[r] * reviews[r] * Buy[r] >= 4 * sum {r in RESTAURANTS} reviews[r] * Buy[r];
+"""
 
 
 # Streamlit application
@@ -150,14 +150,7 @@ def main():
         """
         )
 
-        st.markdown(
-            f"""
-        ### AMPL Model
-        ```python
-        {MODEL}
-        ```
-        """
-        )
+        st.markdown(f"""### AMPL Model\n```python\n{MODEL}\n```\n""")
 
     # Fetch data
     data_file = os.path.join(os.path.dirname(__file__), "data.json")
