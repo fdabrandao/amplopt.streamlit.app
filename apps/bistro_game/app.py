@@ -75,9 +75,89 @@ def fetch_data(parks):
     return data
 
 
+MODEL = r"""
+    set RESTAURANTS;  # Set of restaurants
+
+    param cost {RESTAURANTS};  # Cost to buy each restaurant
+    param rating {RESTAURANTS};  # Rating of each restaurant
+    param reviews {RESTAURANTS};  # Number of reviews for each restaurant
+
+    param Budget;  # Total budget available to buy restaurants
+
+    var Buy {RESTAURANTS} binary;  # Decision variable: 1 if a restaurant is bought, 0 otherwise
+
+    # Objective: Maximize the total number of reviews
+    maximize TotalReviews: 
+        sum {r in RESTAURANTS} reviews[r] * Buy[r];
+
+    # Constraint: Total cost of selected restaurants must not exceed the budget
+    subject to BudgetConstraint:
+        sum {r in RESTAURANTS} cost[r] * Buy[r] <= Budget;
+
+    # Constraint: Ensure the average rating is at least 4 (simplified linear form)
+    subject to AverageRatingConstraint:
+        sum {r in RESTAURANTS} rating[r] * reviews[r] * Buy[r] >= 4 * sum {r in RESTAURANTS} reviews[r] * Buy[r];
+    """
+
+
 # Streamlit application
 def main():
     st.title("🍽️ Bistro Game")
+
+    st.markdown(
+        r"""
+    This app was generated using ChatGPT ([ChatGPT Session](https://chatgpt.com/share/da0f42a5-1b94-4787-8772-554864811d6b),
+                [Webinar on 🚀 AMPL + 🐍 Python + 🧠 AI 🤖](https://www.youtube.com/watch?v=Yw_Usvea8jM))
+    """
+    )
+
+    with st.expander("Problem description and 🚀 AMPL model by 🤖 ChatGPT"):
+        st.markdown(
+            r"""
+        ## Problem Description: Optimal Restaurant Selection
+
+        ### Objective
+        The primary goal of this AMPL model is to select a subset of restaurants to maximize the total number of customer reviews while adhering to a specified budget. The selection process also aims to ensure that the average rating of the chosen restaurants remains above a certain threshold, reflecting a commitment to quality.
+
+        ### Decision Variables
+        - **`Buy[r]`**: A binary variable for each restaurant \( r \) in the set of possible restaurants. It takes a value of 1 if the restaurant is selected, and 0 otherwise.
+
+        ### Parameters
+        - **`cost[r]`**: The cost associated with purchasing or investing in restaurant \( r \).
+        - **`rating[r]`**: The average customer rating of restaurant \( r \).
+        - **`reviews[r]`**: The number of reviews for restaurant \( r \).
+        - **`Budget`**: The total budget available for purchasing restaurants.
+
+        ### Constraints
+        1. **Budget Constraint**: The total cost of the selected restaurants must not exceed the available budget. This ensures that the selections remain financially viable.
+        $$
+        \sum_{r \in \text{RESTAURANTS}} \text{cost}[r] \times \text{Buy}[r] \leq \text{Budget}
+        $$
+        2. **Average Rating Constraint**: The weighted average rating of the selected restaurants must be at least 4. This constraint ensures that the chosen establishments maintain a high standard of quality. The average rating is calculated as the sum of the product of ratings and the corresponding binary decision variables, normalized by the number of reviews. This constraint requires careful linearization to handle in a linear programming framework.
+        $$
+        \sum_{r \in \text{RESTAURANTS}} \text{rating}[r] \times \text{reviews}[r] \times \text{Buy}[r] \geq 4 \times \sum_{r \in \text{RESTAURANTS}} \text{reviews}[r] \times \text{Buy}[r]
+        $$
+
+        ### Objective Function
+        The objective function is designed to maximize the sum of reviews from the selected restaurants, thereby favoring restaurants that are more popular or have greater visibility among customers.
+        $$
+        \text{Maximize} \sum_{r \in \text{RESTAURANTS}} \text{reviews}[r] \times \text{Buy}[r]
+        $$
+
+        ### Model Usage and Expected Output
+        - **Usage**: The model is used by decision-makers considering investments in a portfolio of restaurants, with constraints on budget and a minimum quality threshold. It is suitable for scenarios in corporate strategy, franchise decisions, or portfolio management in the hospitality sector.
+        - **Output**: The model will output the binary decisions for each restaurant, indicating whether it should be included in the portfolio. Additionally, the total cost and the average rating of the selected group will be computed to ensure they meet the stipulated constraints.
+        """
+        )
+
+        st.markdown(
+            f"""
+        ### AMPL Model
+        ```python
+        {MODEL}
+        ```
+        """
+        )
 
     # Fetch data
     data_file = os.path.join(os.path.dirname(__file__), "data.json")
@@ -174,32 +254,8 @@ def main():
         )
     )
 
-    model = r"""
-    set RESTAURANTS;  # Set of restaurants
-
-    param cost {RESTAURANTS};  # Cost to buy each restaurant
-    param rating {RESTAURANTS};  # Rating of each restaurant
-    param reviews {RESTAURANTS};  # Number of reviews for each restaurant
-
-    param Budget;  # Total budget available to buy restaurants
-
-    var Buy {RESTAURANTS} binary;  # Decision variable: 1 if a restaurant is bought, 0 otherwise
-
-    # Objective: Maximize the total number of reviews
-    maximize TotalReviews: 
-        sum {r in RESTAURANTS} reviews[r] * Buy[r];
-
-    # Constraint: Total cost of selected restaurants must not exceed the budget
-    subject to BudgetConstraint:
-        sum {r in RESTAURANTS} cost[r] * Buy[r] <= Budget;
-
-    # Constraint: Ensure the average rating is at least 4 (simplified linear form)
-    subject to AverageRatingConstraint:
-        sum {r in RESTAURANTS} rating[r] * reviews[r] * Buy[r] >= 4 * sum {r in RESTAURANTS} reviews[r] * Buy[r];
-    """
-
     ampl = AMPL()
-    ampl.eval(model)
+    ampl.eval(MODEL)
     ampl.set["RESTAURANTS"] = df.index
     ampl.param["cost"] = df["rent_estimate"]
     ampl.param["rating"] = df["rating"]
@@ -250,53 +306,6 @@ def main():
         st.write(df[selected])
 
     st.write(f"```\n{output}\n```")
-
-    st.markdown(
-        r"""
-    ## Problem Description: Optimal Restaurant Selection
-
-    ### Objective
-    The primary goal of this AMPL model is to select a subset of restaurants to maximize the total number of customer reviews while adhering to a specified budget. The selection process also aims to ensure that the average rating of the chosen restaurants remains above a certain threshold, reflecting a commitment to quality.
-
-    ### Decision Variables
-    - **`Buy[r]`**: A binary variable for each restaurant \( r \) in the set of possible restaurants. It takes a value of 1 if the restaurant is selected, and 0 otherwise.
-
-    ### Parameters
-    - **`cost[r]`**: The cost associated with purchasing or investing in restaurant \( r \).
-    - **`rating[r]`**: The average customer rating of restaurant \( r \).
-    - **`reviews[r]`**: The number of reviews for restaurant \( r \).
-    - **`Budget`**: The total budget available for purchasing restaurants.
-
-    ### Constraints
-    1. **Budget Constraint**: The total cost of the selected restaurants must not exceed the available budget. This ensures that the selections remain financially viable.
-    $$
-    \sum_{r \in \text{RESTAURANTS}} \text{cost}[r] \times \text{Buy}[r] \leq \text{Budget}
-    $$
-    2. **Average Rating Constraint**: The weighted average rating of the selected restaurants must be at least 4. This constraint ensures that the chosen establishments maintain a high standard of quality. The average rating is calculated as the sum of the product of ratings and the corresponding binary decision variables, normalized by the number of reviews. This constraint requires careful linearization to handle in a linear programming framework.
-    $$
-    \sum_{r \in \text{RESTAURANTS}} \text{rating}[r] \times \text{reviews}[r] \times \text{Buy}[r] \geq 4 \times \sum_{r \in \text{RESTAURANTS}} \text{reviews}[r] \times \text{Buy}[r]
-    $$
-
-    ### Objective Function
-    The objective function is designed to maximize the sum of reviews from the selected restaurants, thereby favoring restaurants that are more popular or have greater visibility among customers.
-    $$
-    \text{Maximize} \sum_{r \in \text{RESTAURANTS}} \text{reviews}[r] \times \text{Buy}[r]
-    $$
-
-    ### Model Usage and Expected Output
-    - **Usage**: The model is used by decision-makers considering investments in a portfolio of restaurants, with constraints on budget and a minimum quality threshold. It is suitable for scenarios in corporate strategy, franchise decisions, or portfolio management in the hospitality sector.
-    - **Output**: The model will output the binary decisions for each restaurant, indicating whether it should be included in the portfolio. Additionally, the total cost and the average rating of the selected group will be computed to ensure they meet the stipulated constraints.
-    """
-    )
-
-    st.markdown(
-        f"""
-    ### AMPL Model
-    ```python
-    {model}
-    ```
-    """
-    )
 
 
 if __name__ == "__main__":
