@@ -1,10 +1,13 @@
 import streamlit as st
-from .content import tip1, tip2, tip3, tip4, tip5, tip6, tip7
+from .content import tip1, tip2, tip3, tip4, tip5, tip6, tip7, tip8, tip9, tip10, tip11
 
 
 def main():
-    tips = [(t.title, t.run) for t in [tip1, tip2, tip3, tip4, tip5, tip6, tip7]]
-    tip_titles = [title for title, _ in tips]
+    tips = [
+        (t.title, t.run)
+        for t in [tip1, tip2, tip3, tip4, tip5, tip6, tip7, tip8, tip9, tip10, tip11]
+    ]
+    tip_titles = [title.replace("`", "") for title, _ in tips]
 
     def update_params():
         st.query_params["tip"] = tip_titles.index(st.session_state.title) + 1
@@ -23,5 +26,5 @@ def main():
     tip_index = tip_titles.index(selected_tip)
 
     title, run = tips[tip_index]
-    st.markdown(f"### 💡 {title}")
+    st.markdown(f"## 💡 {title}")
     run()
