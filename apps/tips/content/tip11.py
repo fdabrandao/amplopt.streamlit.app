@@ -11,33 +11,33 @@ def run():
 
         Consider constraints limiting changes of charge rate for a battery.
 
-        ```ampl
+        ```python
         set T ordered;
         param MaxChargeRate;
         var ChargeRate{T} >= 0 <= MaxChargeRate;
-        subject to ChargeRateVariationLimit{t in T: ord(t) >= 2}:
+        s.t. ChargeRateVariationLimit{t in T: ord(t) >= 2}:
             ChargeRate[t] != 0 && ChargeRate[prev(t)] != 0
-            ==> 
-                    abs(ChargeRate[t]-ChargeRate[prev(t)]) <= 10;
+                ==> 
+            abs(ChargeRate[t]-ChargeRate[prev(t)]) <= 10;
         ```
         Note that we have the ‘easy’ case from above here: `ChargeRate[t] != 0 ==> ...`.  
         The constraints can be reformulated as follows:
-        ```ampl
-        subject to ChargeRateVariationLimitOR{t in T: ord(t) >= 2}:
+        ```python
+        s.t. ChargeRateVariationLimitOR{t in T: ord(t) >= 2}:
             ChargeRate[t] == 0 or ChargeRate[prev(t)] == 0
             or abs(ChargeRate[t]-ChargeRate[prev(t)]) <= 10;
         ```
         To translate this for most solvers, we need to further
         reformulate using indicator constraints:
-        ```ampl
+        ```python
         var ChargeRateZero {t in T} binary;
         var ChargeRateChangeLimited {t in T: ord(t) >= 2} binary;
-        subject to ChargeRateZeroIND{t in T}:
+        s.t. ChargeRateZeroIND{t in T}:
             ChargeRateZero[t] ==> ChargeRate[t] == 0;
-        subject to ChargeRateVariationLimitIND{t in T: ord(t) >= 2}:
+        s.t. ChargeRateVariationLimitIND{t in T: ord(t) >= 2}:
             ChargeRateChangeLimited[t]
                 ==> abs(ChargeRate[t]-ChargeRate[prev(t)]) <= 10;
-        subject to ChargeRateVariationLimitOR_IND{t in T: ord(t) >= 2}:
+        s.t. ChargeRateVariationLimitOR_IND{t in T: ord(t) >= 2}:
             ChargeRateZero[t] or ChargeRateZero[prev(t)]
             or ChargeRateChangeLimited[t];
         ```
@@ -48,40 +48,38 @@ def run():
         - `a or b or c` can be linearized as `a+b+c >= 1`
         - `a ==> x <= u` with `x <= ub_x` can be linearized as `x <= ub_x - (ub_x-u)*a`
 
-
         ```python
-        subject to ChargeRateZeroIND_LIN{t in T}:
+        s.t. ChargeRateZeroIND_LIN{t in T}:
             ChargeRate[t] <= MaxChargeRate - MaxChargeRate*ChargeRateZero[t];
-        subject to ChargeRateVariationLimitIND_LIN{t in T: ord(t) >= 2}:
+        s.t. ChargeRateVariationLimitIND_LIN{t in T: ord(t) >= 2}:
             ChargeRate[t]-ChargeRate[prev(t)] <= 
                     MaxChargeRate - (MaxChargeRate - 10) * ChargeRateChangeLimited[t]
-                and
+            and
             ChargeRate[prev(t)]-ChargeRate[t] <= 
                     MaxChargeRate - (MaxChargeRate - 10) * ChargeRateChangeLimited[t];
-        subject to ChargeRateVariationLimitOR_IND_LIN{t in T: ord(t) >= 2}:
+        s.t. ChargeRateVariationLimitOR_IND_LIN{t in T: ord(t) >= 2}:
             ChargeRateZero[t] + ChargeRateZero[prev(t)]
             + ChargeRateChangeLimited[t] >= 1;
         ```
 
         Complete linearized example:
-        ```ampl
+        ```python
         set T ordered;
         param MaxChargeRate;
         var ChargeRate{T} >= 0 <= MaxChargeRate;
         var ChargeRateZero {t in T} binary;
         var ChargeRateChangeLimited {t in T: ord(t) >= 2} binary;
 
-        subject to ChargeRateZeroIND_LIN{t in T}:
+        s.t. ChargeRateZeroIND_LIN{t in T}:
             ChargeRate[t] + MaxChargeRate*ChargeRateZero[t] <= MaxChargeRate;
-        subject to ChargeRateVariationLimitIND_LIN{t in T: ord(t) >= 2}:
+        s.t. ChargeRateVariationLimitIND_LIN{t in T: ord(t) >= 2}:
             (MaxChargeRate - 10) * ChargeRateChangeLimited[t]
                 + ChargeRate[t]-ChargeRate[prev(t)] <= MaxChargeRate
             and
             (MaxChargeRate - 10) * ChargeRateChangeLimited[t]
                 + ChargeRate[prev(t)]-ChargeRate[t] <= MaxChargeRate;
-        subject to ChargeRateVariationLimitOR_IND_LIN{t in T: ord(t) >= 2}:
-            ChargeRateZero[t] + ChargeRateZero[prev(t)]
-            + ChargeRateChangeLimited[t] >= 1;
+        s.t. ChargeRateVariationLimitOR_IND_LIN{t in T: ord(t) >= 2}:
+            ChargeRateZero[t] + ChargeRateZero[prev(t)] + ChargeRateChangeLimited[t] >= 1;
         ```
         """
     )

@@ -21,14 +21,12 @@ def run():
                 `B2 ==> (eps <= -x+y)`  
                 `B1 + B2 >= 1`  
                 where indicators can be linearized using Big-M.
-                
 
         ## Example
 
-        ```ampl
-                s.t. DiffLanes {(i, j) in DiffLanePairs}:
-                        in_lane_veh[i] != in_lane_veh[j];
-
+        ```python
+        s.t. DiffLanes {(i, j) in DiffLanePairs}:
+            in_lane_veh[i] != in_lane_veh[j];
         ```
         """
     )

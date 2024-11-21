@@ -110,12 +110,13 @@ pages = {
         app_page(home, "🏠", "Home"),
         app_page(tips.main, "💡", "Modeling Tips"),
     ],
-    "Real applications": [
+    "Applications": [
         app_page(aircrew_training_scheduling.main, "✈️", "Aircrew Training Scheduling"),
         app_page(batch_process.main, "⚙️", "Batch Process Optimization"),
         app_page(facility_location.main, "🏭", "Stochastic Facility Location"),
         app_page(supply_chain.main, "📦", "Supply Chain Optimization"),
         app_page(risk_return.main, "📈", "Portfolio Optimization", "Risk_Return"),
+        app_page(tips.main_tip7, "🎯", "Logistic Regression"),
     ],
     "Puzzles & Games": [
         app_page(nqueens.main, "👑", "N-Queens"),

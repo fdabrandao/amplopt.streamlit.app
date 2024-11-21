@@ -9,7 +9,7 @@ def run():
         """
         ### In AMPL you can simply write `b <==> x!=y`. How is conditional disequality linearized?
 
-        ```ampl
+        ```python
         switch_state[t] = 1 <==> generator_state[t] != generator_state[prev(t)]
         ```
 

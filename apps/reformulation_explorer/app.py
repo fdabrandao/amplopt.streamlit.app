@@ -332,7 +332,7 @@ def main():
                 
         Usage example:
         - Step 1: Export reformulation graph as follows:
-        ```ampl
+        ```python
         param n integer > 0; # N-queens
         var Row {1..n} integer >= 1 <= n;
         s.t. row_attacks: alldiff ({j in 1..n} Row[j]);

@@ -28,7 +28,7 @@ def run():
 
         ## Example
 
-        ```ampl
+        ```python
         var x {1..2} >=-30 <=100;
         minimize Objective: abs(x[1]) - 2*abs(x[2]);
         s.t. Con1: 3*x[1] - 2*x[2] <=  8;
@@ -38,7 +38,7 @@ def run():
         Adding variables `U[1]` and `U[2]`, we can change the objective to `U[1] - 2*U[2]`,
         with `U[1] >= abs(x[1])` and `U[2] <= abs(x[2])` as new constraints. 
 
-        ```ampl
+        ```python
         var U {1..2} >=0 <=100;
         var x {1..2} >=-30 <=100;
         minimize Obj: U[1] - 2*U[2];
@@ -50,7 +50,7 @@ def run():
 
         We can use the first (easy) reformulation above for `U[1]` and the second reformulation for `U[2]`.
 
-        ```ampl
+        ```python
         var U {1..2} >=0 <=100;
         var b binary;
         s.t. AbsU1:
@@ -61,14 +61,14 @@ def run():
 
         If the solver requires, `AbsU2` can be linearized with big-M (assuming finite bounds on `x[2]`):
 
-        ```ampl
+        ```python
         s.t. LinAbsU2:
             U[2] - x[2] + 30*b <= 30 and U[2] + x[2] - 200*b <= 0;
         ```
 
         Complete linearized model:
 
-        ```ampl
+        ```python
         var x {1..2} >=-30 <=100;
         var U {1..2} >=0 <=100;
         var b binary;

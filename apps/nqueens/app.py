@@ -11,7 +11,7 @@ def main():
 
         Constraint `alldiff` enforces a set of integer variables to take distinct values. Using `alldiff`, we can model N-Queens as follows:
 
-        ```ampl
+        ```python
         param n integer > 0; # N-queens
         var Row {1..n} integer >= 1 <= n;
         s.t. row_attacks: alldiff ({j in 1..n} Row[j]);

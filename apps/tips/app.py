@@ -28,3 +28,8 @@ def main():
     title, run = tips[tip_index]
     st.markdown(f"## 💡 {title}")
     run()
+
+
+def main_tip7():
+    st.title(f"🎯 {tip7.title[tip7.title.find(':')+1:].strip()}")
+    tip7.run()
