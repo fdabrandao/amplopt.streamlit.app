@@ -20,7 +20,7 @@ def run():
                 ==> 
             abs(ChargeRate[t]-ChargeRate[prev(t)]) <= 10;
         ```
-        Note that we have the ‘easy’ case from above here: `ChargeRate[t] != 0 ==> ...`.  
+        Note that we have the ‘easy’ case from [Tip #10](/Modeling_Tips?tip=10) here: `ChargeRate[t] != 0 ==> ...`.  
         The constraints can be reformulated as follows:
         ```python
         s.t. ChargeRateVariationLimitOR{t in T: ord(t) >= 2}:
