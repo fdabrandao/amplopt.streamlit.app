@@ -290,7 +290,7 @@ def main():
             per_cycle = st.slider("Max ornaments per cycle 👇", 1, 3, 2)
 
         solvers = [
-            "Gurobi 11 🚀 (with global=1)",
+            "Gurobi 🚀",
             "SCIP",
             "LGO",
             "Octeract",
