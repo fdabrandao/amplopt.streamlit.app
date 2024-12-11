@@ -313,7 +313,7 @@ def main():
     optimizer = ChristmasTreeOptimizer(width, height, sine_slope, frequency)
 
     # Set solver options such as timelim
-    optimizer.ampl.option["gurobi_options"] = "global=1 timelim=5 outlev=1"
+    optimizer.ampl.option["gurobi_options"] = "timelim=5 outlev=1"
     optimizer.ampl.option["scip_options"] = "timelim=5 outlev=1"
     optimizer.ampl.option["lindoglobal_options"] = "maxtime=5"
     optimizer.ampl.option["knitro_options"] = "maxtime_cpu=5"
