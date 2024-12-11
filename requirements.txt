@@ -15,6 +15,7 @@ ampl_module_lgo
 ampl_module_minos
 ampl_module_lindoglobal
 ampl_module_octeract
+ampl_module_snopt
 amplpy>=0.14.0
 pandas==1.5.3
 numpy==1.26.2
