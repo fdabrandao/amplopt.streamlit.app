@@ -16,6 +16,8 @@ ampl_module_minos
 ampl_module_lindoglobal
 ampl_module_octeract
 amplpy>=0.14.0
+pandas==1.5.3
+numpy==1.26.2
 amplpyfinance
 streamlit==1.37.0
 matplotlib==3.7.1
