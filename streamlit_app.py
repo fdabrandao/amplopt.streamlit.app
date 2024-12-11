@@ -13,6 +13,7 @@ from apps import (
     supply_chain,
     aircrew_training_scheduling,
     risk_return,
+    optimal_control,
     nqueens,
     sudoku,
     tips,
@@ -116,7 +117,8 @@ pages = {
         app_page(facility_location.main, "🏭", "Stochastic Facility Location"),
         app_page(supply_chain.main, "📦", "Supply Chain Optimization"),
         app_page(risk_return.main, "📈", "Portfolio Optimization", "Risk_Return"),
-        app_page(tips.main_tip7, "🎯", "Logistic Regression"),
+        app_page(tips.main_tip7, "🏷️", "Logistic Regression"),
+        app_page(optimal_control.main, "🎯", "Optimal Control"),
     ],
     "Puzzles & Games": [
         app_page(nqueens.main, "👑", "N-Queens"),

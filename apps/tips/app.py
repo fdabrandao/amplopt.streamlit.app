@@ -31,5 +31,5 @@ def main():
 
 
 def main_tip7():
-    st.title(f"🎯 {tip7.title[tip7.title.find(':')+1:].strip()}")
+    st.title(f"🏷️ {tip7.title[tip7.title.find(':')+1:].strip()}")
     tip7.run()
