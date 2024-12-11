@@ -31,7 +31,6 @@ def run():
             for the previous case (easy!)
 
             * The disjunctions may need to be linearized.
-
-        Expand example...
         """
+        # TODO: expand example
     )
