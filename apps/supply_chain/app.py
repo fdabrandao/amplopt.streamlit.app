@@ -146,27 +146,39 @@ def main():
     demand.set_index(["Product", "Location", "Period"], inplace=True)
     starting_inventory.set_index(["Product", "Location"], inplace=True)
 
-    ampl.set["PRODUCTS"] = instance.selected_products
-    ampl.set["LOCATIONS"] = instance.selected_locations
-    ampl.set["PRODUCTS_LOCATIONS"] = instance.products_locations
-    ampl.set["PERIODS"] = periods
-    ampl.param["Demand"] = demand["Quantity"]
-    ampl.param["InitialInventory"] = starting_inventory["Quantity"]
-    if class_number >= 2:
-        ampl.set["RESOURCES"] = instance.all_resources
-        ampl.param["ProductionRate"] = instance.production_rate.set_index(
-            ["Product", "Location", "Resource"]
-        )[["Rate"]]
-        ampl.param["AvailableCapacity"] = instance.available_capacity.set_index(
-            ["Resource", "Location"]
-        )
-        ampl.set["TRANSFER_LANES"] = list(
-            instance.transfer_lanes.itertuples(index=False, name=None)
-        )
-        ampl.param["TargetStock"] = instance.target_stocks.set_index(
-            ["Product", "Location"]
-        )
-        ampl.param["MaxCapacity"] = instance.location_capacity.set_index(["Location"])
+    try:
+        ampl.set["PRODUCTS"] = instance.selected_products
+        ampl.set["LOCATIONS"] = instance.selected_locations
+        ampl.set["PRODUCTS_LOCATIONS"] = instance.products_locations
+        ampl.set["PERIODS"] = periods
+        ampl.param["Demand"] = demand["Quantity"]
+        ampl.param["InitialInventory"] = starting_inventory["Quantity"]
+
+        if class_number >= 2:
+            ampl.set["RESOURCES"] = instance.all_resources
+            ampl.param["ProductionRate"] = instance.production_rate.set_index(
+                ["Product", "Location", "Resource"]
+            )[["Rate"]]
+            ampl.param["AvailableCapacity"] = instance.available_capacity.set_index(
+                ["Resource", "Location"]
+            )
+            ampl.set["TRANSFER_LANES"] = list(
+                instance.transfer_lanes.itertuples(index=False, name=None)
+            )
+            ampl.param["TargetStock"] = instance.target_stocks.set_index(
+                ["Product", "Location"]
+            )
+            ampl.param["MaxCapacity"] = instance.location_capacity.set_index(
+                ["Location"]
+            )
+    except Exception as e:
+        message = str(e)
+        if message.startswith('Error executing "let" command:'):
+            message = message[message.find(":") + 1 :].strip()
+            st.error(f"Error setting data: {message}")
+            st.stop()
+        else:
+            pass
 
     with st.expander("Adjust objective penalties"):
         col1, col2 = st.columns(2)
@@ -230,7 +242,10 @@ def main():
         solver, _ = solver_selector(mp_only=True)
         # Solve the problem
         output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
-        st.write(f"```\n{output}\n```")
+        if ampl.solve_result != "solved":
+            st.error(f"The model could not be solved:\n```\n{output}\n```")
+        else:
+            st.write(f"```\n{output}\n```")
 
         if ampl.solve_result == "solved":
             ampl.option["display_width"] = 1000
