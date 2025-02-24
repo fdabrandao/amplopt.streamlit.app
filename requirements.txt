@@ -22,7 +22,7 @@ numpy==1.26.2
 amplpyfinance
 streamlit==1.37.0
 matplotlib==3.7.1
-yfinance==0.2.17
+yfinance==0.2.54
 altair==4.2.2
 pydeck==0.9.0
 googlemaps==4.10.0

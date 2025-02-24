@@ -29,8 +29,8 @@ TICKERS = [
 
 @st.cache_data
 def load_data(tickers, start, end):
-    ohlc = yf.download(tickers, start=start, end=end, period="max")
-    prices = ohlc["Adj Close"].dropna(how="all")
+    ohlc = yf.download(tickers, start=start, end=end, period="max", auto_adjust=True)
+    prices = ohlc["Close"].dropna(how="all")
     return prices
 
 
