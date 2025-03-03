@@ -165,21 +165,36 @@ class ModelBuilder:
 
         return re.sub(r"\n\s*\n*\s*\n", "\n", declaration)
 
-    def _exercise_header(self, header, description, exercise):
-        st.markdown(
-            f"""
-            ### !exercise!{header}
-            
-            🧑‍🏫 {description}
-            """.replace(
-                "!exercise!",
-                f"Exercise #{exercise}: " if exercise is not None else "",
-            )
+    def _skip_flag(self, selected_exercise, exercise_number):
+        allow_skipping = selected_exercise != exercise_number
+        skip = selected_exercise != 0 and (
+            selected_exercise == -1 or selected_exercise != exercise_number
         )
+        return allow_skipping, skip
 
     def _exercise(
-        self, ampl, name, constraint, needs, allow_skipping=True, skip=False, help=""
+        self,
+        ampl,
+        name,
+        description,
+        exercise,
+        selected_exercise,
+        constraint,
+        needs,
+        help="",
     ):
+        allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
+        if not skip:
+            st.markdown(
+                f"""
+                ### !exercise!{name}
+                
+                🧑‍🏫 {description}
+                """.replace(
+                    "!exercise!",
+                    f"Exercise #{exercise}: " if exercise is not None else "",
+                )
+            )
         if skip or (
             allow_skipping
             and st.checkbox(
@@ -289,28 +304,20 @@ class ModelBuilder:
         else:
             return self.demand_fulfillment_placeholder
 
-    def _skip_flag(self, selected_exercise, exercise_number):
-        allow_skipping = selected_exercise != exercise_number
-        skip = selected_exercise != 0 and (
-            selected_exercise == -1 or selected_exercise != exercise_number
-        )
-        return allow_skipping, skip
-
     def demand_fulfillment_exercise(self, ampl, exercise, selected_exercise):
-        allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
-        if not skip:
-            self._exercise_header(
-                header="Demand Balance Constraint",
-                description="Ensure that all demand is accounted for either as met or unmet.",
-                exercise=exercise,
-            )
         self._exercise(
             ampl,
-            "Demand Balance Constraint",
-            self.demand_fulfillment,
-            ["Demand[p, l, t]", "MetDemand[p, l, t]", "UnmetDemand[p, l, t]", "="],
-            allow_skipping=allow_skipping,
-            skip=skip,
+            name="Demand Balance Constraint",
+            description="Ensure that all demand is accounted for either as met or unmet.",
+            exercise=exercise,
+            selected_exercise=selected_exercise,
+            constraint=self.demand_fulfillment,
+            needs=[
+                "Demand[p, l, t]",
+                "MetDemand[p, l, t]",
+                "UnmetDemand[p, l, t]",
+                "=",
+            ],
         )
 
     def inventory_carryover_declaration(self, exercise=None, show=None):
@@ -342,18 +349,14 @@ class ModelBuilder:
             return self.inventory_carryover_placeholder
 
     def inventory_carryover_exercise(self, ampl, exercise, selected_exercise):
-        allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
-        if not skip:
-            self._exercise_header(
-                header="Inventory Carryover Constraint",
-                description="Define how inventory is carried over from one period to the next.",
-                exercise=exercise,
-            )
         self._exercise(
             ampl,
-            "Inventory Carryover Constraint",
-            self.inventory_carryover,
-            [
+            name="Inventory Carryover Constraint",
+            description="Define how inventory is carried over from one period to the next.",
+            exercise=exercise,
+            selected_exercise=selected_exercise,
+            constraint=self.inventory_carryover,
+            needs=[
                 "StartingInventory[p, l, t]",
                 "EndingInventory[p, l, prev(t)]",
                 "InitialInventory[p, l]",
@@ -377,8 +380,6 @@ class ModelBuilder:
                 For more modern usage examples see https://ampl.com/mo-book/ and https://ampl.com/colab/ where
                 AMPL is used integrated with Python just like in this Streamlit app.
                 """,
-            allow_skipping=allow_skipping,
-            skip=skip,
         )
 
     def material_balance_declaration(self, exercise=None, show=None):
@@ -406,26 +407,20 @@ class ModelBuilder:
             return self.material_balance_placeholder
 
     def material_balance_exercise(self, ampl, exercise, selected_exercise):
-        allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
-        if not skip:
-            self._exercise_header(
-                header="Material Balance Constraint",
-                description="Balance starting inventory and production against demand to determine ending inventory.",
-                exercise=exercise,
-            )
         self._exercise(
             ampl,
-            "Material Balance Constraint",
-            self.material_balance,
-            [
+            name="Material Balance Constraint",
+            description="Balance starting inventory and production against demand to determine ending inventory.",
+            exercise=exercise,
+            selected_exercise=selected_exercise,
+            constraint=self.material_balance,
+            needs=[
                 "StartingInventory[p, l, t]",
                 "Production[p, l, t]",
                 "MetDemand[p, l, t]",
                 "EndingInventory[p, l, t]",
                 "=",
             ],
-            allow_skipping=allow_skipping,
-            skip=skip,
         )
 
     def production_rate_declaration(self, exercise=None, show=None):
@@ -464,26 +459,20 @@ class ModelBuilder:
             return header + self.production_rate_placeholder
 
     def production_rate_exercise(self, ampl, exercise, selected_exercise):
-        allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
-        if not skip:
-            self._exercise_header(
-                header="Production and Production Hours",
-                description="Ensure that the total production quantity is equal to the production hours multiplied by the production rate.",
-                exercise=exercise,
-            )
         self._exercise(
             ampl,
-            "Production and Production Hours",
-            self.production_rate,
-            [
+            name="Production and Production Hours",
+            description="Ensure that the total production quantity is equal to the production hours multiplied by the production rate.",
+            exercise=exercise,
+            selected_exercise=selected_exercise,
+            constraint=self.production_rate,
+            needs=[
                 "Production[p,l,t]",
                 "sum{r in RESOURCES}",
                 "ProductionHours[p,l,r,t]",
                 "*",
                 "ProductionRate[p,l,r]",
             ],
-            allow_skipping=allow_skipping,
-            skip=skip,
         )
 
     def resource_capacity_declaration(self, exercise=None, show=None):
@@ -518,25 +507,19 @@ class ModelBuilder:
             return header + self.resource_capacity_placeholder
 
     def resource_capacity_exercise(self, ampl, exercise, selected_exercise):
-        allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
-        if not skip:
-            self._exercise_header(
-                header="Resource capacity",
-                description="Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location.",
-                exercise=exercise,
-            )
         self._exercise(
             ampl,
-            "Resource capacity",
-            self.resource_capacity,
-            [
+            name="Resource capacity",
+            description="Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location.",
+            exercise=exercise,
+            selected_exercise=selected_exercise,
+            constraint=self.resource_capacity,
+            needs=[
                 "sum{(p, l) in PRODUCTS_LOCATIONS}",
                 "ProductionHours[p,l,r,t]",
                 "<=",
                 "AvailableCapacity[r,l]",
             ],
-            allow_skipping=allow_skipping,
-            skip=skip,
         )
 
     def material_balance_with_transfers_declaration(self, exercise=None, show=None):
@@ -580,18 +563,14 @@ class ModelBuilder:
     def material_balance_with_transfers_exercise(
         self, ampl, exercise, selected_exercise
     ):
-        allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
-        if not skip:
-            self._exercise_header(
-                header="Transfers",
-                description="Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment.",
-                exercise=exercise,
-            )
         self._exercise(
             ampl,
-            "Transfers",
-            self.material_balance_with_transfers,
-            [
+            name="Transfers",
+            description="Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment.",
+            exercise=exercise,
+            selected_exercise=selected_exercise,
+            constraint=self.material_balance_with_transfers,
+            needs=[
                 "StartingInventory[p,l,t]",
                 "MetDemand[p,l,t]",
                 "Production[p,l,t]",
@@ -601,8 +580,6 @@ class ModelBuilder:
                 "TransfersOUT[p,l,j,t]",
                 "EndingInventory[p,l,t]",
             ],
-            allow_skipping=allow_skipping,
-            skip=skip,
         )
 
     def target_stock_declaration(self, exercise=None, show=None):
@@ -641,25 +618,19 @@ class ModelBuilder:
             return header + self.target_stock_placeholder
 
     def target_stock_exercise(self, ampl, exercise, selected_exercise):
-        allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
-        if not skip:
-            self._exercise_header(
-                header="Target Stocks",
-                description="Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level.",
-                exercise=exercise,
-            )
         self._exercise(
             ampl,
-            "Target Stocks",
-            self.target_stock,
-            [
+            name="Target Stocks",
+            description="Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level.",
+            exercise=exercise,
+            selected_exercise=selected_exercise,
+            constraint=self.target_stock,
+            needs=[
                 "TargetStock[p, l]",
                 "EndingInventory[p, l, t]",
                 "BelowTarget[p, l, t]",
                 "AboveTarget[p, l, t]",
             ],
-            allow_skipping=allow_skipping,
-            skip=skip,
         )
 
     def storage_capacity_declaration(self, exercise=None, show=None):
@@ -694,25 +665,19 @@ class ModelBuilder:
             return header + self.storage_capacity_placeholder
 
     def storage_capacity_exercise(self, ampl, exercise, selected_exercise):
-        allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
-        if not skip:
-            self._exercise_header(
-                header="Storage Capacity",
-                description="Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location.",
-                exercise=exercise,
-            )
         self._exercise(
             ampl,
-            "Storage Capacity",
-            self.storage_capacity,
-            [
+            name="Storage Capacity",
+            description="Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location.",
+            exercise=exercise,
+            selected_exercise=selected_exercise,
+            constraint=self.storage_capacity,
+            needs=[
                 "sum{(p, l) in PRODUCTS_LOCATIONS}",
                 "EndingInventory[p, l, t]",
                 "<=",
                 "MaxCapacity[l]",
             ],
-            allow_skipping=allow_skipping,
-            skip=skip,
         )
 
     def class1_objective(self):
