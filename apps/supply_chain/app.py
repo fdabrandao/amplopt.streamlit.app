@@ -20,7 +20,7 @@ def main():
     ]
 
     if "homework" not in st.query_params:
-        st.query_params["homework"] = 2
+        st.query_params["homework"] = 3
 
     default_option = max(0, int(st.query_params["homework"]) - 1)
 

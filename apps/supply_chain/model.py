@@ -145,12 +145,37 @@ class ModelBuilder:
         else:
             assert False
 
-    def _transform(self, declaration):
+    def _transform(self, declaration, exercise=None):
         if self.use_restrict_table:
             declaration = declaration.replace(
                 "p in PRODUCTS, l in LOCATIONS", "(p, l) in PRODUCTS_LOCATIONS"
             )
+        if exercise is not None:
+            assert "!exercise!" in declaration
+            declaration = declaration.replace(
+                "... !exercise!",
+                f"Exercise #{exercise}: ",
+            )
+            declaration = declaration.replace(
+                "!exercise!",
+                f"# Exercise #{exercise}: ",
+            )
+        else:
+            declaration = declaration.replace("!exercise!", "")
+
         return re.sub(r"\n\s*\n*\s*\n", "\n", declaration)
+
+    def _exercise_header(self, header, description, exercise):
+        st.markdown(
+            f"""
+            ### !exercise!{header}
+            
+            🧑‍🏫 {description}
+            """.replace(
+                "!exercise!",
+                f"Exercise #{exercise}: " if exercise is not None else "",
+            )
+        )
 
     def _exercise(
         self, ampl, name, constraint, needs, allow_skipping=True, skip=False, help=""
@@ -247,20 +272,16 @@ class ModelBuilder:
             s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
                 Demand[p, l, t] = MetDemand[p, l, t] + UnmetDemand[p, l, t];
                 # Ensure that all demand is accounted for either as met or unmet
-            """.replace(
-                "!exercise!",
-                f"# Exercise #{exercise}" if exercise is not None else "",
-            )
+            """,
+            exercise=exercise,
         )
 
         self.demand_fulfillment_placeholder = self._transform(
             r"""
             # s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure that all demand is accounted for either as met or unmet
-            """.replace(
-                "!exercise!",
-                f"Exercise #{exercise}: " if exercise is not None else "",
-            )
+            """,
+            exercise=exercise,
         )
 
         if show or self.show_complete_model:
@@ -278,15 +299,10 @@ class ModelBuilder:
     def demand_fulfillment_exercise(self, ampl, exercise, selected_exercise):
         allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
         if not skip:
-            st.markdown(
-                """
-                ### !exercise!Demand Balance Constraint
-                
-                🧑‍🏫 Ensure that all demand is accounted for either as met or unmet.
-                """.replace(
-                    "!exercise!",
-                    f"Exercise #{exercise}: " if exercise is not None else "",
-                )
+            self._exercise_header(
+                header="Demand Balance Constraint",
+                description="Ensure that all demand is accounted for either as met or unmet.",
+                exercise=exercise,
             )
         self._exercise(
             ampl,
@@ -308,18 +324,16 @@ class ModelBuilder:
                     else
                         InitialInventory[p, l];
                 # Define how inventory is carried over from one period to the next
-            """.replace(
-                "!exercise!", f"# Exercise #{exercise}" if exercise is not None else ""
-            )
+            """,
+            exercise=exercise,
         )
 
         self.inventory_carryover_placeholder = self._transform(
             r"""
             # s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Define how inventory is carried over from one period to the next
-            """.replace(
-                "!exercise!", f"Exercise #{exercise}: " if exercise is not None else ""
-            )
+            """,
+            exercise=exercise,
         )
 
         if show or self.show_complete_model:
@@ -330,15 +344,10 @@ class ModelBuilder:
     def inventory_carryover_exercise(self, ampl, exercise, selected_exercise):
         allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
         if not skip:
-            st.markdown(
-                """
-                ### !exercise!Inventory Carryover Constraint
-                
-                🧑‍🏫 Define how inventory is carried over from one period to the next.
-                """.replace(
-                    "!exercise!",
-                    f"Exercise #{exercise}: " if exercise is not None else "",
-                )
+            self._exercise_header(
+                header="Inventory Carryover Constraint",
+                description="Define how inventory is carried over from one period to the next.",
+                exercise=exercise,
             )
         self._exercise(
             ampl,
@@ -379,18 +388,16 @@ class ModelBuilder:
             s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
                 StartingInventory[p, l, t] + Production[p, l, t] - MetDemand[p, l, t] = EndingInventory[p, l, t];
                 # Balance starting inventory and production against demand to determine ending inventory
-            """.replace(
-                "!exercise!", f"# Exercise #{exercise}" if exercise is not None else ""
-            )
+            """,
+            exercise=exercise,
         )
 
         self.material_balance_placeholder = self._transform(
             r"""
             # s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Balance starting inventory and production against demand to determine ending inventory
-            """.replace(
-                "!exercise!", f"Exercise #{exercise}: " if exercise is not None else ""
-            )
+            """,
+            exercise=exercise,
         )
 
         if show or self.show_complete_model:
@@ -401,15 +408,10 @@ class ModelBuilder:
     def material_balance_exercise(self, ampl, exercise, selected_exercise):
         allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
         if not skip:
-            st.markdown(
-                """
-                ### !exercise!Material Balance Constraint
-                
-                🧑‍🏫 Balance starting inventory and production against demand to determine ending inventory.
-                """.replace(
-                    "!exercise!",
-                    f"Exercise #{exercise}: " if exercise is not None else "",
-                )
+            self._exercise_header(
+                header="Material Balance Constraint",
+                description="Balance starting inventory and production against demand to determine ending inventory.",
+                exercise=exercise,
             )
         self._exercise(
             ampl,
@@ -444,18 +446,16 @@ class ModelBuilder:
             s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
                 Production[p,l,t] == sum{r in RESOURCES} ProductionHours[p,l,r,t] * ProductionRate[p,l,r];
                 # Ensure that the total production quantity is equal to the production hours multiplied by the production rate
-            """.replace(
-                "!exercise!", f"# Exercise #{exercise}" if exercise is not None else ""
-            )
+            """,
+            exercise=exercise,
         )
 
         self.production_rate_placeholder = self._transform(
             r"""
             # s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure that the total production quantity is equal to the production hours multiplied by the production rate
-            """.replace(
-                "!exercise!", f"Exercise #{exercise}: " if exercise is not None else ""
-            )
+            """,
+            exercise=exercise,
         )
 
         if show or self.show_complete_model:
@@ -466,15 +466,10 @@ class ModelBuilder:
     def production_rate_exercise(self, ampl, exercise, selected_exercise):
         allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
         if not skip:
-            st.markdown(
-                """
-                ### !exercise!Production and Production Hours
-                
-                🧑‍🏫 Ensure that the total production quantity is equal to the production hours multiplied by the production rate.
-                """.replace(
-                    "!exercise!",
-                    f"Exercise #{exercise}: " if exercise is not None else "",
-                )
+            self._exercise_header(
+                header="Production and Production Hours",
+                description="Ensure that the total production quantity is equal to the production hours multiplied by the production rate.",
+                exercise=exercise,
             )
         self._exercise(
             ampl,
@@ -505,18 +500,16 @@ class ModelBuilder:
             s.t. ProductionCapacity{r in RESOURCES, l in LOCATIONS, t in PERIODS}:
                 sum{(p, l) in PRODUCTS_LOCATIONS} ProductionHours[p,l,r,t] <= AvailableCapacity[r,l];
                 # Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location
-            """.replace(
-                "!exercise!", f"# Exercise #{exercise}" if exercise is not None else ""
-            )
+            """,
+            exercise=exercise,
         )
 
         self.resource_capacity_placeholder = self._transform(
             r"""
             # s.t. ProductionCapacity{r in RESOURCES, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location
-            """.replace(
-                "!exercise!", f"Exercise #{exercise}: " if exercise is not None else ""
-            )
+            """,
+            exercise=exercise,
         )
 
         if show or self.show_complete_model:
@@ -527,15 +520,10 @@ class ModelBuilder:
     def resource_capacity_exercise(self, ampl, exercise, selected_exercise):
         allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
         if not skip:
-            st.markdown(
-                """
-                ### !exercise!Resource capacity
-                
-                🧑‍🏫 Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location.
-                """.replace(
-                    "!exercise!",
-                    f"Exercise #{exercise}: " if exercise is not None else "",
-                )
+            self._exercise_header(
+                header="Resource capacity",
+                description="Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location.",
+                exercise=exercise,
             )
         self._exercise(
             ampl,
@@ -572,19 +560,16 @@ class ModelBuilder:
                 - sum{j in LOCATIONS: (p, l, j) in TRANSFER_LANES} TransfersOUT[p,l,j,t]
                 == EndingInventory[p,l,t];
                 # Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment
-            """.replace(
-                "!exercise!",
-                f"# Exercise #{exercise}: " if exercise is not None else "",
-            )
+            """,
+            exercise=exercise,
         )
 
         self.material_balance_with_transfers_placeholder = self._transform(
             r"""
             # s.t. MaterialBalanceWithTransfers{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment
-            """.replace(
-                "!exercise!", f"Exercise #{exercise}: " if exercise is not None else ""
-            )
+            """,
+            exercise=exercise,
         )
 
         if show or self.show_complete_model:
@@ -597,15 +582,10 @@ class ModelBuilder:
     ):
         allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
         if not skip:
-            st.markdown(
-                """
-                ### !exercise!Transfers
-                
-                🧑‍🏫 Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment.
-                """.replace(
-                    "!exercise!",
-                    f"Exercise #{exercise}: " if exercise is not None else "",
-                )
+            self._exercise_header(
+                header="Transfers",
+                description="Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment.",
+                exercise=exercise,
             )
         self._exercise(
             ampl,
@@ -643,19 +623,16 @@ class ModelBuilder:
             s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
                 TargetStock[p, l] == EndingInventory[p, l, t] + BelowTarget[p, l, t] - AboveTarget[p, l, t];
                 # Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level
-            """.replace(
-                "!exercise!",
-                f"# Exercise #{exercise}: " if exercise is not None else "",
-            )
+            """,
+            exercise=exercise,
         )
 
         self.target_stock_placeholder = self._transform(
             r"""
             # s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
-            """.replace(
-                "!exercise!", f"Exercise #{exercise}: " if exercise is not None else ""
-            )
+            """,
+            exercise=exercise,
         )
 
         if show or self.show_complete_model:
@@ -666,15 +643,10 @@ class ModelBuilder:
     def target_stock_exercise(self, ampl, exercise, selected_exercise):
         allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
         if not skip:
-            st.markdown(
-                """
-                ### !exercise!Target Stocks
-                
-                🧑‍🏫 Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level.
-                """.replace(
-                    "!exercise!",
-                    f"Exercise #{exercise}: " if exercise is not None else "",
-                )
+            self._exercise_header(
+                header="Target Stocks",
+                description="Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level.",
+                exercise=exercise,
             )
         self._exercise(
             ampl,
@@ -704,19 +676,16 @@ class ModelBuilder:
             subject to StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
                 sum{(p, l) in PRODUCTS_LOCATIONS} EndingInventory[p, l, t] <= MaxCapacity[l];
                 # Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
-            """.replace(
-                "!exercise!",
-                f"# Exercise #{exercise}: " if exercise is not None else "",
-            )
+            """,
+            exercise=exercise,
         )
 
         self.storage_capacity_placeholder = self._transform(
             r"""
             # s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
-            """.replace(
-                "!exercise!", f"Exercise #{exercise}: " if exercise is not None else ""
-            )
+            """,
+            exercise=exercise,
         )
 
         if show or self.show_complete_model:
@@ -727,15 +696,10 @@ class ModelBuilder:
     def storage_capacity_exercise(self, ampl, exercise, selected_exercise):
         allow_skipping, skip = self._skip_flag(selected_exercise, exercise)
         if not skip:
-            st.markdown(
-                """
-                ### !exercise!Storage Capacity
-                
-                🧑‍🏫 Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location.
-                """.replace(
-                    "!exercise!",
-                    f"Exercise #{exercise}: " if exercise is not None else "",
-                )
+            self._exercise_header(
+                header="Storage Capacity",
+                description="Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location.",
+                exercise=exercise,
             )
         self._exercise(
             ampl,
