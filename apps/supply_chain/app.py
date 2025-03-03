@@ -15,7 +15,8 @@ def main():
 
     options = [
         "Homework 1: Demand Balance + Inventory Carryover + Material Balance",
-        "Homework 2: Production Hours + Resource Capacity + Transfers + Target Stocks + Storage Capacity",
+        "Homework 2: Production Hours + Resource Capacity + Transfers",
+        "Homework 3: Target Stocks + Storage Capacity",
     ]
 
     if "homework" not in st.query_params:
@@ -95,9 +96,15 @@ def main():
             )
             - 1
         )
-        mb.demand_fulfillment_exercise(ampl, selected_exercise=selected_exercise)
-        mb.inventory_carryover_exercise(ampl, selected_exercise=selected_exercise)
-        mb.material_balance_exercise(ampl, selected_exercise=selected_exercise)
+        mb.demand_fulfillment_exercise(
+            ampl, exercise=1, selected_exercise=selected_exercise
+        )
+        mb.inventory_carryover_exercise(
+            ampl, exercise=2, selected_exercise=selected_exercise
+        )
+        mb.material_balance_exercise(
+            ampl, exercise=3, selected_exercise=selected_exercise
+        )
     elif class_number == 2:
         st.markdown("## 🧑‍🏫 Exercises")
         exercises = [
@@ -106,8 +113,6 @@ def main():
             "Exercise #1: Production Hours",
             "Exercise #2: Resource Capacity",
             "Exercise #3: Transfers",
-            "Exercise #4: Target Stocks",
-            "Exercise #5: Storage Capacity",
         ]
         selected_exercise = (
             exercises.index(
@@ -121,13 +126,39 @@ def main():
             )
             - 1
         )
-        mb.production_rate_exercise(ampl, selected_exercise=selected_exercise)
-        mb.resource_capacity_exercise(ampl, selected_exercise=selected_exercise)
-        mb.material_balance_with_transfers_exercise(
-            ampl, selected_exercise=selected_exercise
+        mb.production_rate_exercise(
+            ampl, exercise=1, selected_exercise=selected_exercise
         )
-        mb.target_stock_exercise(ampl, selected_exercise=selected_exercise)
-        mb.storage_capacity_exercise(ampl, selected_exercise=selected_exercise)
+        mb.resource_capacity_exercise(
+            ampl, exercise=2, selected_exercise=selected_exercise
+        )
+        mb.material_balance_with_transfers_exercise(
+            ampl, exercise=3, selected_exercise=selected_exercise
+        )
+    elif class_number == 3:
+        st.markdown("## 🧑‍🏫 Exercises")
+        exercises = [
+            "",
+            "All",
+            "Exercise #1: Target Stocks",
+            "Exercise #2: Storage Capacity",
+        ]
+        selected_exercise = (
+            exercises.index(
+                st.selectbox(
+                    "Select the exercise(s) you want to complete 👇",
+                    exercises,
+                    key="exercise",
+                    index=0,
+                    on_change=require_rerun,
+                )
+            )
+            - 1
+        )
+        mb.target_stock_exercise(ampl, exercise=1, selected_exercise=selected_exercise)
+        mb.storage_capacity_exercise(
+            ampl, exercise=2, selected_exercise=selected_exercise
+        )
 
     st.markdown("## Solve")
 
@@ -165,12 +196,15 @@ def main():
             ampl.set["TRANSFER_LANES"] = list(
                 instance.transfer_lanes.itertuples(index=False, name=None)
             )
+
+        if class_number >= 3:
             ampl.param["TargetStock"] = instance.target_stocks.set_index(
                 ["Product", "Location"]
             )
             ampl.param["MaxCapacity"] = instance.location_capacity.set_index(
                 ["Location"]
             )
+
     except Exception as e:
         message = str(e)
         if message.startswith('Error executing "let" command:'):
@@ -200,7 +234,7 @@ def main():
                 on_change=require_rerun,
             )
 
-        if class_number >= 2:
+        if class_number >= 3:
             with col1:
                 ampl.param["AboveTargetPenalty"] = st.slider(
                     "AboveTargetPenalty:",
@@ -291,7 +325,7 @@ def main():
             reports.demand_report()
 
             st.markdown("### Material Balance Report")
-            reports.material_balance_report(include_target_stock=class_number >= 2)
+            reports.material_balance_report(include_target_stock=class_number >= 3)
 
             if class_number >= 2:
                 st.markdown("### Resource Utilization Report")

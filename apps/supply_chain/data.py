@@ -316,6 +316,7 @@ class InputData:
             on_change=self.on_change,
         )
 
+    def _edit_data_class3(self):
         st.write("TargetStock:")
         self.target_stocks = self._data_editor(self.target_stocks, ["TargetStock"])
 
@@ -327,8 +328,11 @@ class InputData:
     def _filter_dimensions_class3(self):
         pass
 
-    def _edit_data_class3(self):
+    def _edit_data_class4(self):
         st.write("TransportationCosts:")
         self.transportation_costs = self._data_editor(
             self.transportation_costs, ["Cost"]
         )
+
+    def _filter_dimensions_class4(self):
+        pass
