@@ -58,6 +58,13 @@ class ModelBuilder:
             self.model += self.inventory_carryover_declaration(show=True)
 
             self.model += r"""
+            ####################
+            # Material Balance # 
+            ####################
+            """
+            self.model += self.material_balance_declaration(show=True)
+
+            self.model += r"""
             ###########################################
             # Part 1: Production and Production Hours #
             ###########################################
@@ -70,13 +77,6 @@ class ModelBuilder:
             #############################
             """
             self.model += self.resource_capacity_declaration(exercise=2)
-
-            self.model += r"""
-            #####################
-            # Part 3: Transfers #
-            #####################
-            """
-            self.model += self.material_balance_with_transfers_declaration(exercise=3)
 
             self.model += r"""
             #############
@@ -116,25 +116,25 @@ class ModelBuilder:
             self.model += self.resource_capacity_declaration(show=True)
 
             self.model += r"""
-            #############
-            # Transfers #
-            #############
+            #####################
+            # Part 1: Transfers #
+            #####################
             """
-            self.model += self.material_balance_with_transfers_declaration(show=True)
+            self.model += self.material_balance_with_transfers_declaration(exercise=1)
 
             self.model += r"""
             #########################
-            # Part 1: Target Stocks # 
+            # Part 2: Target Stocks # 
             #########################
             """
-            self.model += self.target_stock_declaration(exercise=1)
+            self.model += self.target_stock_declaration(exercise=2)
 
             self.model += r"""
             ############################
-            # Part 2: Storage Capacity #
+            # Part 3: Storage Capacity #
             ############################
             """
-            self.model += self.storage_capacity_declaration(exercise=2)
+            self.model += self.storage_capacity_declaration(exercise=3)
 
             self.model += r"""
             #############

@@ -295,6 +295,15 @@ class InputData:
             self.available_capacity, ["TotalCapacityPerPeriod"]
         )
 
+    def _edit_data_class3(self):
+        st.write("TargetStock:")
+        self.target_stocks = self._data_editor(self.target_stocks, ["TargetStock"])
+
+        st.write("MaxCapacity:")
+        self.location_capacity = self._data_editor(
+            self.location_capacity, ["MaxCapacity"]
+        )
+
         st.write("TransferLanes:")
         self.transfer_lanes = st.data_editor(
             self.transfer_lanes,
@@ -314,15 +323,6 @@ class InputData:
                 ),
             },
             on_change=self.on_change,
-        )
-
-    def _edit_data_class3(self):
-        st.write("TargetStock:")
-        self.target_stocks = self._data_editor(self.target_stocks, ["TargetStock"])
-
-        st.write("MaxCapacity:")
-        self.location_capacity = self._data_editor(
-            self.location_capacity, ["MaxCapacity"]
         )
 
     def _filter_dimensions_class3(self):

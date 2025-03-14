@@ -15,8 +15,8 @@ def main():
 
     options = [
         "Homework 1: Demand Balance + Inventory Carryover + Material Balance",
-        "Homework 2: Production Hours + Resource Capacity + Transfers",
-        "Homework 3: Target Stocks + Storage Capacity",
+        "Homework 2: Production Hours + Resource Capacity",
+        "Homework 3: Transfers+ Target Stocks + Storage Capacity",
     ]
 
     if "homework" not in st.query_params:
@@ -112,7 +112,6 @@ def main():
             "All",
             "Exercise #1: Production Hours",
             "Exercise #2: Resource Capacity",
-            "Exercise #3: Transfers",
         ]
         selected_exercise = (
             exercises.index(
@@ -132,16 +131,14 @@ def main():
         mb.resource_capacity_exercise(
             ampl, exercise=2, selected_exercise=selected_exercise
         )
-        mb.material_balance_with_transfers_exercise(
-            ampl, exercise=3, selected_exercise=selected_exercise
-        )
     elif class_number == 3:
         st.markdown("## 🧑‍🏫 Exercises")
         exercises = [
             "",
             "All",
-            "Exercise #1: Target Stocks",
-            "Exercise #2: Storage Capacity",
+            "Exercise #1: Transfers",
+            "Exercise #2: Target Stocks",
+            "Exercise #3: Storage Capacity",
         ]
         selected_exercise = (
             exercises.index(
@@ -155,9 +152,12 @@ def main():
             )
             - 1
         )
-        mb.target_stock_exercise(ampl, exercise=1, selected_exercise=selected_exercise)
+        mb.material_balance_with_transfers_exercise(
+            ampl, exercise=1, selected_exercise=selected_exercise
+        )
+        mb.target_stock_exercise(ampl, exercise=2, selected_exercise=selected_exercise)
         mb.storage_capacity_exercise(
-            ampl, exercise=2, selected_exercise=selected_exercise
+            ampl, exercise=3, selected_exercise=selected_exercise
         )
 
     st.markdown("## Solve")
@@ -193,11 +193,11 @@ def main():
             ampl.param["AvailableCapacity"] = instance.available_capacity.set_index(
                 ["Resource", "Location"]
             )
+
+        if class_number >= 3:
             ampl.set["TRANSFER_LANES"] = list(
                 instance.transfer_lanes.itertuples(index=False, name=None)
             )
-
-        if class_number >= 3:
             ampl.param["TargetStock"] = instance.target_stocks.set_index(
                 ["Product", "Location"]
             )
@@ -326,7 +326,7 @@ def main():
 
             st.markdown("### Material Balance Report")
             reports.material_balance_report(
-                include_transfers=class_number >= 2,
+                include_transfers=class_number >= 3,
                 include_target_stock=class_number >= 3,
             )
 
