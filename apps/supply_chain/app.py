@@ -325,7 +325,10 @@ def main():
             reports.demand_report()
 
             st.markdown("### Material Balance Report")
-            reports.material_balance_report(include_target_stock=class_number >= 3)
+            reports.material_balance_report(
+                include_transfers=class_number >= 2,
+                include_target_stock=class_number >= 3,
+            )
 
             if class_number >= 2:
                 st.markdown("### Resource Utilization Report")

@@ -315,18 +315,41 @@ class Reports:
         else:
             st.dataframe(resource_df, hide_index=True)
 
-    def material_balance_report(self, include_target_stock=False):
-        columns = [
-            "StartingInventory",
-            "MetDemand",
-            "Production",
-            "EndingInventory",
-        ]
+    def material_balance_report(
+        self, include_transfers=False, include_target_stock=False
+    ):
+        columns = ["StartingInventory", "MetDemand", "Production", "EndingInventory"]
         material_df = self.ampl.get_data(*columns).to_pandas()
         material_df.reset_index(inplace=True)
         material_df.columns = ["Product", "Location", "Period"] + list(
             material_df.columns[3:]
         )
+        if include_transfers:
+            columns = columns + ["TransfersIN", "TransfersOUT"]
+            transfers_in = self.ampl.get_data(
+                "{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} sum {(p, i, l) in TRANSFER_LANES} TransfersIN[p, i, l, t]"
+            ).to_dict()
+            transfers_out = self.ampl.get_data(
+                "{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} sum {(p, i, l) in TRANSFER_LANES} TransfersOUT[p, i, l, t]"
+            ).to_dict()
+            material_df["TransfersIN"] = [
+                transfers_in.get((p, l, t), 0)
+                for p, l, t in zip(
+                    material_df["Product"],
+                    material_df["Location"],
+                    material_df["Period"],
+                )
+            ]
+            material_df["TransfersOUT"] = [
+                transfers_out.get((p, l, t), 0)
+                for p, l, t in zip(
+                    material_df["Product"],
+                    material_df["Location"],
+                    material_df["Period"],
+                )
+            ]
+            columns.remove("EndingInventory")
+            columns.append("EndingInventory")
         if include_target_stock:
             columns = columns + ["TargetStock"]
             target_stock = self.ampl.get_data(
@@ -376,6 +399,20 @@ class Reports:
                 label="EndingInventory",
                 marker="o",
             )
+
+            if include_transfers:
+                ax.plot(
+                    df.columns,
+                    df.loc["TransfersIN", :],
+                    label="TransfersIN",
+                    marker="o",
+                )
+                ax.plot(
+                    df.columns,
+                    df.loc["TransfersOUT", :],
+                    label="TransfersOUT",
+                    marker="o",
+                )
 
             if include_target_stock:
                 ax.plot(
