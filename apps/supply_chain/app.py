@@ -15,7 +15,7 @@ def main():
 
     options = [
         "Homework 1: Demand Balance + Inventory Carryover + Material Balance",
-        "Homework 2: Production Hours + Resource Capacity",
+        "Homework 2: Shelf Life + Production Hours + Resource Capacity",
         "Homework 3: Transfers+ Target Stocks + Storage Capacity",
     ]
 
@@ -60,10 +60,17 @@ def main():
     with col2:
         show_complete_model = st.checkbox("Show complete model", value=False)
 
+    if class_number == 2:
+        with col1:
+            model_shelf_life = st.checkbox("Model shelf life", value=True)
+    else:
+        model_shelf_life = False
+
     st.session_state.mb = ModelBuilder(
-        class_number,
-        use_restrict_table,
-        show_complete_model,
+        class_number=class_number,
+        use_restrict_table=use_restrict_table,
+        show_complete_model=show_complete_model,
+        model_shelf_life=model_shelf_life,
         on_change=require_rerun,
     )
     mb = st.session_state.mb
@@ -326,6 +333,7 @@ def main():
 
             st.markdown("### Material Balance Report")
             reports.material_balance_report(
+                include_shelf_life=model_shelf_life,
                 include_transfers=class_number >= 3,
                 include_target_stock=class_number >= 3,
             )

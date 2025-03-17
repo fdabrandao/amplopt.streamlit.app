@@ -316,7 +316,10 @@ class Reports:
             st.dataframe(resource_df, hide_index=True)
 
     def material_balance_report(
-        self, include_transfers=False, include_target_stock=False
+        self,
+        include_transfers=False,
+        include_target_stock=False,
+        include_shelf_life=True,
     ):
         columns = ["StartingInventory", "MetDemand", "Production", "EndingInventory"]
         material_df = self.ampl.get_data(*columns).to_pandas()
@@ -324,6 +327,21 @@ class Reports:
         material_df.columns = ["Product", "Location", "Period"] + list(
             material_df.columns[3:]
         )
+        if include_shelf_life:
+            columns = columns + ["LostInventory"]
+            lost = self.ampl.get_data(
+                "{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} EndingInventorySL[p, l, t, last(SHELF_LIFE)];"
+            ).to_dict()
+            material_df["LostInventory"] = [
+                lost.get((p, l, t), 0)
+                for p, l, t in zip(
+                    material_df["Product"],
+                    material_df["Location"],
+                    material_df["Period"],
+                )
+            ]
+            columns.remove("EndingInventory")
+            columns.append("EndingInventory")
         if include_transfers:
             columns = columns + ["TransfersIN", "TransfersOUT"]
             transfers_in = self.ampl.get_data(

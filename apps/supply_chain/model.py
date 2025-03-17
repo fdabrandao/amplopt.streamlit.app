@@ -4,12 +4,18 @@ import re
 
 class ModelBuilder:
     def __init__(
-        self, class_number, use_restrict_table, show_complete_model, on_change=None
+        self,
+        class_number,
+        use_restrict_table,
+        show_complete_model,
+        model_shelf_life,
+        on_change=None,
     ):
         self.on_change = on_change
         self.class_number = class_number
         self.use_restrict_table = use_restrict_table
         self.show_complete_model = show_complete_model
+        self.model_shelf_life = model_shelf_life
         if class_number == 1:
             self.model = self.base_model()
 
@@ -41,7 +47,10 @@ class ModelBuilder:
             """
             self.model += self.class1_objective()
         elif class_number == 2:
-            self.model = self.base_model()
+            if not self.model_shelf_life:
+                self.model = self.base_model()
+            else:
+                self.model = self.base_model_with_shelf_life()
 
             self.model += r"""
             ##################
@@ -55,14 +64,24 @@ class ModelBuilder:
             # Inventory Carryover # 
             #######################
             """
-            self.model += self.inventory_carryover_declaration(show=True)
+            if not self.model_shelf_life:
+                self.model += self.inventory_carryover_declaration(show=True)
+            else:
+                self.model += self.inventory_carryover_with_shelf_life_declaration(
+                    show=True
+                )
 
             self.model += r"""
             ####################
             # Material Balance # 
             ####################
             """
-            self.model += self.material_balance_declaration(show=True)
+            if not self.model_shelf_life:
+                self.model += self.material_balance_declaration(show=True)
+            else:
+                self.model += self.material_balance_with_shelf_life_declaration(
+                    show=True
+                )
 
             self.model += r"""
             ###########################################
@@ -163,7 +182,7 @@ class ModelBuilder:
         else:
             declaration = declaration.replace("!exercise!", "")
 
-        return re.sub(r"\n\s*\n*\s*\n", "\n", declaration)
+        return re.sub(r"\n\s*\n*\s*\n", "\n", declaration).replace("!empty!", "")
 
     def _skip_flag(self, selected_exercise, exercise_number):
         allow_skipping = selected_exercise != exercise_number
@@ -261,20 +280,57 @@ class ModelBuilder:
             set LOCATIONS;  # Set of distribution or production locations
             set PRODUCTS_LOCATIONS within {PRODUCTS, LOCATIONS};  # Restrict table
             set PERIODS ordered;  # Ordered set of time periods for planning
-            
+            !empty!
             param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
                 # Demand for each product at each location during each time period
             var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Quantity of demand that is not met for a product at a location in a time period
             var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Quantity of demand that is met for a product at a location in a time period
-
+            !empty!
             param InitialInventory{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
                 # Initial inventory levels for each product at each location
             var StartingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Inventory at the beginning of each time period
             var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Inventory at the end of each time period
+            var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+                # Production volume for each product at each location during each time period
+            """
+        )
+
+    def base_model_with_shelf_life(self):
+        return self._transform(
+            r"""
+            set PRODUCTS;  # Set of products
+            set LOCATIONS;  # Set of distribution or production locations
+            set PRODUCTS_LOCATIONS within {PRODUCTS, LOCATIONS};  # Restrict table
+            set PERIODS ordered;  # Ordered set of time periods for planning
+            set SHELF_LIFE ordered := 0..2; # Define the set of shelf life periods
+            !empty!
+            param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
+                # Demand for each product at each location during each time period
+            var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+                # Quantity of demand that is not met for a product at a location in a time period
+            !empty!
+            var MetDemandSL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
+                # Quantity of demand that is met for each product-location-period-shelf life combination
+            var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE} MetDemandSL[p, l, t, d];
+                # Quantity of demand that is met for a product at a location in a time period
+            !empty! 
+            param InitialInventory{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
+                # Initial inventory levels for each product at each location
+            !empty!
+            var StartingInventorySL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
+                # Inventory at the beginning of each time period for each shelf life
+            var StartingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE} StartingInventorySL[p, l, t, d];
+                # Inventory at the beginning of each time period
+            !empty!
+            var EndingInventorySL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
+                # Inventory at the end of each time period
+            var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE: d < last(SHELF_LIFE)} EndingInventorySL[p, l, t, d];
+                # Inventory at the end of each time period
+            !empty!
             var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Production volume for each product at each location during each time period
             """
@@ -348,6 +404,34 @@ class ModelBuilder:
         else:
             return self.inventory_carryover_placeholder
 
+    def inventory_carryover_with_shelf_life_declaration(self, exercise=None, show=None):
+        self.inventory_carryover = self._transform(
+            r"""
+            !exercise!
+            s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
+                StartingInventorySL[p, l, t, d] =
+                    if ord(t) > 1 then
+                        (if ord(d) > 1 then EndingInventorySL[p, l, prev(t), prev(d)] else 0)
+                    else
+                        (if ord(d) = 1 then InitialInventory[p, l] else 0);
+                # Define how inventory is carried over from one period to the next
+            """,
+            exercise=exercise,
+        )
+
+        self.inventory_carryover_placeholder = self._transform(
+            r"""
+            # s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
+            # ... !exercise!Define how inventory is carried over from one period to the next
+            """,
+            exercise=exercise,
+        )
+
+        if show or self.show_complete_model:
+            return self.inventory_carryover
+        else:
+            return self.inventory_carryover_placeholder
+
     def inventory_carryover_exercise(self, ampl, exercise, selected_exercise):
         self._exercise(
             ampl,
@@ -396,6 +480,36 @@ class ModelBuilder:
         self.material_balance_placeholder = self._transform(
             r"""
             # s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+            # ... !exercise!Balance starting inventory and production against demand to determine ending inventory
+            """,
+            exercise=exercise,
+        )
+
+        if show or self.show_complete_model:
+            return self.material_balance
+        else:
+            return self.material_balance_placeholder
+
+    def material_balance_with_shelf_life_declaration(self, exercise=None, show=None):
+        self.material_balance = self._transform(
+            r"""
+            !exercise!
+            s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
+                StartingInventorySL[p, l, t, d]
+                + (if ord(d) == 1 then Production[p, l, t]) 
+                - MetDemandSL[p, l, t, d] = EndingInventorySL[p, l, t, d];
+                # Balance starting inventory and production against demand to determine ending inventory
+            !empty!
+            s.t. OldInventoryFirst{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
+                EndingInventorySL[p, l, t, d] > 0 ==> sum {dd in SHELF_LIFE: ord(dd) < ord(d)} MetDemandSL[p, l, t, dd] = 0;
+                # If there is old inventory, then there should be no demand met for the same product with a shorter shelf life
+            """,
+            exercise=exercise,
+        )
+
+        self.material_balance_placeholder = self._transform(
+            r"""
+            # s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
             # ... !exercise!Balance starting inventory and production against demand to determine ending inventory
             """,
             exercise=exercise,
