@@ -241,6 +241,11 @@ def main():
                 on_change=require_rerun,
             )
 
+            if model_shelf_life:
+                ampl.param["EnsureOldStockGoesFirst"] = st.checkbox(
+                    "Sell old inventory first", value=True
+                )
+
         if class_number >= 3:
             with col1:
                 ampl.param["AboveTargetPenalty"] = st.slider(

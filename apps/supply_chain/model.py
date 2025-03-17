@@ -59,26 +59,44 @@ class ModelBuilder:
             """
             self.model += self.demand_fulfillment_declaration(show=True)
 
-            self.model += r"""
+            inventory_carryover_header = r"""
             #######################
             # Inventory Carryover # 
             #######################
             """
+
+            inventory_carryover_with_shelf_life_header = r"""
+            #######################################
+            # Inventory Carryover With Shelf Life # 
+            #######################################
+            """
+
             if not self.model_shelf_life:
+                self.model += inventory_carryover_header
                 self.model += self.inventory_carryover_declaration(show=True)
             else:
+                self.model += inventory_carryover_with_shelf_life_header
                 self.model += self.inventory_carryover_with_shelf_life_declaration(
                     show=True
                 )
 
-            self.model += r"""
+            material_balance_header = r"""
             ####################
             # Material Balance # 
             ####################
             """
+
+            material_balance_with_shelf_life_header = r"""
+            ####################################
+            # Material Balance With Shelf Life # 
+            ####################################
+            """
+
             if not self.model_shelf_life:
+                self.model += material_balance_header
                 self.model += self.material_balance_declaration(show=True)
             else:
+                self.model += material_balance_with_shelf_life_header
                 self.model += self.material_balance_with_shelf_life_declaration(
                     show=True
                 )
@@ -500,7 +518,8 @@ class ModelBuilder:
                 - MetDemandSL[p, l, t, d] = EndingInventorySL[p, l, t, d];
                 # Balance starting inventory and production against demand to determine ending inventory
             !empty!
-            s.t. OldInventoryFirst{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
+            param EnsureOldStockGoesFirst default 1;
+            s.t. SellOldStockFirst{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE: EnsureOldStockGoesFirst == 1}:
                 EndingInventorySL[p, l, t, d] > 0 ==> sum {dd in SHELF_LIFE: ord(dd) < ord(d)} MetDemandSL[p, l, t, dd] = 0;
                 # If there is old inventory, then there should be no demand met for the same product with a shorter shelf life
             """,
