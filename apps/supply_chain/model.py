@@ -67,7 +67,7 @@ class ModelBuilder:
 
             inventory_carryover_with_shelf_life_header = r"""
             #######################################
-            # Inventory Carryover With Shelf Life # 
+            # Inventory Carryover With Shelf-Life # 
             #######################################
             """
 
@@ -88,7 +88,7 @@ class ModelBuilder:
 
             material_balance_with_shelf_life_header = r"""
             ####################################
-            # Material Balance With Shelf Life # 
+            # Material Balance With Shelf-Life # 
             ####################################
             """
 
@@ -120,7 +120,10 @@ class ModelBuilder:
             # Objective #
             #############
             """
-            self.model += self.class1_objective()
+            if not self.model_shelf_life:
+                self.model += self.class1_objective()
+            else:
+                self.model += self.class1_objective_with_shelf_life()
         elif class_number == 3:
             self.model = self.base_model()
 
@@ -324,7 +327,8 @@ class ModelBuilder:
             set LOCATIONS;  # Set of distribution or production locations
             set PRODUCTS_LOCATIONS within {PRODUCTS, LOCATIONS};  # Restrict table
             set PERIODS ordered;  # Ordered set of time periods for planning
-            set SHELF_LIFE ordered := 0..2; # Define the set of shelf life periods
+            param MaxShelfLife >= 0;  # Maximum shelf-life of products
+            set SHELF_LIFE ordered := 0..MaxShelfLife; # Define the set of shelf-life periods
             !empty!
             param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
                 # Demand for each product at each location during each time period
@@ -332,7 +336,7 @@ class ModelBuilder:
                 # Quantity of demand that is not met for a product at a location in a time period
             !empty!
             var MetDemandSL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
-                # Quantity of demand that is met for each product-location-period-shelf life combination
+                # Quantity of demand that is met for each product-location-period-shelf-life combination
             var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE} MetDemandSL[p, l, t, d];
                 # Quantity of demand that is met for a product at a location in a time period
             !empty! 
@@ -340,12 +344,14 @@ class ModelBuilder:
                 # Initial inventory levels for each product at each location
             !empty!
             var StartingInventorySL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
-                # Inventory at the beginning of each time period for each shelf life
+                # Inventory at the beginning of each time period for each shelf-life
             var StartingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE} StartingInventorySL[p, l, t, d];
                 # Inventory at the beginning of each time period
             !empty!
             var EndingInventorySL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
                 # Inventory at the end of each time period
+            var LostInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = EndingInventorySL[p, l, t, last(SHELF_LIFE)];
+                # Inventory that is lost due to expiration
             var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE: d < last(SHELF_LIFE)} EndingInventorySL[p, l, t, d];
                 # Inventory at the end of each time period
             !empty!
@@ -521,7 +527,7 @@ class ModelBuilder:
             param EnsureOldStockGoesFirst default 1;
             s.t. SellOldStockFirst{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE: EnsureOldStockGoesFirst == 1}:
                 EndingInventorySL[p, l, t, d] > 0 ==> sum {dd in SHELF_LIFE: ord(dd) < ord(d)} MetDemandSL[p, l, t, dd] = 0;
-                # If there is old inventory, then there should be no demand met for the same product with a shorter shelf life
+                # If there is old inventory, then there should be no demand met for the same product with a shorter shelf-life
             """,
             exercise=exercise,
         )
@@ -825,6 +831,23 @@ class ModelBuilder:
                 sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS}
                     (UnmetDemandPenalty * UnmetDemand[p, l, t] + EndingInventoryPenalty * EndingInventory[p, l, t]);
                 # Objective function to minimize total costs associated with unmet demand and leftover inventory
+            """
+        )
+
+    def class1_objective_with_shelf_life(self):
+        return self._transform(
+            r"""
+            param UnmetDemandPenalty default 10;
+                # Penalty cost per unit for unmet demand (impacts decision to meet demand)
+            param EndingInventoryPenalty default 5;
+                # Penalty cost per unit for ending inventory (reflects carrying cost)
+            param LostInventoryPenalty default 5;
+                # Penalty cost per unit for lost inventory (reflects waste cost)
+
+            minimize TotalCost:
+                sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS}
+                    (UnmetDemandPenalty * UnmetDemand[p, l, t] + EndingInventoryPenalty * EndingInventory[p, l, t] + LostInventoryPenalty * LostInventory[p, l, t]);
+                # Objective function to minimize total costs associated with unmet demand, leftover inventory, and lost inventory
             """
         )
 

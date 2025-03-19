@@ -15,7 +15,7 @@ def main():
 
     options = [
         "Homework 1: Demand Balance + Inventory Carryover + Material Balance",
-        "Homework 2: Shelf Life + Production Hours + Resource Capacity",
+        "Homework 2: Shelf-Life + Production Hours + Resource Capacity",
         "Homework 3: Transfers+ Target Stocks + Storage Capacity",
     ]
 
@@ -62,7 +62,7 @@ def main():
 
     if class_number == 2:
         with col1:
-            model_shelf_life = st.checkbox("Model shelf life", value=True)
+            model_shelf_life = st.checkbox("Model shelf-life", value=True)
     else:
         model_shelf_life = False
 
@@ -221,7 +221,7 @@ def main():
         else:
             pass
 
-    with st.expander("Adjust objective penalties"):
+    with st.expander("Adjust parameters"):
         col1, col2 = st.columns(2)
         with col1:
             ampl.param["UnmetDemandPenalty"] = st.slider(
@@ -231,6 +231,19 @@ def main():
                 value=10,
                 on_change=require_rerun,
             )
+
+            if model_shelf_life:
+                ampl.param["MaxShelfLife"] = st.slider(
+                    "MaxShelfLife:",
+                    min_value=0,
+                    max_value=5,
+                    value=3,
+                    on_change=require_rerun,
+                )
+
+                ampl.param["EnsureOldStockGoesFirst"] = st.checkbox(
+                    "Sell old inventory first", value=True
+                )
 
         with col2:
             ampl.param["EndingInventoryPenalty"] = st.slider(
@@ -242,8 +255,12 @@ def main():
             )
 
             if model_shelf_life:
-                ampl.param["EnsureOldStockGoesFirst"] = st.checkbox(
-                    "Sell old inventory first", value=True
+                ampl.param["LostInventoryPenalty"] = st.slider(
+                    "LostInventoryPenalty:",
+                    min_value=0,
+                    max_value=50,
+                    value=10,
+                    on_change=require_rerun,
                 )
 
         if class_number >= 3:
@@ -291,7 +308,8 @@ def main():
         if ampl.solve_result != "solved":
             st.error(f"The model could not be solved:\n```\n{output}\n```")
         else:
-            st.write(f"```\n{output}\n```")
+            with st.expander("Solver Output", expanded=True):
+                st.write(f"```\n{output}\n```")
 
         if ampl.solve_result == "solved":
             ampl.option["display_width"] = 1000

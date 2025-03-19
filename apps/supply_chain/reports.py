@@ -329,9 +329,7 @@ class Reports:
         )
         if include_shelf_life:
             columns = columns + ["LostInventory"]
-            lost = self.ampl.get_data(
-                "{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} EndingInventorySL[p, l, t, last(SHELF_LIFE)];"
-            ).to_dict()
+            lost = self.ampl.get_data("LostInventory").to_dict()
             material_df["LostInventory"] = [
                 lost.get((p, l, t), 0)
                 for p, l, t in zip(
