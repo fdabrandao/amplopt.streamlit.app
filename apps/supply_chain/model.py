@@ -437,7 +437,7 @@ class ModelBuilder:
                     if ord(t) > 1 then
                         (if ord(d) > 1 then EndingInventorySL[p, l, prev(t), prev(d)] else 0)
                     else
-                        (if ord(d) = 1 then InitialInventory[p, l] else 0);
+                        (if ord(d) = 2 then InitialInventory[p, l] else 0);
                 # Define how inventory is carried over from one period to the next
             """,
             exercise=exercise,
