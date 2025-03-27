@@ -39,6 +39,9 @@ class InputData:
 
         # Data
         self.demand = load_sheet("Demand", self.DEMAND_COLUMNS)
+        self.demand = self.demand[self.demand["DemandType"] == "Orders"]
+        self.demand.drop("DemandType", axis=1, inplace=True)
+
         self.starting_inventory = load_sheet(
             "StartingInventory", self.STARTING_INVENTORY_COLUMNS
         )
