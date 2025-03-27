@@ -3,10 +3,11 @@ import platform
 
 
 def badge(url_path=""):
-    if platform.system() == "Linux":
-        badge_html = f"""<img src="https://h.ampl.com/https://amplopt.streamlit.app/{url_path}">"""
-    else:
-        badge_html = ""
+    # if platform.system() == "Linux":
+    #     badge_html = f"""<img src="https://h.ampl.com/https://amplopt.streamlit.app/{url_path}">"""
+    # else:
+    #     badge_html = ""
+    badge_html = ""
     return f"""
         <div style="float:right;">
         {badge_html}
