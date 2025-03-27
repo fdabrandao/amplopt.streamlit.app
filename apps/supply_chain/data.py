@@ -38,9 +38,14 @@ class InputData:
             return self.dfs[name][columns].dropna().copy()
 
         # Data
-        self.demand = load_sheet("Demand", self.DEMAND_COLUMNS)
-        self.demand = self.demand[self.demand["DemandType"] == "Orders"]
-        self.demand.drop("DemandType", axis=1, inplace=True)
+        df = load_sheet("Demand", self.DEMAND_COLUMNS)
+        pivot_df = df.pivot(
+            index=("Product", "Location", "Period"),
+            columns="DemandType",
+            values="Quantity",
+        )
+        pivot_df["Quantity"] = pivot_df.max(axis=1)
+        self.demand = pivot_df[["Quantity"]].reset_index()
 
         self.starting_inventory = load_sheet(
             "StartingInventory", self.STARTING_INVENTORY_COLUMNS
