@@ -962,9 +962,9 @@ class ModelBuilder:
                 sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
                     UnmetDemandPenalty * UnmetDemand[p, l, t] 
                     + EndingInventoryPenalty * EndingInventory[p, l, t]
-                    + (if AboveTarget[p, l, t] <= 5 then AboveTarget[p, l, t] * AboveTargetPenalty 
+                    + (if AboveTarget[p, l, t] <= 5 then AboveTarget[p, l, t] * AboveTargetPenalty
                                                     else 10 * AboveTargetPenalty)
-                    + (if AboveTarget[p, l, t] <= 5 then AboveTarget[p, l, t] * BelowTargetPenalty 
+                    + (if BelowTarget[p, l, t] <= 5 then BelowTarget[p, l, t] * BelowTargetPenalty
                                                     else 10 * BelowTargetPenalty)
                 )
                 + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
