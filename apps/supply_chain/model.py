@@ -9,7 +9,8 @@ class ModelBuilder:
         use_restrict_table,
         show_complete_model,
         model_shelf_life,
-        layered_max_stock,
+        soft_storage_capacity,
+        layered_penalties,
         on_change=None,
     ):
         self.on_change = on_change
@@ -17,7 +18,8 @@ class ModelBuilder:
         self.use_restrict_table = use_restrict_table
         self.show_complete_model = show_complete_model
         self.model_shelf_life = model_shelf_life
-        self.layered_max_stock = layered_max_stock
+        self.soft_storage_capacity = soft_storage_capacity
+        self.layered_penalties = layered_penalties
         if class_number == 1:
             self.model = self.base_model()
 
@@ -176,20 +178,19 @@ class ModelBuilder:
             # Part 3: Storage Capacity #
             ############################
             """
-            if not self.layered_max_stock:
+            if not self.soft_storage_capacity:
                 self.model += self.storage_capacity_declaration(exercise=3)
             else:
-                self.model += self.layered_storage_capacity_declaration(exercise=3)
+                self.model += self.soft_storage_capacity_declaration(exercise=3)
 
             self.model += r"""
             #############
             # Objective #
             #############
             """
-            if not self.layered_max_stock:
-                self.model += self.class3_objective()
-            else:
-                self.model += self.class3_objective_with_layered_max_stock()
+            self.model += self.class3_objective(
+                self.soft_storage_capacity, self.layered_penalties
+            )
         else:
             assert False
 
@@ -827,7 +828,7 @@ class ModelBuilder:
             ],
         )
 
-    def layered_storage_capacity_declaration(self, exercise=None, show=None):
+    def soft_storage_capacity_declaration(self, exercise=None, show=None):
         header = self._transform(
             r"""
             param MaxCapacity{l in LOCATIONS} >= 0;
@@ -860,7 +861,7 @@ class ModelBuilder:
         else:
             return header + self.layered_storage_capacity_placeholder
 
-    def layered_storage_capacity_exercise(self, ampl, exercise, selected_exercise):
+    def soft_storage_capacity_exercise(self, ampl, exercise, selected_exercise):
         self._exercise(
             ampl,
             name="Layered Storage Capacity",
@@ -909,9 +910,8 @@ class ModelBuilder:
             """
         )
 
-    def class3_objective(self):
-        return self._transform(
-            r"""
+    def class3_objective(self, soft_storage_capacity, layered_penalties):
+        parameters = r"""
             param BelowTargetPenalty default 3;
                 # Penalty for having inventory below target
             param UnmetDemandPenalty default 10;
@@ -922,51 +922,63 @@ class ModelBuilder:
                 # Penalty cost per unit for ending inventory (reflects carrying cost)
             param TransferPenalty default 1;
                 # Penalty for each unit transferred
-
-            # Minimize total cost objective
-            minimize TotalCost:
-                sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
-                    UnmetDemandPenalty * UnmetDemand[p, l, t] 
-                    + EndingInventoryPenalty * EndingInventory[p, l, t] 
-                    + AboveTargetPenalty * AboveTarget[p, l, t] 
-                    + BelowTargetPenalty * BelowTarget[p, l, t]
-                )
-                + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
-                    TransferPenalty * TransfersOUT[p, i, j, t]
-                );
-                # Objective: Minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
             """
-        )
 
-    def class3_objective_with_layered_max_stock(self):
-        return self._transform(
-            r"""
-            param BelowTargetPenalty default 3;
-                # Penalty for having inventory below target
-            param UnmetDemandPenalty default 10;
-                # Penalty cost per unit for unmet demand (impacts decision to meet demand)
-            param AboveTargetPenalty default 2;
-                # Penalty for having inventory above target
-            param EndingInventoryPenalty default 5;
-                # Penalty cost per unit for ending inventory (reflects carrying cost)
-            param TransferPenalty default 1;
-                # Penalty for each unit transferred
-
-            # Minimize total cost objective
-            minimize TotalCost:
-                sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
-                    UnmetDemandPenalty * UnmetDemand[p, l, t] 
-                    + EndingInventoryPenalty * EndingInventory[p, l, t] 
-                    + AboveTargetPenalty * AboveTarget[p, l, t] 
-                    + BelowTargetPenalty * BelowTarget[p, l, t]
-                )
-                + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
-                    TransferPenalty * TransfersOUT[p, i, j, t]
-                )
+        soft_storage_component = ""
+        if soft_storage_capacity:
+            soft_storage_component = r"""
                 + sum {l in LOCATIONS, t in PERIODS} (
-                    if AboveCapacitySlack[l, t] >= 1 then 
-                        (if AboveCapacitySlack[l, t] <= 5 then 10 else 50)
-                );
+                    if AboveCapacitySlack[l, t] > 0 then 
+                        (if AboveCapacitySlack[l, t] <= 5 then 10
+                                                          else 50)
+                )"""
+
+        linear_penalties_objective = (
+            parameters
+            + r"""
+
+            # Minimize total cost objective
+            minimize TotalCost:
+                sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
+                    UnmetDemandPenalty * UnmetDemand[p, l, t] 
+                    + EndingInventoryPenalty * EndingInventory[p, l, t] 
+                    + AboveTargetPenalty * AboveTarget[p, l, t] 
+                    + BelowTargetPenalty * BelowTarget[p, l, t]
+                )
+                + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
+                    TransferPenalty * TransfersOUT[p, i, j, t]
+                )"""
+            + soft_storage_component
+            + r""";
                 # Objective: Minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
             """
         )
+
+        layered_penalties_objective = (
+            parameters
+            + r"""
+
+            # Minimize total cost objective
+            minimize TotalCost:
+                sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
+                    (if UnmetDemand[p, l, t] <= 5 then UnmetDemand[p, l, t] * UnmetDemandPenalty 
+                                                  else 10 * UnmetDemandPenalty)
+                    + (if EndingInventory[p, l, t] <= 5 then EndingInventory[p, l, t] * EndingInventoryPenalty 
+                                                        else 10 * EndingInventoryPenalty)
+                    + (if AboveTarget[p, l, t] <= 5 then AboveTarget[p, l, t] * AboveTargetPenalty 
+                                                    else 10 * AboveTargetPenalty)
+                    + (if AboveTarget[p, l, t] <= 5 then AboveTarget[p, l, t] * BelowTargetPenalty 
+                                                    else 10 * BelowTargetPenalty)
+                )
+                + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
+                    TransferPenalty * TransfersOUT[p, i, j, t]
+                )"""
+            + soft_storage_component
+            + r""";
+                # Objective: Minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
+            """
+        )
+        if layered_penalties:
+            return self._transform(layered_penalties_objective)
+        else:
+            return self._transform(linear_penalties_objective)

@@ -65,17 +65,22 @@ def main():
         with col1:
             model_shelf_life = st.checkbox("Model shelf-life", value=True)
 
-    layered_max_stock = False
+    layered_penalties = False
+    soft_storage_capacity = False
     if class_number == 3:
         with col1:
-            layered_max_stock = st.checkbox("Layered Max Stock ", value=False)
+            soft_storage_capacity = st.checkbox(
+                "Layered Max Storage Capacity", value=False
+            )
+            layered_penalties = st.checkbox("Layered Penalties", value=False)
 
     st.session_state.mb = ModelBuilder(
         class_number=class_number,
         use_restrict_table=use_restrict_table,
         show_complete_model=show_complete_model,
         model_shelf_life=model_shelf_life,
-        layered_max_stock=layered_max_stock,
+        soft_storage_capacity=soft_storage_capacity,
+        layered_penalties=layered_penalties,
         on_change=require_rerun,
     )
     mb = st.session_state.mb
@@ -168,12 +173,12 @@ def main():
             ampl, exercise=1, selected_exercise=selected_exercise
         )
         mb.target_stock_exercise(ampl, exercise=2, selected_exercise=selected_exercise)
-        if not layered_max_stock:
+        if not soft_storage_capacity:
             mb.storage_capacity_exercise(
                 ampl, exercise=3, selected_exercise=selected_exercise
             )
         else:
-            mb.layered_storage_capacity_exercise(
+            mb.soft_storage_capacity_exercise(
                 ampl, exercise=3, selected_exercise=selected_exercise
             )
 
