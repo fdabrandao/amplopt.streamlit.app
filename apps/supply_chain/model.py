@@ -922,6 +922,7 @@ class ModelBuilder:
                 # Penalty cost per unit for ending inventory (reflects carrying cost)
             param TransferPenalty default 1;
                 # Penalty for each unit transferred
+            !empty!
             """
 
         soft_storage_component = ""
@@ -936,7 +937,6 @@ class ModelBuilder:
         linear_penalties_objective = (
             parameters
             + r"""
-
             # Minimize total cost objective
             minimize TotalCost:
                 sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
@@ -957,7 +957,6 @@ class ModelBuilder:
         layered_penalties_objective = (
             parameters
             + r"""
-
             # Minimize total cost objective
             minimize TotalCost:
                 sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
