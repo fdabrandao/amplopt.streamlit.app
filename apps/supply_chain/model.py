@@ -841,7 +841,7 @@ class ModelBuilder:
             r"""
             !exercise!
             s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
-                sum{(p, l) in PRODUCTS_LOCATIONS} EndingInventory[p, l, t] = MaxCapacity[l] + AboveCapacitySlack[l, t];
+                sum{(p, l) in PRODUCTS_LOCATIONS} EndingInventory[p, l, t] <= MaxCapacity[l] + AboveCapacitySlack[l, t];
                 # Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
             """,
             exercise=exercise,
@@ -871,7 +871,7 @@ class ModelBuilder:
             needs=[
                 "sum{(p, l) in PRODUCTS_LOCATIONS}",
                 "EndingInventory[p, l, t]",
-                "=",
+                "<=",
                 "MaxCapacity[l]",
                 "AboveCapacitySlack[l, t]",
             ],
