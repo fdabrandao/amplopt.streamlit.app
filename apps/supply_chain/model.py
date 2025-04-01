@@ -9,8 +9,8 @@ class ModelBuilder:
         use_restrict_table,
         show_complete_model,
         model_shelf_life,
-        soft_storage_capacity,
-        layered_penalties,
+        layered_storage_capacity,
+        layered_targets,
         on_change=None,
     ):
         self.on_change = on_change
@@ -18,8 +18,8 @@ class ModelBuilder:
         self.use_restrict_table = use_restrict_table
         self.show_complete_model = show_complete_model
         self.model_shelf_life = model_shelf_life
-        self.soft_storage_capacity = soft_storage_capacity
-        self.layered_penalties = layered_penalties
+        self.layered_storage_capacity = layered_storage_capacity
+        self.layered_targets = layered_targets
         if class_number == 1:
             self.model = self.base_model()
 
@@ -178,7 +178,7 @@ class ModelBuilder:
             # Part 3: Storage Capacity #
             ############################
             """
-            if not self.soft_storage_capacity:
+            if not self.layered_storage_capacity:
                 self.model += self.storage_capacity_declaration(exercise=3)
             else:
                 self.model += self.soft_storage_capacity_declaration(exercise=3)
@@ -189,7 +189,7 @@ class ModelBuilder:
             #############
             """
             self.model += self.class3_objective(
-                self.soft_storage_capacity, self.layered_penalties
+                self.layered_storage_capacity, self.layered_targets
             )
         else:
             assert False
@@ -910,7 +910,7 @@ class ModelBuilder:
             """
         )
 
-    def class3_objective(self, soft_storage_capacity, layered_penalties):
+    def class3_objective(self, layered_storage_capacity, layered_targets):
         parameters = r"""
             param BelowTargetPenalty default 3;
                 # Penalty for having inventory below target
@@ -925,9 +925,9 @@ class ModelBuilder:
             !empty!
             """
 
-        soft_storage_component = ""
-        if soft_storage_capacity:
-            soft_storage_component = r"""
+        layered_storage_component = ""
+        if layered_storage_capacity:
+            layered_storage_component = r"""
                 + sum {l in LOCATIONS, t in PERIODS} (
                     if AboveCapacitySlack[l, t] > 0 then 
                         (if AboveCapacitySlack[l, t] <= 5 then 10
@@ -948,7 +948,7 @@ class ModelBuilder:
                 + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
                     TransferPenalty * TransfersOUT[p, i, j, t]
                 )"""
-            + soft_storage_component
+            + layered_storage_component
             + r""";
                 # Objective: Minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
             """
@@ -960,10 +960,8 @@ class ModelBuilder:
             # Minimize total cost objective
             minimize TotalCost:
                 sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
-                    (if UnmetDemand[p, l, t] <= 5 then UnmetDemand[p, l, t] * UnmetDemandPenalty 
-                                                  else 10 * UnmetDemandPenalty)
-                    + (if EndingInventory[p, l, t] <= 5 then EndingInventory[p, l, t] * EndingInventoryPenalty 
-                                                        else 10 * EndingInventoryPenalty)
+                    UnmetDemandPenalty * UnmetDemand[p, l, t] 
+                    + EndingInventoryPenalty * EndingInventory[p, l, t]
                     + (if AboveTarget[p, l, t] <= 5 then AboveTarget[p, l, t] * AboveTargetPenalty 
                                                     else 10 * AboveTargetPenalty)
                     + (if AboveTarget[p, l, t] <= 5 then AboveTarget[p, l, t] * BelowTargetPenalty 
@@ -972,12 +970,12 @@ class ModelBuilder:
                 + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
                     TransferPenalty * TransfersOUT[p, i, j, t]
                 )"""
-            + soft_storage_component
+            + layered_storage_component
             + r""";
                 # Objective: Minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
             """
         )
-        if layered_penalties:
+        if layered_targets:
             return self._transform(layered_penalties_objective)
         else:
             return self._transform(linear_penalties_objective)
