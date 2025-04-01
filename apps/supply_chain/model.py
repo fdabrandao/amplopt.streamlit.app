@@ -9,6 +9,7 @@ class ModelBuilder:
         use_restrict_table,
         show_complete_model,
         model_shelf_life,
+        layered_max_stock,
         on_change=None,
     ):
         self.on_change = on_change
@@ -16,6 +17,7 @@ class ModelBuilder:
         self.use_restrict_table = use_restrict_table
         self.show_complete_model = show_complete_model
         self.model_shelf_life = model_shelf_life
+        self.layered_max_stock = layered_max_stock
         if class_number == 1:
             self.model = self.base_model()
 
@@ -174,14 +176,20 @@ class ModelBuilder:
             # Part 3: Storage Capacity #
             ############################
             """
-            self.model += self.storage_capacity_declaration(exercise=3)
+            if not self.layered_max_stock:
+                self.model += self.storage_capacity_declaration(exercise=3)
+            else:
+                self.model += self.layered_storage_capacity_declaration(exercise=3)
 
             self.model += r"""
             #############
             # Objective #
             #############
             """
-            self.model += self.class3_objective()
+            if not self.layered_max_stock:
+                self.model += self.class3_objective()
+            else:
+                self.model += self.class3_objective_with_layered_max_stock()
         else:
             assert False
 
@@ -783,7 +791,7 @@ class ModelBuilder:
         self.storage_capacity = self._transform(
             r"""
             !exercise!
-            subject to StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
+            s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
                 sum{(p, l) in PRODUCTS_LOCATIONS} EndingInventory[p, l, t] <= MaxCapacity[l];
                 # Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
             """,
@@ -816,6 +824,56 @@ class ModelBuilder:
                 "EndingInventory[p, l, t]",
                 "<=",
                 "MaxCapacity[l]",
+            ],
+        )
+
+    def layered_storage_capacity_declaration(self, exercise=None, show=None):
+        header = self._transform(
+            r"""
+            param MaxCapacity{l in LOCATIONS} >= 0;
+                # Maximum storage capacity for each location (could also depend on the period)
+            var AboveCapacitySlack{l in LOCATIONS, t in PERIODS} >= 0 <= 20;
+                # Excess amount of inventory at each location and time period 
+            """
+        )
+
+        self.layered_storage_capacity = self._transform(
+            r"""
+            !exercise!
+            s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
+                sum{(p, l) in PRODUCTS_LOCATIONS} EndingInventory[p, l, t] = MaxCapacity[l] + AboveCapacitySlack[l, t];
+                # Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
+            """,
+            exercise=exercise,
+        )
+
+        self.layered_storage_capacity_placeholder = self._transform(
+            r"""
+            # s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
+            # ... !exercise!Ensure that the total ending inventory across all products is penalized if it exceeds the maximum storage capacity at each location
+            """,
+            exercise=exercise,
+        )
+
+        if show or self.show_complete_model:
+            return header + self.layered_storage_capacity
+        else:
+            return header + self.layered_storage_capacity_placeholder
+
+    def layered_storage_capacity_exercise(self, ampl, exercise, selected_exercise):
+        self._exercise(
+            ampl,
+            name="Layered Storage Capacity",
+            description="Ensure that the total ending inventory across all products is penalized if it exceeds the maximum storage capacity at each location.",
+            exercise=exercise,
+            selected_exercise=selected_exercise,
+            constraint=self.layered_storage_capacity,
+            needs=[
+                "sum{(p, l) in PRODUCTS_LOCATIONS}",
+                "EndingInventory[p, l, t]",
+                "=",
+                "MaxCapacity[l]",
+                "AboveCapacitySlack[l, t]",
             ],
         )
 
@@ -875,6 +933,39 @@ class ModelBuilder:
                 )
                 + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
                     TransferPenalty * TransfersOUT[p, i, j, t]
+                );
+                # Objective: Minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
+            """
+        )
+
+    def class3_objective_with_layered_max_stock(self):
+        return self._transform(
+            r"""
+            param BelowTargetPenalty default 3;
+                # Penalty for having inventory below target
+            param UnmetDemandPenalty default 10;
+                # Penalty cost per unit for unmet demand (impacts decision to meet demand)
+            param AboveTargetPenalty default 2;
+                # Penalty for having inventory above target
+            param EndingInventoryPenalty default 5;
+                # Penalty cost per unit for ending inventory (reflects carrying cost)
+            param TransferPenalty default 1;
+                # Penalty for each unit transferred
+
+            # Minimize total cost objective
+            minimize TotalCost:
+                sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
+                    UnmetDemandPenalty * UnmetDemand[p, l, t] 
+                    + EndingInventoryPenalty * EndingInventory[p, l, t] 
+                    + AboveTargetPenalty * AboveTarget[p, l, t] 
+                    + BelowTargetPenalty * BelowTarget[p, l, t]
+                )
+                + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
+                    TransferPenalty * TransfersOUT[p, i, j, t]
+                )
+                + sum {l in LOCATIONS, t in PERIODS} (
+                    if AboveCapacitySlack[l, t] >= 1 then 
+                        (if AboveCapacitySlack[l, t] <= 5 then 10 else 50)
                 );
                 # Objective: Minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
             """

@@ -16,7 +16,7 @@ def main():
     options = [
         "Homework 1: Demand Balance + Inventory Carryover + Material Balance",
         "Homework 2: Shelf-Life + Production Hours + Resource Capacity",
-        "Homework 3: Transfers+ Target Stocks + Storage Capacity",
+        "Homework 3: Transfers + Target Stocks + Storage Capacity",
     ]
 
     if "homework" not in st.query_params:
@@ -60,17 +60,22 @@ def main():
     with col2:
         show_complete_model = st.checkbox("Show complete model", value=False)
 
+    model_shelf_life = False
     if class_number == 2:
         with col1:
             model_shelf_life = st.checkbox("Model shelf-life", value=True)
-    else:
-        model_shelf_life = False
+
+    layered_max_stock = False
+    if class_number == 3:
+        with col1:
+            layered_max_stock = st.checkbox("Layered Max Stock ", value=False)
 
     st.session_state.mb = ModelBuilder(
         class_number=class_number,
         use_restrict_table=use_restrict_table,
         show_complete_model=show_complete_model,
         model_shelf_life=model_shelf_life,
+        layered_max_stock=layered_max_stock,
         on_change=require_rerun,
     )
     mb = st.session_state.mb
@@ -163,9 +168,14 @@ def main():
             ampl, exercise=1, selected_exercise=selected_exercise
         )
         mb.target_stock_exercise(ampl, exercise=2, selected_exercise=selected_exercise)
-        mb.storage_capacity_exercise(
-            ampl, exercise=3, selected_exercise=selected_exercise
-        )
+        if not layered_max_stock:
+            mb.storage_capacity_exercise(
+                ampl, exercise=3, selected_exercise=selected_exercise
+            )
+        else:
+            mb.layered_storage_capacity_exercise(
+                ampl, exercise=3, selected_exercise=selected_exercise
+            )
 
     st.markdown("## Solve")
 
