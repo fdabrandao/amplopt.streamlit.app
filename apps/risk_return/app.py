@@ -35,7 +35,7 @@ def load_data(tickers, start, end):
 
 
 def main():
-    st.title("📈 Risk Return")
+    st.title("💰 Risk Return")
     st.markdown(
         f"""
         **A portfolio that gives maximum return for a given risk, or minimum risk for given return is an efficient portfolio.**
