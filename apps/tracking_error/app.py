@@ -150,7 +150,24 @@ def plot_portfolio_comparison(prices, benckmark, porfolio):
 
 
 def main():
-    st.title("📈 Tracking Error Minimization")
+    st.title("📈 Tracking Error Optimization")
+
+    st.markdown(
+        """
+        ### Build Portfolios That Closely Follow Your Benchmark
+
+        Tracking error measures how closely your portfolio follows its benchmark. This tool helps you construct portfolios 
+        that maintain close benchmark alignment while respecting your constraints.
+        
+        #### What is Tracking Error?
+
+        Tracking error quantifies the standard deviation of differences between your portfolio's returns and the benchmark's returns. 
+        A lower tracking error means your portfolio moves in lockstep with the benchmark.  
+        """
+    )
+
+    st.write("## Tracking Error Model in AMPL")
+    st.code(TRACKING_ERROR_MODEL)
 
     # Get S&P 500 weights
     sp500_weights = get_sp500_weights()
@@ -172,7 +189,7 @@ def main():
     # Filter top 100
     sp500 = sp500.nlargest(100, "Weight")
 
-    st.write("## Top 100 from current S&P 500 constituents")
+    st.write("## Top #100 of current S&P 500 constituents")
     st.dataframe(sp500)
 
     price_data = download_price_data(
@@ -185,9 +202,6 @@ def main():
         print("Data not available for some of the assets!")
         sp500.drop(index=diff_assets, inplace=True)
         sp500["Weight"] /= sp500["Weight"].sum()
-
-    st.write("## Model")
-    st.code(TRACKING_ERROR_MODEL)
 
     # Calculate daily returns
     returns = price_data.pct_change().dropna()
