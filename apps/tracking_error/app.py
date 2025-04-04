@@ -9,34 +9,38 @@ import seaborn as sns
 from ..common import solver_selector, MP_SOLVERS_LINKS
 
 TRACKING_ERROR_MODEL = r"""
-# Sets
-set ASSETS;  # Set of assets
+# === Sets ===
+set ASSETS;  # Available assets
 
-# Parameters
-param sigma{ASSETS, ASSETS};  # Covariance matrix of asset returns
-param w_prev{ASSETS} default 0;  # Portfolio weights of the previous period
-param w_bench{ASSETS};  # Weights of assets in the benchmark portfolio
-param min_weight default 0.01;  # Minimum weight accepted
-param max_weight default 0.20;  # Maximum weight accepted
+# === Parameters ===
+param sigma{ASSETS, ASSETS};       # Covariance matrix
+param w_prev{ASSETS} default 0;    # Previous portfolio weights
+param w_bench{ASSETS};             # Benchmark weights
+param min_weight default 0.01;     # Min weight if invested
+param max_weight default 0.20;     # Max weight per asset
+param n_assets default 10;         # Target number of holdings
+param turnover_limit default 0.05; # Max allowed turnover
 
-# Decision Variables
-var w{ASSETS} >= 0, <= max_weight;  # Portfolio weights (long-only)
+# === Decision Variables ===
+var w{ASSETS} >= 0, <= max_weight; # Portfolio weights (long-only)
 
-# Objective: Minimize Tracking Error
+# === Objective ===
 minimize TrackingErrorSquared:
-    sum{i in ASSETS, j in ASSETS} (w[i] - w_bench[i]) * sigma[i,j] * (w[j] - w_bench[j]);
+    sum{i in ASSETS, j in ASSETS} 
+        (w[i] - w_bench[i]) * sigma[i,j] * (w[j] - w_bench[j]);
 
+# === Constraints ===
 s.t. FullyInvested:
-    sum{i in ASSETS} w[i] = 1;  # Fully invested portfolio
+    sum{i in ASSETS} w[i] = 1;  # All capital invested
 
 s.t. PositionCount:
-    count {i in ASSETS} (w[i] != 0) = 10;  # Exactly 10 positions
+    count {i in ASSETS} (w[i] != 0) = n_assets;  # Exact number of holdings
 
 s.t. MinWeightOrZero{i in ASSETS}:
-    w[i] = 0 or w[i] >= min_weight;  # Either zero or above minimum
+    w[i] = 0 or w[i] >= min_weight;  # Either 0 or above min weight
 
 s.t. Turnover{if sum{i in ASSETS} w_prev[i] > 0}:
-    sum{i in ASSETS} abs(w[i] - w_prev[i]) <= 0.05;  # Turnover constraint
+    sum{i in ASSETS} abs(w[i] - w_prev[i]) <= turnover_limit;  # Limit turnover
 """
 
 
@@ -214,6 +218,23 @@ def main():
     ampl.set["ASSETS"] = sp500.index
     ampl.param["w_bench"] = sp500["Weight"]
     ampl.param["sigma"] = sigma
+    default_min_weight = ampl.param["min_weight"].value()
+    default_max_weight = ampl.param["max_weight"].value()
+    default_n_assets = ampl.param["n_assets"].value()
+    default_turnover_limit = ampl.param["turnover_limit"].value()
+    ampl.param["min_weight"] = st.slider(
+        "Minimum weight if invested", 0.0, 0.5, default_min_weight, 0.01
+    )
+    ampl.param["max_weight"] = st.slider(
+        "Maximum weight per asset", 0.0, 0.5, default_max_weight, 0.01
+    )
+    min_assets = int(1 / ampl.param["max_weight"].value()) + 1
+    ampl.param["n_assets"] = st.slider(
+        "Target number of holdings", min_assets, 25, default_n_assets, 1
+    )
+    ampl.param["turnover_limit"] = st.slider(
+        "Maximum allowed turnover", 0.0, 1.0, default_turnover_limit, 0.01
+    )
 
     # Select the solver to use
     solver, _ = solver_selector(mp_only=True)
