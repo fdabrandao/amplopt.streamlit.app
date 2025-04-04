@@ -126,9 +126,10 @@ def plot_pie_chart(weights, title):
     st.pyplot(plt)
 
 
-def plot_portfolio_comparison(prices, benckmark, porfolio):
+def plot_portfolio_comparison(spy, prices, benckmark, porfolio):
     """Plot comparison of portfolio returns."""
     normalized_prices = prices / prices.iloc[0]
+    normalized_spy = spy / spy.iloc[0]
 
     # Compute portfolio values over time
     pf1_returns = (normalized_prices * benckmark).sum(axis=1)
@@ -136,11 +137,15 @@ def plot_portfolio_comparison(prices, benckmark, porfolio):
 
     # Combine into a single DataFrame for plotting
     combined = pd.DataFrame(
-        {"Benchmark": pf1_returns, "Tracking Error Portfolio": pf2_returns}
+        {
+            "SPY": normalized_spy,
+            "Benchmark": pf1_returns,
+            "Tracking Error Portfolio": pf2_returns,
+        }
     )
 
     # Seaborn style
-    sns.set(style="whitegrid")
+    sns.set_theme(style="whitegrid")
 
     # Plot using seaborn
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -197,8 +202,12 @@ def main():
     st.dataframe(sp500)
 
     price_data = download_price_data(
-        list(sp500.index), start_date="2024-01-01", end_date="2025-01-01"
+        list(sp500.index), start_date="2024-01-01", end_date="2025-04-04"
     )
+
+    spy_prices = download_price_data(
+        ["SPY"], start_date="2024-01-01", end_date="2025-04-04"
+    )["SPY"]
 
     diff_assets = set(sp500.index) - set(price_data.columns)
     # assert len(diff_assets) == 0, diff_assets
@@ -253,7 +262,7 @@ def main():
         plot_pie_chart(pd.Series(ampl.var["w"].to_dict()), "Tracking Error Portfolio")
 
         plot_portfolio_comparison(
-            price_data, sp500["Weight"], ampl.var["w"].to_pandas()["w.val"]
+            spy_prices, price_data, sp500["Weight"], ampl.var["w"].to_pandas()["w.val"]
         )
 
     st.markdown(
