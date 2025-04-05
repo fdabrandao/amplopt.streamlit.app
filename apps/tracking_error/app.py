@@ -222,9 +222,9 @@ def main():
         list(sp500.index), start_date=start_date, end_date=datetime.datetime.today()
     )
 
-    spy_prices = download_price_data(
-        ["SPY"], start_date=start_date, end_date=datetime.datetime.today()
-    )["SPY"]
+    # spy_prices = download_price_data(
+    #     ["SPY"], start_date=start_date, end_date=datetime.datetime.today()
+    # )["SPY"]
 
     diff_assets = set(sp500.index) - set(price_data.columns)
     # assert len(diff_assets) == 0, diff_assets
@@ -276,7 +276,7 @@ def main():
 
     objectives = ["Tracking Error", "Min-Variance", "Both"]
     objective_selected = st.selectbox("Pick the objective 👇", objectives, key="model")
-    mp_options = "outlev=1 timelimit=3"
+    mp_options = "outlev=1 mipgap=0.01 timelimit=10"
     if objective_selected == "Tracking Error":
         objective = "TrackingErrorSquared"
     elif objective_selected == "Min-Variance":
@@ -305,7 +305,7 @@ def main():
         plot_pie_chart(pd.Series(ampl.var["w"].to_dict()), "Tracking Error Portfolio")
 
         normalized_prices = price_data / price_data.iloc[0]
-        normalized_spy = spy_prices / spy_prices.iloc[0]
+        # normalized_spy = spy_prices / spy_prices.iloc[0]
 
         # Compute portfolio values over time
         benchmark = sp500["Weight"]
@@ -313,12 +313,12 @@ def main():
         portfolio = ampl.var["w"].to_pandas()["w.val"]
         portflio_returns = (normalized_prices * portfolio).sum(axis=1)
 
-        # equal weight potfolio
+        # equal weight portfolio
         equal_weight = pd.Series(1 / len(sp500), index=sp500.index)
         equal_weight_returns = (normalized_prices * equal_weight).sum(axis=1)
 
         portfolio_returns = {
-            "SPY": normalized_spy,
+            # "SPY": normalized_spy,
             "Benchmark": benchmark_returns,
             "Equal-Weight Portfolio": equal_weight_returns,
             "Our Portfolio": portflio_returns,
