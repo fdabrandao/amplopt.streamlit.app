@@ -13,6 +13,7 @@ from apps import (
     supply_chain,
     aircrew_training_scheduling,
     risk_return,
+    lmp,
     tracking_error,
     optimal_control,
     nqueens,
@@ -117,6 +118,7 @@ pages = {
         app_page(batch_process.main, "⚙️", "Batch Process Optimization"),
         app_page(facility_location.main, "🏭", "Stochastic Facility Location"),
         app_page(supply_chain.main, "📦", "Supply Chain Optimization"),
+        app_page(lmp.main, "⚡", "Locational Marginal Pricing"),
         app_page(
             tracking_error.main, "📈", "Tracking Error Optimization", "Tracking_Error"
         ),

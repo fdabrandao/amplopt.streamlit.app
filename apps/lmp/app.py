@@ -1,0 +1,162 @@
+import streamlit as st
+import pandas as pd
+from amplpy import AMPL
+import matplotlib.pyplot as plt
+import networkx as nx
+from ..common import solver_selector, MP_SOLVERS_LINKS
+
+
+LMP_MODEL = r"""
+# Nodes and transmission lines (as node pairs)
+set NODES;
+set LINES within {NODES, NODES};
+
+# Parameters: generation cost, capacity, demand, and line limits
+param generation_cost{NODES};
+param generation_capacity{NODES};
+param demand{NODES};
+param line_capacity{LINES};
+
+# Variables: generation at nodes and flow on lines
+var Gen{i in NODES} >= 0, <= generation_capacity[i];
+var Flow{LINES};
+
+# Objective: minimize total generation cost
+minimize TotalCost:
+    sum {n in NODES} generation_cost[n] * Gen[n];
+
+# Power balance at each node: generation + inflow - outflow = demand
+s.t. Balance {n in NODES}:
+    Gen[n] + sum {(i,n) in LINES} Flow[i,n] - sum {(n,j) in LINES} Flow[n,j] = demand[n];
+
+# Flow limits on each line
+s.t. LineLimits {(i,j) in LINES}:
+    -line_capacity[i,j] <= Flow[i,j] <= line_capacity[i,j];
+"""
+
+
+def main():
+    st.title("⚡ Locational Marginal Pricing")
+
+    st.markdown(
+        """
+        **What is Location Marginal Pricing?**
+
+        Location Marginal Pricing (LMP) is a method used in electricity markets to determine the price of electricity at different locations, or nodes, in the power grid. LMP reflects the marginal cost of supplying the next increment of electricity demand at a specific location, accounting for generation costs, demand, and the physical limitations of the transmission system. 
+
+        This pricing mechanism ensures that prices signal both energy value and congestion, promoting efficient use of generation and transmission resources.
+        """
+    )
+
+    nodes = ["Node 1", "Node 2", "Node 3", "Node 4", "Node 5", "Node 6", "Node 7"]
+    lines = [
+        ("Node 1", "Node 2"),
+        ("Node 2", "Node 3"),
+        ("Node 3", "Node 4"),
+        ("Node 4", "Node 5"),
+        ("Node 5", "Node 3"),
+        ("Node 5", "Node 6"),
+        ("Node 6", "Node 7"),
+        ("Node 7", "Node 5"),
+    ]
+
+    # User Inputs
+    st.sidebar.header("Generator Parameters")
+    gen_costs = {
+        n: st.sidebar.slider(f"Gen Cost {n} ($/MWh)", 10, 100, 20 + i * 10)
+        for i, n in enumerate(nodes)
+    }
+    gen_caps = {
+        n: st.sidebar.slider(f"Gen Cap {n} (MW)", 0, 100, 50 + i * 10)
+        for i, n in enumerate(nodes)
+    }
+
+    demands = {
+        n: st.sidebar.slider(f"Demand {n} (MW)", 0, 100, 30 + i * 5)
+        for i, n in enumerate(nodes)
+    }
+
+    st.sidebar.header("Transmission Line Capacities")
+    line_caps = {
+        f"{i}-{j}": st.sidebar.slider(f"Cap {i}-{j} (MW)", 0, 100, 40) for i, j in lines
+    }
+
+    st.write("## Simplified Electricity Market Simulation")
+    st.code(LMP_MODEL)
+
+    # Load model in amplpy
+    ampl = AMPL()
+    ampl.eval(LMP_MODEL)
+    ampl.set["NODES"] = nodes
+    ampl.set["LINES"] = lines
+    ampl.param["generation_cost"] = gen_costs
+    ampl.param["generation_capacity"] = gen_caps
+    ampl.param["demand"] = demands
+    ampl.param["line_capacity"] = {(i, j): line_caps[f"{i}-{j}"] for i, j in lines}
+
+    # Select the solver to use
+    solver, _ = solver_selector(mp_only=True)
+    # Solve the problem
+    output = ampl.solve(
+        solver=solver,
+        mp_options="outlev=1",
+        return_output=True,
+    )
+
+    if ampl.solve_result not in ["solved", "limit"]:
+        st.error(f"The model could not be solved:\n```\n{output}\n```")
+    else:
+        with st.expander("Solver output"):
+            st.write(f"```\n{output}\n```")
+
+        # Retrieve results
+        gen_df = ampl.var["Gen"].to_pandas()
+        lmp_values = ampl.get_data("Balance.dual").to_pandas()
+        flow = ampl.var["Flow"].to_pandas()
+
+        lmp_df = pd.DataFrame(
+            {
+                "Node": gen_df.index,
+                "Generation (MW)": gen_df.iloc[:, 0],
+                "LMP ($/MWh)": lmp_values.iloc[:, 0],
+            }
+        ).set_index("Node")
+
+        st.subheader("Results")
+        st.dataframe(lmp_df)
+        st.bar_chart(lmp_df[["LMP ($/MWh)"]])
+
+        # Visualize Network
+        st.subheader("Network Visualization")
+        G = nx.DiGraph()
+        G.add_nodes_from(nodes)
+        G.add_edges_from(lines)
+        pos = nx.spring_layout(G, seed=42)
+
+        edge_labels = {
+            (i, j) if value > 0 else (j, i): f"{abs(value)} MW"
+            for (i, j), value in ampl.var["Flow"].to_dict().items()
+        }
+        node_labels = {
+            i: f"{i}\n{lmp} MW"
+            for i, lmp in ampl.get_data("Balance.dual").to_dict().items()
+        }
+
+        plt.figure(figsize=(8, 6))
+        nx.draw(
+            G,
+            pos,
+            with_labels=True,
+            node_color="lightblue",
+            node_size=2000,
+            font_size=12,
+            labels=node_labels,
+        )
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+        st.pyplot(plt)
+
+    st.markdown(
+        """
+    #### [[Source Code on GitHub](http://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/lmp)]
+    """
+    )
