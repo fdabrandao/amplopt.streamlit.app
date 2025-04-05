@@ -168,14 +168,17 @@ def main():
     st.markdown(
         """
         ### Build Portfolios That Closely Follow Your Benchmark
+ 
+        Tracking error optimization is a technique used in portfolio management to minimize the deviation of a portfolio’s returns from its benchmark. This deviation, called *tracking error*, is a measure of active risk and is critical for strategies aiming to closely track an index while allowing for some degree of active management.
 
-        Tracking error measures how closely your portfolio follows its benchmark. This tool helps you construct portfolios 
-        that maintain close benchmark alignment while respecting your constraints.
-        
-        #### What is Tracking Error?
+        Tracking error can be measured in two ways:
 
-        Tracking error quantifies the standard deviation of differences between your portfolio's returns and the benchmark's returns. 
-        A lower tracking error means your portfolio moves in lockstep with the benchmark.  
+        - **Backward-looking tracking error** uses historical return data to assess how much a portfolio has deviated from its benchmark in the past. It’s useful for performance evaluation but may not reflect future conditions.
+
+        - **Forward-looking tracking error** is based on forecasts of return volatility and correlations. It estimates expected future deviation and is used in optimization models to construct portfolios within a desired risk range.
+
+        Both perspectives are essential — backward-looking for assessment, forward-looking for decision-making.
+        The optimization model we will use is a quadratic programming model that minimizes the tracking error while adhering to constraints such as maximum weight per asset, minimum weight if invested, and turnover limits. The model is formulated in AMPL and solved using a suitable solver. 
         """
     )
 
