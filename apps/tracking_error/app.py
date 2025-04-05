@@ -127,36 +127,28 @@ def plot_pie_chart(weights, title):
     st.pyplot(plt)
 
 
-def plot_portfolio_comparison(split_date, spy, prices, benckmark, porfolio):
+def plot_portfolio_comparison(split_date, portfolio_returns):
     """Plot comparison of portfolio returns."""
-    normalized_prices = prices / prices.iloc[0]
-    normalized_spy = spy / spy.iloc[0]
-
-    # Compute portfolio values over time
-    pf1_returns = (normalized_prices * benckmark).sum(axis=1)
-    pf2_returns = (normalized_prices * porfolio).sum(axis=1)
-
     # Combine into a single DataFrame for plotting
-    combined = pd.DataFrame(
-        {
-            "SPY": normalized_spy,
-            "Benchmark": pf1_returns,
-            "Tracking Error Portfolio": pf2_returns,
-        }
-    )
+    combined = pd.DataFrame(portfolio_returns)
 
     # Seaborn style
     sns.set_theme(style="whitegrid")
 
-    # Plot using seaborn
+    # Create a figure and axis
     fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Add vertical line for slit date
+    ax.axvline(x=split_date, color="red", linestyle="--", label="Train/Test Split")
+
+    # Plot using seaborn
     sns.lineplot(data=combined, ax=ax)
     ax.set_title("Portfolio Performance Over Time")
     ax.set_xlabel("Date")
     ax.set_ylabel("Cumulative Return")
 
-    # Add vertical line for slit date
-    ax.axvline(x=split_date, color="red", linestyle="--", label="Train/Test Split")
+    # Add legend
+    ax.legend()
 
     # Show in Streamlit
     st.pyplot(fig)
@@ -292,12 +284,29 @@ def main():
         w["w.val"] /= w["w.val"].sum()
         plot_pie_chart(pd.Series(ampl.var["w"].to_dict()), "Tracking Error Portfolio")
 
+        normalized_prices = price_data / price_data.iloc[0]
+        normalized_spy = spy_prices / spy_prices.iloc[0]
+
+        # Compute portfolio values over time
+        benchmark = sp500["Weight"]
+        benchmark_returns = (normalized_prices * benchmark).sum(axis=1)
+        portfolio = ampl.var["w"].to_pandas()["w.val"]
+        portflio_returns = (normalized_prices * portfolio).sum(axis=1)
+
+        # equal weight potfolio
+        equal_weight = pd.Series(1 / len(sp500), index=sp500.index)
+        equal_weight_returns = (normalized_prices * equal_weight).sum(axis=1)
+
+        portfolio_returns = {
+            "SPY": normalized_spy,
+            "Benchmark": benchmark_returns,
+            "Equal-Weight Portfolio": equal_weight_returns,
+            "Tracking Error Portfolio": portflio_returns,
+        }
+
         plot_portfolio_comparison(
             split_date,
-            spy_prices,
-            price_data,
-            sp500["Weight"],
-            ampl.var["w"].to_pandas()["w.val"],
+            portfolio_returns,
         )
 
     st.markdown(
