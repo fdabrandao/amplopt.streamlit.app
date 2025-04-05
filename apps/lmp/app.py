@@ -154,13 +154,9 @@ def main():
 
         # Visualize Network
         st.markdown("## Network Visualization")
-        G = nx.DiGraph()
-        G.add_nodes_from(nodes)
-        G.add_edges_from(lines)
-        pos = nx.spring_layout(G, seed=42)
 
         edge_labels = {
-            (i, j) if flow > 0 else (j, i): f"{abs(flow)} MW / {capacity} MW"
+            (i, j) if flow >= 0 else (j, i): f"{abs(flow)} MW / {capacity} MW"
             for (i, j), (flow, capacity) in ampl.get_data("Flow", "line_capacity")
             .to_dict()
             .items()
@@ -174,6 +170,11 @@ def main():
             .items()
         }
 
+        G = nx.DiGraph()
+        G.add_nodes_from(sorted(nodes))
+        G.add_edges_from(sorted(edge_labels.keys()))
+        pos = nx.circular_layout(G)
+
         plt.figure(figsize=(8, 6))
         nx.draw(
             G,
@@ -186,6 +187,23 @@ def main():
         )
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8)
         st.pyplot(plt)
+
+        st.markdown("## Balance")
+        st.write(
+            ampl.get_data(
+                "{n in NODES} (Generation[n], generation_capacity[n], sum {(i,n) in LINES} Flow[i,n], sum {(n,j) in LINES} Flow[n,j], demand[n])"
+            ).to_pandas()
+        )
+        st.write(
+            """
+            The balance equation at each node shows the relationship between generation, flow, and demand.
+            The left-hand side represents the total generation and inflow, while the right-hand side represents the demand at that node.
+            The balance equation ensures that the total generation and inflow at each node equals the demand at that node.
+
+            The dual values of the balance constraints represent the LMP at each node.
+            A positive dual value indicates that increasing the demand at that node would increase the LMP, while a negative dual value indicates that increasing the demand would decrease the LMP.
+            """
+        )
 
     st.markdown(
         """
