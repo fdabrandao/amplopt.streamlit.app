@@ -112,7 +112,6 @@ def main():
         # Retrieve results
         gen_df = ampl.var["Gen"].to_pandas()
         lmp_values = ampl.get_data("Balance.dual").to_pandas()
-        flow = ampl.var["Flow"].to_pandas()
 
         lmp_df = pd.DataFrame(
             {
@@ -122,12 +121,37 @@ def main():
             }
         ).set_index("Node")
 
-        st.subheader("Results")
-        st.dataframe(lmp_df)
-        st.bar_chart(lmp_df[["LMP ($/MWh)"]])
+        st.markdown("## Results")
+        # st.dataframe(lmp_df)
+        # st.bar_chart(lmp_df[["LMP ($/MWh)"]], y_label="LMP ($/MWh)")
+        # st.bar_chart(lmp_df[["Generation (MW)"]], y_label="Generation (MW)")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            # Bar chart with LMP values
+            st.markdown("### LMP ($/MWh)")
+            fig, ax = plt.subplots()
+            ax.bar(lmp_df.index, lmp_df["LMP ($/MWh)"])
+            for i, val in enumerate(lmp_df["LMP ($/MWh)"]):
+                ax.text(i, val + 0.5, f"{val:.2f}", ha="center", va="bottom")
+            ax.set_ylabel("LMP ($/MWh)")
+            ax.set_title("Location Marginal Prices by Node")
+            st.pyplot(fig)
+
+        with col2:
+            # Bar chart with Generation values
+            st.markdown("### Generation (MW)")
+            fig2, ax2 = plt.subplots()
+            ax2.bar(lmp_df.index, lmp_df["Generation (MW)"])
+            for i, val in enumerate(lmp_df["Generation (MW)"]):
+                ax2.text(i, val + 0.5, f"{val:.2f}", ha="center", va="bottom")
+            ax2.set_ylabel("Generation (MW)")
+            ax2.set_title("Generation Output by Node")
+            st.pyplot(fig2)
 
         # Visualize Network
-        st.subheader("Network Visualization")
+        st.markdown("## Network Visualization")
         G = nx.DiGraph()
         G.add_nodes_from(nodes)
         G.add_edges_from(lines)
