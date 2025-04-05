@@ -26,6 +26,8 @@ param turnover_limit default 0.05; # Max allowed turnover
 var w{ASSETS} >= 0, <= max_weight; # Portfolio weights (long-only)
 
 # === Objective ===
+suffix objpriority;  # Priority of the objective function. The higher the number, the more important it is
+
 minimize TrackingErrorSquared:
     sum{i in ASSETS, j in ASSETS} 
         (w[i] - w_bench[i]) * sigma[i,j] * (w[j] - w_bench[j])
