@@ -2,6 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import requests
+import datetime
 from bs4 import BeautifulSoup
 from amplpy import AMPL
 import matplotlib.pyplot as plt
@@ -126,7 +127,7 @@ def plot_pie_chart(weights, title):
     st.pyplot(plt)
 
 
-def plot_portfolio_comparison(spy, prices, benckmark, porfolio):
+def plot_portfolio_comparison(split_date, spy, prices, benckmark, porfolio):
     """Plot comparison of portfolio returns."""
     normalized_prices = prices / prices.iloc[0]
     normalized_spy = spy / spy.iloc[0]
@@ -153,6 +154,9 @@ def plot_portfolio_comparison(spy, prices, benckmark, porfolio):
     ax.set_title("Portfolio Performance Over Time")
     ax.set_xlabel("Date")
     ax.set_ylabel("Cumulative Return")
+
+    # Add vertical line for slit date
+    ax.axvline(x=split_date, color="red", linestyle="--", label="Train/Test Split")
 
     # Show in Streamlit
     st.pyplot(fig)
@@ -201,12 +205,24 @@ def main():
     st.write("## Top #100 of current S&P 500 constituents")
     st.dataframe(sp500)
 
+    # Training data starts at
+    min_start_date = datetime.date(2020, 1, 1)
+    max_start_date = datetime.datetime.today() - datetime.timedelta(days=365)
+    start_date = pd.to_datetime(
+        st.date_input(
+            "Pick a start date for training 👇",
+            min_start_date,
+            min_value=min_start_date,
+            max_value=max_start_date,
+        )
+    )
+
     price_data = download_price_data(
-        list(sp500.index), start_date="2024-01-01", end_date="2025-04-04"
+        list(sp500.index), start_date=start_date, end_date=datetime.datetime.today()
     )
 
     spy_prices = download_price_data(
-        ["SPY"], start_date="2024-01-01", end_date="2025-04-04"
+        ["SPY"], start_date=start_date, end_date=datetime.datetime.today()
     )["SPY"]
 
     diff_assets = set(sp500.index) - set(price_data.columns)
@@ -219,8 +235,20 @@ def main():
     # Calculate daily returns
     returns = price_data.pct_change().dropna()
 
+    # Training data ends at
+    min_split_date = start_date + datetime.timedelta(days=365)
+    max_split_date = datetime.datetime.today()
+    split_date = pd.to_datetime(
+        st.date_input(
+            "Train/test split date 👇",
+            min_split_date,
+            min_value=min_split_date,
+            max_value=max_split_date,
+        )
+    )
+
     # Get covariance matrix
-    sigma = returns.cov() * 252  # Annualized
+    sigma = returns[returns.index <= split_date].cov() * 252  # Annualized
 
     ampl = AMPL()
     ampl.eval(TRACKING_ERROR_MODEL)
@@ -262,7 +290,11 @@ def main():
         plot_pie_chart(pd.Series(ampl.var["w"].to_dict()), "Tracking Error Portfolio")
 
         plot_portfolio_comparison(
-            spy_prices, price_data, sp500["Weight"], ampl.var["w"].to_pandas()["w.val"]
+            split_date,
+            spy_prices,
+            price_data,
+            sp500["Weight"],
+            ampl.var["w"].to_pandas()["w.val"],
         )
 
     st.markdown(
