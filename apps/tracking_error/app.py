@@ -28,7 +28,13 @@ var w{ASSETS} >= 0, <= max_weight; # Portfolio weights (long-only)
 # === Objective ===
 minimize TrackingErrorSquared:
     sum{i in ASSETS, j in ASSETS} 
-        (w[i] - w_bench[i]) * sigma[i,j] * (w[j] - w_bench[j]);
+        (w[i] - w_bench[i]) * sigma[i,j] * (w[j] - w_bench[j])
+    suffix objpriority 2;
+
+minimize MinVariance:
+    sum{i in ASSETS, j in ASSETS}
+        w[i] * sigma[i,j] * w[j]
+    suffix objpriority 1;
 
 # === Constraints ===
 s.t. FullyInvested:
@@ -268,11 +274,25 @@ def main():
         "Maximum allowed turnover", 0.0, 1.0, default_turnover_limit, 0.01
     )
 
+    objectives = ["Tracking Error", "Min-Variance", "Both"]
+    objective_selected = st.selectbox("Pick the objective 👇", objectives, key="model")
+    mp_options = "outlev=1 timelimit=3"
+    if objective_selected == "Tracking Error":
+        objective = "TrackingErrorSquared"
+    elif objective_selected == "Min-Variance":
+        objective = "MinVariance"
+    else:
+        objective = ""
+        mp_options += " multiobj=2"
+
     # Select the solver to use
     solver, _ = solver_selector(mp_only=True)
     # Solve the problem
     output = ampl.solve(
-        solver=solver, mp_options="outlev=1 timelimit=3", return_output=True
+        objective,
+        solver=solver,
+        mp_options=mp_options,
+        return_output=True,
     )
     if ampl.solve_result not in ["solved", "limit"]:
         st.error(f"The model could not be solved:\n```\n{output}\n```")
@@ -301,7 +321,7 @@ def main():
             "SPY": normalized_spy,
             "Benchmark": benchmark_returns,
             "Equal-Weight Portfolio": equal_weight_returns,
-            "Tracking Error Portfolio": portflio_returns,
+            "Our Portfolio": portflio_returns,
         }
 
         plot_portfolio_comparison(
