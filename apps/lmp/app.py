@@ -18,16 +18,16 @@ param demand{NODES};
 param line_capacity{LINES};
 
 # Variables: generation at nodes and flow on lines
-var Gen{i in NODES} >= 0, <= generation_capacity[i];
+var Generation{i in NODES} >= 0, <= generation_capacity[i];
 var Flow{LINES};
 
 # Objective: minimize total generation cost
 minimize TotalCost:
-    sum {n in NODES} generation_cost[n] * Gen[n];
+    sum {n in NODES} generation_cost[n] * Generation[n];
 
 # Power balance at each node: generation + inflow - outflow = demand
 s.t. Balance {n in NODES}:
-    Gen[n] + sum {(i,n) in LINES} Flow[i,n] - sum {(n,j) in LINES} Flow[n,j] = demand[n];
+    Generation[n] + sum {(i,n) in LINES} Flow[i,n] - sum {(n,j) in LINES} Flow[n,j] = demand[n];
 
 # Flow limits on each line
 s.t. LineLimits {(i,j) in LINES}:
@@ -45,6 +45,8 @@ def main():
         Location Marginal Pricing (LMP) is a method used in electricity markets to determine the price of electricity at different locations, or nodes, in the power grid. LMP reflects the marginal cost of supplying the next increment of electricity demand at a specific location, accounting for generation costs, demand, and the physical limitations of the transmission system. 
 
         This pricing mechanism ensures that prices signal both energy value and congestion, promoting efficient use of generation and transmission resources.
+        
+        Learn more on [Optimization Models in Electricity Markets](https://dev.ampl.com/ampl/books/anthony-papavasiliou/electricity-markets.html) by Anthony Papavasiliou. It is is a textbook published by Cambridge University Press that treats the analysis of optimization models that are routinely used in electricity market operations.
         """
     )
 
@@ -110,7 +112,7 @@ def main():
             st.write(f"```\n{output}\n```")
 
         # Retrieve results
-        gen_df = ampl.var["Gen"].to_pandas()
+        gen_df = ampl.var["Generation"].to_pandas()
         lmp_values = ampl.get_data("Balance.dual").to_pandas()
 
         lmp_df = pd.DataFrame(
@@ -158,12 +160,18 @@ def main():
         pos = nx.spring_layout(G, seed=42)
 
         edge_labels = {
-            (i, j) if value > 0 else (j, i): f"{abs(value)} MW"
-            for (i, j), value in ampl.var["Flow"].to_dict().items()
+            (i, j) if flow > 0 else (j, i): f"{abs(flow)} MW / {capacity} MW"
+            for (i, j), (flow, capacity) in ampl.get_data("Flow", "line_capacity")
+            .to_dict()
+            .items()
         }
         node_labels = {
-            i: f"{i}\n{lmp} MW"
-            for i, lmp in ampl.get_data("Balance.dual").to_dict().items()
+            i: f"\n{i}\n{lmp} $/MWh\n{g} / {glimit} MW\n-{d} MW\n"
+            for i, (lmp, d, g, glimit) in ampl.get_data(
+                "Balance.dual", "demand", "Generation", "generation_capacity"
+            )
+            .to_dict()
+            .items()
         }
 
         plt.figure(figsize=(8, 6))
@@ -171,12 +179,12 @@ def main():
             G,
             pos,
             with_labels=True,
-            node_color="lightblue",
-            node_size=2000,
-            font_size=12,
+            node_color="orange",
+            node_size=4000,
+            font_size=10,
             labels=node_labels,
         )
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8)
         st.pyplot(plt)
 
     st.markdown(
