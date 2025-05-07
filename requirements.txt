@@ -23,7 +23,7 @@ amplpyfinance
 streamlit==1.37.0
 matplotlib==3.7.1
 seaborn==0.13.2
-yfinance==0.2.55
+yfinance==0.2.59
 beautifulsoup4==4.13.3
 requests==2.32.3
 altair==4.2.2

@@ -209,7 +209,7 @@ def main():
     st.dataframe(sp500)
 
     # Training data starts at
-    min_start_date = datetime.date(2020, 1, 1)
+    min_start_date = datetime.date(datetime.datetime.today().year - 5, 1, 1)
     max_start_date = datetime.datetime.today() - datetime.timedelta(days=365)
     start_date = pd.to_datetime(
         st.date_input(
