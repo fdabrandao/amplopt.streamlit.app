@@ -303,11 +303,16 @@ def main():
             reports.demand_report()
 
             st.markdown("### Material Balance Report")
+            include_transfers = class_number >= 3
             reports.material_balance_report(
                 include_shelf_life=model_shelf_life,
-                include_transfers=class_number >= 3,
+                include_transfers=include_transfers,
                 include_target_stock=class_number >= 3,
             )
+
+            if include_transfers:
+                st.markdown("### Transfers Graph")
+                reports.transfers_report()
 
             if class_number >= 2:
                 st.markdown("### Resource Utilization Report")

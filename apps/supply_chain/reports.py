@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import networkx as nx
 import matplotlib.pyplot as plt
 
 
@@ -462,3 +463,52 @@ class Reports:
             )
         else:
             st.dataframe(material_df, hide_index=True)
+
+    def transfers_report(self):
+        product = st.selectbox(
+            "Pick the product 👇",
+            [""] + self.instance.selected_products,
+            key=f"transfers_view_product",
+        )
+        periods = self.ampl.set["PERIODS"].to_list()
+        period = st.selectbox(
+            "Pick the time period 👇",
+            periods,
+            key=f"transfers_view_period",
+        )
+
+        nodes = self.ampl.set["LOCATIONS"].to_list()
+        all_transfers = self.ampl.var["Transfers"].to_dict()
+        transfers = {}
+        for (p, i, j, t), value in all_transfers.items():
+            if t != period or value <= 1e-5:
+                continue
+            if p == product or product == "":
+                if (i, j) not in transfers:
+                    transfers[i, j] = 0
+                transfers[i, j] += value
+
+        edge_labels = {(i, j): f"{value:.2f}" for (i, j), value in transfers.items()}
+
+        G = nx.DiGraph()
+        G.add_nodes_from(sorted(nodes))
+        G.add_edges_from(sorted(edge_labels.keys()))
+        pos = nx.circular_layout(G)
+
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.axis("off")
+        ax.margins(0.15)
+
+        nx.draw(
+            G,
+            pos,
+            ax=ax,
+            with_labels=True,
+            node_color="orange",
+            node_size=2000,
+            font_size=10,
+            # labels=node_labels,
+        )
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8)
+        st.pyplot(fig)
+        pass
