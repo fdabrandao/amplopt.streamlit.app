@@ -342,12 +342,8 @@ class Reports:
             columns.append("EndingInventory")
         if include_transfers:
             columns = columns + ["TransfersIN", "TransfersOUT"]
-            transfers_in = self.ampl.get_data(
-                "{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} sum {(p, i, l) in TRANSFER_LANES} TransfersIN[p, i, l, t]"
-            ).to_dict()
-            transfers_out = self.ampl.get_data(
-                "{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} sum {(p, i, l) in TRANSFER_LANES} TransfersOUT[p, i, l, t]"
-            ).to_dict()
+            transfers_in = self.ampl.get_data("TransfersIN").to_dict()
+            transfers_out = self.ampl.get_data("TransfersOUT").to_dict()
             material_df["TransfersIN"] = [
                 transfers_in.get((p, l, t), 0)
                 for p, l, t in zip(

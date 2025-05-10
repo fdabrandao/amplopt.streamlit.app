@@ -778,7 +778,7 @@ class ModelBuilder:
             r"""
             !exercise!
             s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-                Production[p,l,t] == sum{r in RESOURCES} ProductionHours[p,l,r,t] * ProductionRate[p,l,r];
+                Production[p,l,t] = sum{r in RESOURCES} ProductionHours[p,l,r,t] * ProductionRate[p,l,r];
                 # Ensure that the total production quantity is equal to the production hours multiplied by the production rate
             """,
             exercise=exercise,
@@ -804,6 +804,7 @@ class ModelBuilder:
                 constraint=production_rate,
                 needs=[
                     "Production[p,l,t]",
+                    "=",
                     "sum{r in RESOURCES}",
                     "ProductionHours[p,l,r,t]",
                     "*",
@@ -884,10 +885,12 @@ class ModelBuilder:
             r"""
             set TRANSFER_LANES within {PRODUCTS, LOCATIONS, LOCATIONS};
                 # Valid transfer lanes (From_Location, To_Location)
-            var TransfersIN{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;
-                # Transfers of product 'p' arriving at location 'j' from location 'i'
-            var TransfersOUT{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;
+            var Transfers{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;
                 # Transfers of product 'p' leaving from location 'i' to location 'j'
+            var TransfersIN{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} = sum {(p, i, l) in TRANSFER_LANES} Transfers[p, i, l, t];
+                # Total amount of transfers of product 'p' into location 'l' at period 't'
+            var TransfersOUT{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} = sum {(p, l, i) in TRANSFER_LANES} Transfers[p, l, i, t];
+                # Total amount of transfers of product 'p' out of location 'l' at period 't'
             """
         )
 
@@ -896,9 +899,8 @@ class ModelBuilder:
             !exercise!
             s.t. MaterialBalanceWithTransfers{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
                 StartingInventory[p,l,t] - MetDemand[p,l,t] + Production[p,l,t]
-                + sum{i in LOCATIONS: (p, i, l) in TRANSFER_LANES} TransfersIN[p,i,l,t]
-                - sum{j in LOCATIONS: (p, l, j) in TRANSFER_LANES} TransfersOUT[p,l,j,t]
-                == EndingInventory[p,l,t];
+                + TransfersIN[p,l,t] - TransfersOUT[p,l,t]
+                = EndingInventory[p,l,t];
                 # Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment
             """,
             exercise=exercise,
@@ -926,10 +928,9 @@ class ModelBuilder:
                     "StartingInventory[p,l,t]",
                     "MetDemand[p,l,t]",
                     "Production[p,l,t]",
-                    "sum{i in LOCATIONS: (p, i, l) in TRANSFER_LANES}",
-                    "TransfersIN[p,i,l,t]",
-                    "sum{j in LOCATIONS: (p, l, j) in TRANSFER_LANES}",
-                    "TransfersOUT[p,l,j,t]",
+                    "TransfersIN[p,l,t]",
+                    "TransfersOUT[p,l,t]",
+                    "=",
                     "EndingInventory[p,l,t]",
                 ],
             )
@@ -962,7 +963,7 @@ class ModelBuilder:
             r"""
             !exercise!
             s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-                TargetStock[p, l] == EndingInventory[p, l, t] + BelowTarget[p, l, t] - AboveTarget[p, l, t];
+                TargetStock[p, l] = EndingInventory[p, l, t] + BelowTarget[p, l, t] - AboveTarget[p, l, t];
                 # Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level
             """,
             exercise=exercise,
@@ -988,8 +989,11 @@ class ModelBuilder:
                 constraint=target_stock,
                 needs=[
                     "TargetStock[p, l]",
+                    "=",
                     "EndingInventory[p, l, t]",
+                    "+",
                     "BelowTarget[p, l, t]",
+                    "-",
                     "AboveTarget[p, l, t]",
                 ],
             )
@@ -1417,9 +1421,7 @@ class ModelBuilder:
                     + EndingInventoryPenalty * EndingInventory[p, l, t] 
                     + AboveTargetPenalty * AboveTarget[p, l, t] 
                     + BelowTargetPenalty * BelowTarget[p, l, t]
-                )
-                + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
-                    TransferPenalty * TransfersOUT[p, i, j, t]
+                    + TransferPenalty * TransfersOUT[p, l, t]
                 )"""
             + layered_storage_component
             + r""";
@@ -1439,9 +1441,7 @@ class ModelBuilder:
                                                     else 10 * AboveTargetPenalty)
                     + (if BelowTarget[p, l, t] <= 5 then BelowTarget[p, l, t] * BelowTargetPenalty
                                                     else 10 * BelowTargetPenalty)
-                )
-                + sum{(p, i, j) in TRANSFER_LANES, t in PERIODS} (
-                    TransferPenalty * TransfersOUT[p, i, j, t]
+                    + TransferPenalty * TransfersOUT[p, l, t]
                 )"""
             + layered_storage_component
             + r""";

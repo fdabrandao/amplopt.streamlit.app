@@ -251,8 +251,10 @@ def main():
         # Select the solver to use
         solver, _ = solver_selector(mp_only=True)
         # Solve the problem
-        output = ampl.solve(solver=solver, mp_options="outlev=1", return_output=True)
-        if ampl.solve_result != "solved":
+        output = ampl.solve(
+            solver=solver, mp_options="outlev=1 timelim=10", return_output=True
+        )
+        if ampl.solve_result not in ["solved", "limit"]:
             st.error(f"The model could not be solved:\n```\n{output}\n```")
         else:
             with st.expander("Solver Output", expanded=True):
