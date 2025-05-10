@@ -17,10 +17,11 @@ def main():
         "Homework 1: Demand Balance + Inventory Carryover + Material Balance",
         "Homework 2: Shelf-Life + Production Hours + Resource Capacity",
         "Homework 3: Transfers + Target Stocks + Storage Capacity",
+        "Homework 4: Min and Min+Incremental Lot-sizing",
     ]
 
     if "homework" not in st.query_params:
-        st.query_params["homework"] = 3
+        st.query_params["homework"] = 4
 
     default_option = max(0, int(st.query_params["homework"]) - 1)
 
@@ -73,6 +74,22 @@ def main():
                 "Layered Max Storage Capacity", value=False
             )
             layered_targets = st.checkbox("Layered Targets", value=False)
+    lot_sizing_mp, model_incremental_lot_sizing = False, False
+    if class_number == 4:
+        with col1:
+            options = [
+                "Min Lot-Sizing",
+                "Min+Incremental Lot-Sizing",
+            ]
+            choice = st.radio("Type of lot-sizing?", options)
+            model_incremental_lot_sizing = options.index(choice) == 1
+
+            options = [
+                "High-Level Logic Modeling (via AMPL MP)",
+                "Old-School Big-M Method",
+            ]
+            choice = st.radio("How to model lot-sizing?", options)
+            lot_sizing_mp = options.index(choice) == 0
 
     st.session_state.mb = ModelBuilder(
         class_number=class_number,
@@ -81,6 +98,8 @@ def main():
         model_shelf_life=model_shelf_life,
         layered_storage_capacity=layered_storage_capacity,
         layered_targets=layered_targets,
+        model_incremental_lot_sizing=model_incremental_lot_sizing,
+        lot_sizing_mp=lot_sizing_mp,
         on_change=require_rerun,
     )
     mb = st.session_state.mb
@@ -92,95 +111,8 @@ def main():
 
     if show_complete_model:
         pass
-    elif class_number == 1:
-        st.markdown("## 🧑‍🏫 Exercises")
-        exercises = [
-            "",
-            "All",
-            "Exercise #1: Demand Balance",
-            "Exercise #2: Inventory Carryover",
-            "Exercise #3: Material Balance",
-        ]
-        selected_exercise = (
-            exercises.index(
-                st.selectbox(
-                    "Select the exercise(s) you want to complete 👇",
-                    exercises,
-                    key="exercise",
-                    index=0,
-                    on_change=require_rerun,
-                )
-            )
-            - 1
-        )
-        mb.demand_fulfillment_exercise(
-            ampl, exercise=1, selected_exercise=selected_exercise
-        )
-        mb.inventory_carryover_exercise(
-            ampl, exercise=2, selected_exercise=selected_exercise
-        )
-        mb.material_balance_exercise(
-            ampl, exercise=3, selected_exercise=selected_exercise
-        )
-    elif class_number == 2:
-        st.markdown("## 🧑‍🏫 Exercises")
-        exercises = [
-            "",
-            "All",
-            "Exercise #1: Production Hours",
-            "Exercise #2: Resource Capacity",
-        ]
-        selected_exercise = (
-            exercises.index(
-                st.selectbox(
-                    "Select the exercise(s) you want to complete 👇",
-                    exercises,
-                    key="exercise",
-                    index=0,
-                    on_change=require_rerun,
-                )
-            )
-            - 1
-        )
-        mb.production_rate_exercise(
-            ampl, exercise=1, selected_exercise=selected_exercise
-        )
-        mb.resource_capacity_exercise(
-            ampl, exercise=2, selected_exercise=selected_exercise
-        )
-    elif class_number == 3:
-        st.markdown("## 🧑‍🏫 Exercises")
-        exercises = [
-            "",
-            "All",
-            "Exercise #1: Transfers",
-            "Exercise #2: Target Stocks",
-            "Exercise #3: Storage Capacity",
-        ]
-        selected_exercise = (
-            exercises.index(
-                st.selectbox(
-                    "Select the exercise(s) you want to complete 👇",
-                    exercises,
-                    key="exercise",
-                    index=0,
-                    on_change=require_rerun,
-                )
-            )
-            - 1
-        )
-        mb.material_balance_with_transfers_exercise(
-            ampl, exercise=1, selected_exercise=selected_exercise
-        )
-        mb.target_stock_exercise(ampl, exercise=2, selected_exercise=selected_exercise)
-        if not layered_storage_capacity:
-            mb.storage_capacity_exercise(
-                ampl, exercise=3, selected_exercise=selected_exercise
-            )
-        else:
-            mb.soft_storage_capacity_exercise(
-                ampl, exercise=3, selected_exercise=selected_exercise
-            )
+    else:
+        mb.display_exercises(ampl=ampl, require_rerun=require_rerun)
 
     st.markdown("## Solve")
 

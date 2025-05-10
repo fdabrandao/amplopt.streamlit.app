@@ -1,5 +1,24 @@
 import streamlit as st
+import textwrap
 import re
+
+
+class Exercise:
+    def __init__(self, number, name, render_exercise):
+        self.number = number
+        self.name = name
+        self.render_exercise = render_exercise
+
+    def title(self):
+        return f"Exercise #{self.number}: {self.name}"
+
+    def render(self, ampl, selected_exercise):
+        self.render_exercise(
+            ampl,
+            name=self.name,
+            number=self.number,
+            selected_exercise=selected_exercise,
+        )
 
 
 class ModelBuilder:
@@ -11,8 +30,12 @@ class ModelBuilder:
         model_shelf_life,
         layered_storage_capacity,
         layered_targets,
+        model_incremental_lot_sizing,
+        lot_sizing_mp,
         on_change=None,
     ):
+        self.model = ""
+        self.exercises = []
         self.on_change = on_change
         self.class_number = class_number
         self.use_restrict_table = use_restrict_table
@@ -21,47 +44,57 @@ class ModelBuilder:
         self.layered_storage_capacity = layered_storage_capacity
         self.layered_targets = layered_targets
         if class_number == 1:
-            self.model = self.base_model()
+            self.add_base_model()
 
-            self.model += r"""
+            self.add(
+                r"""
             ##################
             # Demand Balance # 
             ##################
-            """
-            self.model += self.demand_fulfillment_declaration(exercise=1)
+                """
+            )
+            self.add_demand_fulfillment_declaration(exercise=1)
 
-            self.model += r"""
+            self.add(
+                r"""
             #######################
             # Inventory Carryover # 
             #######################
-            """
-            self.model += self.inventory_carryover_declaration(exercise=2)
+                """
+            )
+            self.add_inventory_carryover_declaration(exercise=2)
 
-            self.model += r"""
+            self.add(
+                r"""
             ####################
             # Material Balance # 
             ####################
-            """
-            self.model += self.material_balance_declaration(exercise=3)
+                """
+            )
+            self.add_material_balance_declaration(exercise=3)
 
-            self.model += r"""
+            self.add(
+                r"""
             #############
             # Objective #
             #############
-            """
-            self.model += self.class1_objective()
+                """
+            )
+            self.add_class1_objective()
         elif class_number == 2:
             if not self.model_shelf_life:
-                self.model = self.base_model()
+                self.add_base_model()
             else:
-                self.model = self.base_model_with_shelf_life()
+                self.add_base_model_with_shelf_life()
 
-            self.model += r"""
+            self.add(
+                r"""
             ##################
             # Demand Balance # 
             ##################
-            """
-            self.model += self.demand_fulfillment_declaration(show=True)
+                """
+            )
+            self.add_demand_fulfillment_declaration(show=True)
 
             inventory_carryover_header = r"""
             #######################
@@ -76,13 +109,11 @@ class ModelBuilder:
             """
 
             if not self.model_shelf_life:
-                self.model += inventory_carryover_header
-                self.model += self.inventory_carryover_declaration(show=True)
+                self.add(inventory_carryover_header)
+                self.add_inventory_carryover_declaration(show=True)
             else:
-                self.model += inventory_carryover_with_shelf_life_header
-                self.model += self.inventory_carryover_with_shelf_life_declaration(
-                    show=True
-                )
+                self.add(inventory_carryover_with_shelf_life_header)
+                self.add_inventory_carryover_with_shelf_life_declaration(show=True)
 
             material_balance_header = r"""
             ####################
@@ -97,104 +128,231 @@ class ModelBuilder:
             """
 
             if not self.model_shelf_life:
-                self.model += material_balance_header
-                self.model += self.material_balance_declaration(show=True)
+                self.add(material_balance_header)
+                self.add_material_balance_declaration(show=True)
             else:
-                self.model += material_balance_with_shelf_life_header
-                self.model += self.material_balance_with_shelf_life_declaration(
-                    show=True
-                )
+                self.add(material_balance_with_shelf_life_header)
+                self.add_material_balance_with_shelf_life_declaration(show=True)
 
-            self.model += r"""
+            self.add(
+                r"""
             ###########################################
             # Part 1: Production and Production Hours #
             ###########################################
-            """
-            self.model += self.production_rate_declaration(exercise=1)
+                """
+            )
+            self.add_production_rate_declaration(exercise=1)
 
-            self.model += r"""
+            self.add(
+                r"""
             #############################
             # Part 2: Resource capacity #
             #############################
-            """
-            self.model += self.resource_capacity_declaration(exercise=2)
+                """
+            )
+            self.add_resource_capacity_declaration(exercise=2)
 
-            self.model += r"""
+            self.add(
+                r"""
             #############
             # Objective #
             #############
-            """
+                """
+            )
             if not self.model_shelf_life:
-                self.model += self.class1_objective()
+                self.add_class1_objective()
             else:
-                self.model += self.class1_objective_with_shelf_life()
+                self.add_class1_objective_with_shelf_life()
         elif class_number == 3:
-            self.model = self.base_model()
+            self.add_base_model()
 
-            self.model += r"""
+            self.add(
+                r"""
             ##################
             # Demand Balance # 
             ##################
-            """
-            self.model += self.demand_fulfillment_declaration(show=True)
+                """
+            )
+            self.add_demand_fulfillment_declaration(show=True)
 
-            self.model += r"""
+            self.add(
+                r"""
             #######################
             # Inventory Carryover # 
             #######################
-            """
-            self.model += self.inventory_carryover_declaration(show=True)
+                """
+            )
+            self.add_inventory_carryover_declaration(show=True)
 
-            self.model += r"""
+            self.add(
+                r"""
             ###################################
             # Production and Production Hours #
             ###################################
-            """
-            self.model += self.production_rate_declaration(show=True)
+                """
+            )
+            self.add_production_rate_declaration(show=True)
 
-            self.model += r"""
+            self.add(
+                r"""
             #####################
             # Resource capacity #
             #####################
-            """
-            self.model += self.resource_capacity_declaration(show=True)
+                """
+            )
+            self.add_resource_capacity_declaration(show=True)
 
-            self.model += r"""
+            self.add(
+                r"""
             #####################
             # Part 1: Transfers #
             #####################
-            """
-            self.model += self.material_balance_with_transfers_declaration(exercise=1)
+                """
+            )
+            self.add_material_balance_with_transfers_declaration(exercise=1)
 
-            self.model += r"""
+            self.add(
+                r"""
             #########################
             # Part 2: Target Stocks # 
             #########################
-            """
-            self.model += self.target_stock_declaration(exercise=2)
+                """
+            )
+            self.add_target_stock_declaration(exercise=2)
 
-            self.model += r"""
+            self.add(
+                r"""
             ############################
             # Part 3: Storage Capacity #
             ############################
-            """
+                """
+            )
             if not self.layered_storage_capacity:
-                self.model += self.storage_capacity_declaration(exercise=3)
+                self.add_storage_capacity_declaration(exercise=3)
             else:
-                self.model += self.soft_storage_capacity_declaration(exercise=3)
+                self.add_soft_storage_capacity_declaration(exercise=3)
 
-            self.model += r"""
+            self.add(
+                r"""
             #############
             # Objective #
             #############
-            """
-            self.model += self.class3_objective(
+                """
+            )
+            self.add_class3_objective(
+                self.layered_storage_capacity, self.layered_targets
+            )
+        elif class_number == 4:
+            self.add_base_model()
+
+            self.add(
+                r"""
+            ##################
+            # Demand Balance # 
+            ##################
+                """
+            )
+            self.add_demand_fulfillment_declaration(show=True)
+
+            self.add(
+                r"""
+            #######################
+            # Inventory Carryover # 
+            #######################
+                """
+            )
+            self.add_inventory_carryover_declaration(show=True)
+
+            self.add(
+                r"""
+            ###################################
+            # Production and Production Hours #
+            ###################################
+                """
+            )
+            self.add_production_rate_declaration(show=True)
+
+            self.add(
+                r"""
+            #####################
+            # Resource capacity #
+            #####################
+                """
+            )
+            self.add_resource_capacity_declaration(show=True)
+
+            self.add(
+                r"""
+            #############
+            # Transfers #
+            #############
+                """
+            )
+            self.add_material_balance_with_transfers_declaration(show=True)
+
+            self.add(
+                r"""
+            #################
+            # Target Stocks # 
+            #################
+                """
+            )
+            self.add_target_stock_declaration(show=True)
+
+            self.add(
+                r"""
+            ####################
+            # Storage Capacity #
+            ####################
+                """
+            )
+            self.add_storage_capacity_declaration(show=True)
+
+            if not model_incremental_lot_sizing:
+                self.add(
+                    r"""
+                    ##############
+                    # Lot-Sizing #
+                    ##############
+                    """
+                )
+                self.add_lot_sizing_min(
+                    use_mp=lot_sizing_mp,
+                    exercise=1,
+                )
+            else:
+                self.add(
+                    r"""
+                    ##########################
+                    # Incremental Lot-Sizing #
+                    ##########################
+                    """
+                )
+                self.add_lot_sizing_incremental(
+                    use_mp=lot_sizing_mp,
+                    exercise=1,
+                )
+
+            self.add(
+                r"""
+            #############
+            # Objective #
+            #############
+                """
+            )
+            self.add_class3_objective(
                 self.layered_storage_capacity, self.layered_targets
             )
         else:
             assert False
 
+    def add(self, declaration, transform=False):
+        if transform:
+            declaration = self._transform(declaration)
+        self.model += textwrap.dedent(declaration)
+
     def _transform(self, declaration, exercise=None):
+        declaration = textwrap.dedent(declaration)
         if self.use_restrict_table:
             declaration = declaration.replace(
                 "p in PRODUCTS, l in LOCATIONS", "(p, l) in PRODUCTS_LOCATIONS"
@@ -303,8 +461,8 @@ class ModelBuilder:
                 #         output = output[output.find(":") + 1 :].strip()
                 #     st.error(f"❌ Error: {output}")
 
-    def base_model(self):
-        return self._transform(
+    def add_base_model(self):
+        self.add(
             r"""
             set PRODUCTS;  # Set of products
             set LOCATIONS;  # Set of distribution or production locations
@@ -326,11 +484,12 @@ class ModelBuilder:
                 # Inventory at the end of each time period
             var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Production volume for each product at each location during each time period
-            """
+            """,
+            transform=True,
         )
 
-    def base_model_with_shelf_life(self):
-        return self._transform(
+    def add_base_model_with_shelf_life(self):
+        self.add(
             r"""
             set PRODUCTS;  # Set of products
             set LOCATIONS;  # Set of distribution or production locations
@@ -366,11 +525,12 @@ class ModelBuilder:
             !empty!
             var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Production volume for each product at each location during each time period
-            """
+            """,
+            transform=True,
         )
 
-    def demand_fulfillment_declaration(self, exercise=None, show=None):
-        self.demand_fulfillment = self._transform(
+    def add_demand_fulfillment_declaration(self, exercise=None, show=None):
+        demand_fulfillment = self._transform(
             """
             !exercise!
             s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
@@ -380,7 +540,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        self.demand_fulfillment_placeholder = self._transform(
+        demand_fulfillment_placeholder = self._transform(
             r"""
             # s.t. DemandBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure that all demand is accounted for either as met or unmet
@@ -388,29 +548,38 @@ class ModelBuilder:
             exercise=exercise,
         )
 
+        exercise_name = "Demand Balance Constraint"
+
+        def render_exercise(ampl, name, number, selected_exercise):
+            self._exercise(
+                ampl,
+                name=name,
+                description="Ensure that all demand is accounted for either as met or unmet.",
+                exercise=number,
+                selected_exercise=selected_exercise,
+                constraint=demand_fulfillment,
+                needs=[
+                    "Demand[p, l, t]",
+                    "MetDemand[p, l, t]",
+                    "UnmetDemand[p, l, t]",
+                    "=",
+                ],
+            )
+
         if show or self.show_complete_model:
-            return self.demand_fulfillment
+            self.add(demand_fulfillment)
         else:
-            return self.demand_fulfillment_placeholder
+            self.add(demand_fulfillment_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
 
-    def demand_fulfillment_exercise(self, ampl, exercise, selected_exercise):
-        self._exercise(
-            ampl,
-            name="Demand Balance Constraint",
-            description="Ensure that all demand is accounted for either as met or unmet.",
-            exercise=exercise,
-            selected_exercise=selected_exercise,
-            constraint=self.demand_fulfillment,
-            needs=[
-                "Demand[p, l, t]",
-                "MetDemand[p, l, t]",
-                "UnmetDemand[p, l, t]",
-                "=",
-            ],
-        )
-
-    def inventory_carryover_declaration(self, exercise=None, show=None):
-        self.inventory_carryover = self._transform(
+    def add_inventory_carryover_declaration(self, exercise=None, show=None):
+        inventory_carryover = self._transform(
             r"""
             !exercise!
             s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
@@ -424,7 +593,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        self.inventory_carryover_placeholder = self._transform(
+        inventory_carryover_placeholder = self._transform(
             r"""
             # s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Define how inventory is carried over from one period to the next
@@ -432,57 +601,26 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        if show or self.show_complete_model:
-            return self.inventory_carryover
-        else:
-            return self.inventory_carryover_placeholder
+        exercise_name = "Inventory Carryover Constraint"
 
-    def inventory_carryover_with_shelf_life_declaration(self, exercise=None, show=None):
-        self.inventory_carryover = self._transform(
-            r"""
-            !exercise!
-            s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
-                StartingInventorySL[p, l, t, d] =
-                    if ord(t) > 1 then
-                        (if ord(d) > 1 then EndingInventorySL[p, l, prev(t), prev(d)] else 0)
-                    else
-                        (if ord(d) = 2 then InitialInventory[p, l] else 0);
-                # Define how inventory is carried over from one period to the next
-            """,
-            exercise=exercise,
-        )
-
-        self.inventory_carryover_placeholder = self._transform(
-            r"""
-            # s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
-            # ... !exercise!Define how inventory is carried over from one period to the next
-            """,
-            exercise=exercise,
-        )
-
-        if show or self.show_complete_model:
-            return self.inventory_carryover
-        else:
-            return self.inventory_carryover_placeholder
-
-    def inventory_carryover_exercise(self, ampl, exercise, selected_exercise):
-        self._exercise(
-            ampl,
-            name="Inventory Carryover Constraint",
-            description="Define how inventory is carried over from one period to the next.",
-            exercise=exercise,
-            selected_exercise=selected_exercise,
-            constraint=self.inventory_carryover,
-            needs=[
-                "StartingInventory[p, l, t]",
-                "EndingInventory[p, l, prev(t)]",
-                "InitialInventory[p, l]",
-                "if",
-                "ord(t)",
-                "then",
-                "=",
-            ],
-            help="""
+        def render_exercise(ampl, name, number, selected_exercise):
+            self._exercise(
+                ampl,
+                name=name,
+                description="Define how inventory is carried over from one period to the next.",
+                exercise=number,
+                selected_exercise=selected_exercise,
+                constraint=inventory_carryover,
+                needs=[
+                    "StartingInventory[p, l, t]",
+                    "EndingInventory[p, l, prev(t)]",
+                    "InitialInventory[p, l]",
+                    "if",
+                    "ord(t)",
+                    "then",
+                    "=",
+                ],
+                help="""
                 The set `PERIODS` is an ordered set (declared as `set PERIODS ordered;`).
                 This allows checking the order of a set element `t` with `ord(t)` (starting at 1),
                 and access the previous and following elements with `prev(t)` and `next(t)`, respectively.
@@ -497,10 +635,52 @@ class ModelBuilder:
                 For more modern usage examples see https://ampl.com/mo-book/ and https://ampl.com/colab/ where
                 AMPL is used integrated with Python just like in this Streamlit app.
                 """,
+            )
+
+        if show or self.show_complete_model:
+            self.add(inventory_carryover)
+        else:
+            self.add(inventory_carryover_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
+
+    def add_inventory_carryover_with_shelf_life_declaration(
+        self, exercise=None, show=None
+    ):
+        inventory_carryover = self._transform(
+            r"""
+            !exercise!
+            s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
+                StartingInventorySL[p, l, t, d] =
+                    if ord(t) > 1 then
+                        (if ord(d) > 1 then EndingInventorySL[p, l, prev(t), prev(d)] else 0)
+                    else
+                        (if ord(d) = 2 then InitialInventory[p, l] else 0);
+                # Define how inventory is carried over from one period to the next
+            """,
+            exercise=exercise,
         )
 
-    def material_balance_declaration(self, exercise=None, show=None):
-        self.material_balance = self._transform(
+        inventory_carryover_placeholder = self._transform(
+            r"""
+            # s.t. InventoryCarryover{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
+            # ... !exercise!Define how inventory is carried over from one period to the next
+            """,
+            exercise=exercise,
+        )
+
+        if show or self.show_complete_model:
+            self.add(inventory_carryover)
+        else:
+            self.add(inventory_carryover_placeholder)
+
+    def add_material_balance_declaration(self, exercise=None, show=None):
+        material_balance = self._transform(
             r"""
             !exercise!
             s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
@@ -510,7 +690,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        self.material_balance_placeholder = self._transform(
+        material_balance_placeholder = self._transform(
             r"""
             # s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Balance starting inventory and production against demand to determine ending inventory
@@ -518,13 +698,41 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        if show or self.show_complete_model:
-            return self.material_balance
-        else:
-            return self.material_balance_placeholder
+        exercise_name = "Material Balance Constraint"
 
-    def material_balance_with_shelf_life_declaration(self, exercise=None, show=None):
-        self.material_balance = self._transform(
+        def render_exercise(ampl, name, number, selected_exercise):
+            self._exercise(
+                ampl,
+                name=name,
+                description="Balance starting inventory and production against demand to determine ending inventory.",
+                exercise=number,
+                selected_exercise=selected_exercise,
+                constraint=material_balance,
+                needs=[
+                    "StartingInventory[p, l, t]",
+                    "Production[p, l, t]",
+                    "MetDemand[p, l, t]",
+                    "EndingInventory[p, l, t]",
+                    "=",
+                ],
+            )
+
+        if show or self.show_complete_model:
+            self.add(material_balance)
+        else:
+            self.add(material_balance_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
+
+    def add_material_balance_with_shelf_life_declaration(
+        self, exercise=None, show=None
+    ):
+        material_balance = self._transform(
             r"""
             !exercise!
             s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
@@ -541,7 +749,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        self.material_balance_placeholder = self._transform(
+        material_balance_placeholder = self._transform(
             r"""
             # s.t. MaterialBalance{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE}:
             # ... !exercise!Balance starting inventory and production against demand to determine ending inventory
@@ -550,28 +758,11 @@ class ModelBuilder:
         )
 
         if show or self.show_complete_model:
-            return self.material_balance
+            self.add(material_balance)
         else:
-            return self.material_balance_placeholder
+            self.add(material_balance_placeholder)
 
-    def material_balance_exercise(self, ampl, exercise, selected_exercise):
-        self._exercise(
-            ampl,
-            name="Material Balance Constraint",
-            description="Balance starting inventory and production against demand to determine ending inventory.",
-            exercise=exercise,
-            selected_exercise=selected_exercise,
-            constraint=self.material_balance,
-            needs=[
-                "StartingInventory[p, l, t]",
-                "Production[p, l, t]",
-                "MetDemand[p, l, t]",
-                "EndingInventory[p, l, t]",
-                "=",
-            ],
-        )
-
-    def production_rate_declaration(self, exercise=None, show=None):
+    def add_production_rate_declaration(self, exercise=None, show=None):
         header = self._transform(
             r"""
             set RESOURCES;  # Set of production resources
@@ -583,7 +774,7 @@ class ModelBuilder:
             """
         )
 
-        self.production_rate = self._transform(
+        production_rate = self._transform(
             r"""
             !exercise!
             s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
@@ -593,7 +784,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        self.production_rate_placeholder = self._transform(
+        production_rate_placeholder = self._transform(
             r"""
             # s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure that the total production quantity is equal to the production hours multiplied by the production rate
@@ -601,29 +792,38 @@ class ModelBuilder:
             exercise=exercise,
         )
 
+        exercise_name = "Production and Production Hours"
+
+        def render_exercise(ampl, name, number, selected_exercise):
+            self._exercise(
+                ampl,
+                name=name,
+                description="Ensure that the total production quantity is equal to the production hours multiplied by the production rate.",
+                exercise=number,
+                selected_exercise=selected_exercise,
+                constraint=production_rate,
+                needs=[
+                    "Production[p,l,t]",
+                    "sum{r in RESOURCES}",
+                    "ProductionHours[p,l,r,t]",
+                    "*",
+                    "ProductionRate[p,l,r]",
+                ],
+            )
+
         if show or self.show_complete_model:
-            return header + self.production_rate
+            self.add(header + production_rate)
         else:
-            return header + self.production_rate_placeholder
+            self.add(header + production_rate_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
 
-    def production_rate_exercise(self, ampl, exercise, selected_exercise):
-        self._exercise(
-            ampl,
-            name="Production and Production Hours",
-            description="Ensure that the total production quantity is equal to the production hours multiplied by the production rate.",
-            exercise=exercise,
-            selected_exercise=selected_exercise,
-            constraint=self.production_rate,
-            needs=[
-                "Production[p,l,t]",
-                "sum{r in RESOURCES}",
-                "ProductionHours[p,l,r,t]",
-                "*",
-                "ProductionRate[p,l,r]",
-            ],
-        )
-
-    def resource_capacity_declaration(self, exercise=None, show=None):
+    def add_resource_capacity_declaration(self, exercise=None, show=None):
         header = self._transform(
             r"""
             param AvailableCapacity{r in RESOURCES, l in LOCATIONS} >= 0 default 0; 
@@ -631,7 +831,7 @@ class ModelBuilder:
             """
         )
 
-        self.resource_capacity = self._transform(
+        resource_capacity = self._transform(
             r"""
             !exercise!
             s.t. ProductionCapacity{r in RESOURCES, l in LOCATIONS, t in PERIODS}:
@@ -641,7 +841,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        self.resource_capacity_placeholder = self._transform(
+        resource_capacity_placeholder = self._transform(
             r"""
             # s.t. ProductionCapacity{r in RESOURCES, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location
@@ -649,28 +849,37 @@ class ModelBuilder:
             exercise=exercise,
         )
 
+        exercise_name = "Resource capacity"
+
+        def render_exercise(ampl, name, number, selected_exercise):
+            self._exercise(
+                ampl,
+                name=name,
+                description="Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location.",
+                exercise=number,
+                selected_exercise=selected_exercise,
+                constraint=resource_capacity,
+                needs=[
+                    "sum{(p, l) in PRODUCTS_LOCATIONS}",
+                    "ProductionHours[p,l,r,t]",
+                    "<=",
+                    "AvailableCapacity[r,l]",
+                ],
+            )
+
         if show or self.show_complete_model:
-            return header + self.resource_capacity
+            self.add(header + resource_capacity)
         else:
-            return header + self.resource_capacity_placeholder
+            self.add(header + resource_capacity_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
 
-    def resource_capacity_exercise(self, ampl, exercise, selected_exercise):
-        self._exercise(
-            ampl,
-            name="Resource capacity",
-            description="Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location.",
-            exercise=exercise,
-            selected_exercise=selected_exercise,
-            constraint=self.resource_capacity,
-            needs=[
-                "sum{(p, l) in PRODUCTS_LOCATIONS}",
-                "ProductionHours[p,l,r,t]",
-                "<=",
-                "AvailableCapacity[r,l]",
-            ],
-        )
-
-    def material_balance_with_transfers_declaration(self, exercise=None, show=None):
+    def add_material_balance_with_transfers_declaration(self, exercise=None, show=None):
         header = self._transform(
             r"""
             set TRANSFER_LANES within {PRODUCTS, LOCATIONS, LOCATIONS};
@@ -682,7 +891,7 @@ class ModelBuilder:
             """
         )
 
-        self.material_balance_with_transfers = self._transform(
+        material_balance_with_transfers = self._transform(
             r"""
             !exercise!
             s.t. MaterialBalanceWithTransfers{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
@@ -695,7 +904,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        self.material_balance_with_transfers_placeholder = self._transform(
+        material_balance_with_transfers_placeholder = self._transform(
             r"""
             # s.t. MaterialBalanceWithTransfers{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment
@@ -703,34 +912,41 @@ class ModelBuilder:
             exercise=exercise,
         )
 
+        exercise_name = "Material Balance with Transfers"
+
+        def render_exercise(ampl, name, number, selected_exercise):
+            self._exercise(
+                ampl,
+                name=name,
+                description="Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment.",
+                exercise=number,
+                selected_exercise=selected_exercise,
+                constraint=material_balance_with_transfers,
+                needs=[
+                    "StartingInventory[p,l,t]",
+                    "MetDemand[p,l,t]",
+                    "Production[p,l,t]",
+                    "sum{i in LOCATIONS: (p, i, l) in TRANSFER_LANES}",
+                    "TransfersIN[p,i,l,t]",
+                    "sum{j in LOCATIONS: (p, l, j) in TRANSFER_LANES}",
+                    "TransfersOUT[p,l,j,t]",
+                    "EndingInventory[p,l,t]",
+                ],
+            )
+
         if show or self.show_complete_model:
-            return header + self.material_balance_with_transfers
+            self.add(header + material_balance_with_transfers)
         else:
-            return header + self.material_balance_with_transfers_placeholder
+            self.add(header + material_balance_with_transfers_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
 
-    def material_balance_with_transfers_exercise(
-        self, ampl, exercise, selected_exercise
-    ):
-        self._exercise(
-            ampl,
-            name="Transfers",
-            description="Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment.",
-            exercise=exercise,
-            selected_exercise=selected_exercise,
-            constraint=self.material_balance_with_transfers,
-            needs=[
-                "StartingInventory[p,l,t]",
-                "MetDemand[p,l,t]",
-                "Production[p,l,t]",
-                "sum{i in LOCATIONS: (p, i, l) in TRANSFER_LANES}",
-                "TransfersIN[p,i,l,t]",
-                "sum{j in LOCATIONS: (p, l, j) in TRANSFER_LANES}",
-                "TransfersOUT[p,l,j,t]",
-                "EndingInventory[p,l,t]",
-            ],
-        )
-
-    def target_stock_declaration(self, exercise=None, show=None):
+    def add_target_stock_declaration(self, exercise=None, show=None):
         header = self._transform(
             r"""
             param TargetStock{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
@@ -742,7 +958,7 @@ class ModelBuilder:
             """
         )
 
-        self.target_stock = self._transform(
+        target_stock = self._transform(
             r"""
             !exercise!
             s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
@@ -752,7 +968,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        self.target_stock_placeholder = self._transform(
+        target_stock_placeholder = self._transform(
             r"""
             # s.t. TargetStockConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
@@ -760,28 +976,37 @@ class ModelBuilder:
             exercise=exercise,
         )
 
+        exercise_name = "Target Stocks"
+
+        def render_exercise(ampl, name, number, selected_exercise):
+            self._exercise(
+                ampl,
+                name=name,
+                description="Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level.",
+                exercise=number,
+                selected_exercise=selected_exercise,
+                constraint=target_stock,
+                needs=[
+                    "TargetStock[p, l]",
+                    "EndingInventory[p, l, t]",
+                    "BelowTarget[p, l, t]",
+                    "AboveTarget[p, l, t]",
+                ],
+            )
+
         if show or self.show_complete_model:
-            return header + self.target_stock
+            self.add(header + target_stock)
         else:
-            return header + self.target_stock_placeholder
+            self.add(header + target_stock_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
 
-    def target_stock_exercise(self, ampl, exercise, selected_exercise):
-        self._exercise(
-            ampl,
-            name="Target Stocks",
-            description="Ensure that the ending inventory is adjusted to either exceed (AboveTarget) or fall below (BelowTarget) the target stock level.",
-            exercise=exercise,
-            selected_exercise=selected_exercise,
-            constraint=self.target_stock,
-            needs=[
-                "TargetStock[p, l]",
-                "EndingInventory[p, l, t]",
-                "BelowTarget[p, l, t]",
-                "AboveTarget[p, l, t]",
-            ],
-        )
-
-    def storage_capacity_declaration(self, exercise=None, show=None):
+    def add_storage_capacity_declaration(self, exercise=None, show=None):
         header = self._transform(
             r"""
             param MaxCapacity{l in LOCATIONS} >= 0;
@@ -789,7 +1014,7 @@ class ModelBuilder:
             """
         )
 
-        self.storage_capacity = self._transform(
+        storage_capacity = self._transform(
             r"""
             !exercise!
             s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
@@ -799,7 +1024,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        self.storage_capacity_placeholder = self._transform(
+        storage_capacity_placeholder = self._transform(
             r"""
             # s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location
@@ -807,28 +1032,37 @@ class ModelBuilder:
             exercise=exercise,
         )
 
+        exercise_name = "Storage Capacity"
+
+        def render_exercise(ampl, name, number, selected_exercise):
+            self._exercise(
+                ampl,
+                name=name,
+                description="Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location.",
+                exercise=number,
+                selected_exercise=selected_exercise,
+                constraint=storage_capacity,
+                needs=[
+                    "sum{(p, l) in PRODUCTS_LOCATIONS}",
+                    "EndingInventory[p, l, t]",
+                    "<=",
+                    "MaxCapacity[l]",
+                ],
+            )
+
         if show or self.show_complete_model:
-            return header + self.storage_capacity
+            self.add(header + storage_capacity)
         else:
-            return header + self.storage_capacity_placeholder
+            self.add(header + storage_capacity_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
 
-    def storage_capacity_exercise(self, ampl, exercise, selected_exercise):
-        self._exercise(
-            ampl,
-            name="Storage Capacity",
-            description="Ensure that the total ending inventory across all products does not exceed the maximum storage capacity at each location.",
-            exercise=exercise,
-            selected_exercise=selected_exercise,
-            constraint=self.storage_capacity,
-            needs=[
-                "sum{(p, l) in PRODUCTS_LOCATIONS}",
-                "EndingInventory[p, l, t]",
-                "<=",
-                "MaxCapacity[l]",
-            ],
-        )
-
-    def soft_storage_capacity_declaration(self, exercise=None, show=None):
+    def add_soft_storage_capacity_declaration(self, exercise=None, show=None):
         header = self._transform(
             r"""
             param MaxCapacity{l in LOCATIONS} >= 0;
@@ -838,7 +1072,7 @@ class ModelBuilder:
             """
         )
 
-        self.layered_storage_capacity = self._transform(
+        layered_storage_capacity = self._transform(
             r"""
             !exercise!
             s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
@@ -848,7 +1082,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        self.layered_storage_capacity_placeholder = self._transform(
+        layered_storage_capacity_placeholder = self._transform(
             r"""
             # s.t. StorageCapacityConstraint{l in LOCATIONS, t in PERIODS}:
             # ... !exercise!Ensure that the total ending inventory across all products is penalized if it exceeds the maximum storage capacity at each location
@@ -856,30 +1090,267 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        if show or self.show_complete_model:
-            return header + self.layered_storage_capacity
-        else:
-            return header + self.layered_storage_capacity_placeholder
+        exercise_name = "Layered Storage Capacity"
 
-    def soft_storage_capacity_exercise(self, ampl, exercise, selected_exercise):
-        self._exercise(
-            ampl,
-            name="Layered Storage Capacity",
-            description="Ensure that the total ending inventory across all products is penalized if it exceeds the maximum storage capacity at each location.",
+        def render_exercise(ampl, name, number, selected_exercise):
+            self._exercise(
+                ampl,
+                name=name,
+                description="Ensure that the total ending inventory across all products is penalized if it exceeds the maximum storage capacity at each location.",
+                exercise=number,
+                selected_exercise=selected_exercise,
+                constraint=layered_storage_capacity,
+                needs=[
+                    "sum{(p, l) in PRODUCTS_LOCATIONS}",
+                    "EndingInventory[p, l, t]",
+                    "<=",
+                    "MaxCapacity[l]",
+                    "AboveCapacitySlack[l, t]",
+                ],
+            )
+
+        if show or self.show_complete_model:
+            self.add(header + layered_storage_capacity)
+        else:
+            self.add(header + layered_storage_capacity_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
+
+    def add_lot_sizing_min(self, use_mp=False, exercise=None, show=None):
+        if use_mp:
+            header = self._transform(
+                r"""
+                param MinLotSize default 10;
+                """
+            )
+
+            lot_sizing = self._transform(
+                r"""
+                !exercise!
+                s.t. LotSizing{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+                    Production[p, l, t] = 0 or Production[p, l, t] >= MinLotSize;
+                    # Ensure that the production is either 0 or above MinLotSize
+                """,
+                exercise=exercise,
+            )
+
+            exercise_name = "Min Lot-Sizing with High-Level Logic Modeling"
+
+            def render_exercise(ampl, name, number, selected_exercise):
+                self._exercise(
+                    ampl,
+                    name=name,
+                    description="Ensure that the production is either 0 or above MinLotSize.",
+                    exercise=number,
+                    selected_exercise=selected_exercise,
+                    constraint=lot_sizing,
+                    needs=[
+                        "Production[p, l, t]",
+                        "=",
+                        "0",
+                        "or",
+                        "Production[p, l, t]",
+                        ">=",
+                        "MinLotSize",
+                    ],
+                )
+
+        else:
+            header = self._transform(
+                r"""
+                param MinLotSize default 10;
+                param MaxProduction := sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS} Demand[p, l, t];
+                !empty!
+                var AboveMinLotSize{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+                    # Production volume for each product at each location during each time period above the minimum lot size
+                var Produce{p in PRODUCTS, l in LOCATIONS, t in PERIODS} binary;
+                    # Whether or not we produce each product at each location during each time period
+                """
+            )
+
+            lot_sizing = self._transform(
+                r"""
+                !exercise!
+                s.t. LotSizing{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+                    Production[p, l, t] = Produce[p, l, t] * MinLotSize + AboveMinLotSize[p, l, t] and
+                    Production[p, l, t] <= Produce[p, l, t] * MaxProduction and
+                    Production[p, l, t] >= Produce[p, l, t] * MinLotSize;
+                    # Ensure that the production is either 0 or above MinLotSize
+                """,
+                exercise=exercise,
+            )
+
+            exercise_name = "Min Lot-Sizing with Big-M"
+
+            def render_exercise(ampl, name, number, selected_exercise):
+                self._exercise(
+                    ampl,
+                    name=name,
+                    description="Ensure that the production is either 0 or above MinLotSize.",
+                    exercise=number,
+                    selected_exercise=selected_exercise,
+                    constraint=lot_sizing,
+                    needs=[
+                        "Production[p, l, t]",
+                        "Produce[p, l, t]",
+                        "MinLotSize",
+                        "AboveMinLotSize[p, l, t]",
+                        "and",
+                        "=",
+                        "<=",
+                        ">=",
+                        "MaxProduction",
+                        "MinLotSize",
+                    ],
+                )
+
+        lot_sizing_placeholder = self._transform(
+            r"""
+            # s.t. LotSizing{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+            # ... !exercise!Ensure that the production is either 0 or above MinLotSize
+            """,
             exercise=exercise,
-            selected_exercise=selected_exercise,
-            constraint=self.layered_storage_capacity,
-            needs=[
-                "sum{(p, l) in PRODUCTS_LOCATIONS}",
-                "EndingInventory[p, l, t]",
-                "<=",
-                "MaxCapacity[l]",
-                "AboveCapacitySlack[l, t]",
-            ],
         )
 
-    def class1_objective(self):
-        return self._transform(
+        if show or self.show_complete_model:
+            self.add(header + lot_sizing)
+        else:
+            self.add(header + lot_sizing_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
+
+    def add_lot_sizing_incremental(self, use_mp=False, exercise=None, show=None):
+        if use_mp:
+            header = self._transform(
+                r"""
+                param MinLotSize default 10;
+                param IncrementLotSize default 5;
+                !empty!
+                var LSIncrements{p in PRODUCTS, l in LOCATIONS, t in PERIODS} integer >= 0;
+                    # Number of lot sizing increments for each product at each location during each time period above the minimum lot size
+                """
+            )
+
+            lot_sizing = self._transform(
+                r"""
+                !exercise!
+                s.t. LotSizing{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+                    Production[p, l, t] = 0 or
+                    Production[p, l, t] >= MinLotSize + IncrementLotSize * LSIncrements[p, l, t];
+                    # Ensure that the production is either 0 or above MinLotSize + IncrementLotSize * Integer
+                """,
+                exercise=exercise,
+            )
+
+            exercise_name = "Min+Incremental Lot-Sizing with High-Level Logic Modeling"
+
+            def render_exercise(ampl, name, number, selected_exercise):
+                self._exercise(
+                    ampl,
+                    name=name,
+                    description="Ensure that the production is either 0 or above MinLotSize + IncrementLotSize * Integer.",
+                    exercise=number,
+                    selected_exercise=selected_exercise,
+                    constraint=lot_sizing,
+                    needs=[
+                        "Production[p, l, t]",
+                        "=",
+                        "0",
+                        "or",
+                        ">=",
+                        "MinLotSize",
+                        "+",
+                        "IncrementLotSize",
+                        "*",
+                        "LSIncrements[p, l, t]",
+                    ],
+                )
+
+        else:
+            header = self._transform(
+                r"""
+                param MinLotSize default 10;
+                param IncrementLotSize default 5;
+                param MaxProduction := sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS} Demand[p, l, t];
+                !empty!
+                var Produce{p in PRODUCTS, l in LOCATIONS, t in PERIODS} binary;
+                    # Whether or not we produce each product at each location during each time period
+                var LSIncrements{p in PRODUCTS, l in LOCATIONS, t in PERIODS} integer >= 0;
+                    # Number of lot sizing increments for each product at each location during each time period above the minimum lot size
+                """
+            )
+
+            lot_sizing = self._transform(
+                r"""
+                !exercise!
+                s.t. LotSizing{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+                    Production[p, l, t] = Produce[p, l, t] * MinLotSize + IncrementLotSize * LSIncrements[p, l, t] and
+                    Production[p, l, t] <= Produce[p, l, t] * MaxProduction and
+                    Production[p, l, t] >= Produce[p, l, t] * MinLotSize;
+                    # Ensure that the production is either 0 or above MinLotSize + IncrementLotSize * Integer
+                """,
+                exercise=exercise,
+            )
+
+            exercise_name = "Min+Incremental Lot-Sizing with Big-M"
+
+            def render_exercise(ampl, name, number, selected_exercise):
+                self._exercise(
+                    ampl,
+                    name=name,
+                    description="Ensure that the production is either 0 or above MinLotSize + IncrementLotSize * Integer.",
+                    exercise=number,
+                    selected_exercise=selected_exercise,
+                    constraint=lot_sizing,
+                    needs=[
+                        "Production[p, l, t]",
+                        "=",
+                        "Produce[p, l, t]",
+                        "*",
+                        "MinLotSize",
+                        "+",
+                        "IncrementLotSize",
+                        "LSIncrements[p, l, t]",
+                        "and",
+                        "<=",
+                        "MaxProduction",
+                        ">=",
+                        "MinLotSize",
+                    ],
+                )
+
+        lot_sizing_placeholder = self._transform(
+            r"""
+            # s.t. LotSizing{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
+            # ... !exercise!Ensure that the production is either 0 or above MinLotSize + IncrementLotSize * Integer
+            """,
+            exercise=exercise,
+        )
+
+        if show or self.show_complete_model:
+            self.add(header + lot_sizing)
+        else:
+            self.add(header + lot_sizing_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
+
+    def add_class1_objective(self):
+        self.add(
             r"""
             param UnmetDemandPenalty default 10;
                 # Penalty cost per unit for unmet demand (impacts decision to meet demand)
@@ -890,11 +1361,12 @@ class ModelBuilder:
                 sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS}
                     (UnmetDemandPenalty * UnmetDemand[p, l, t] + EndingInventoryPenalty * EndingInventory[p, l, t]);
                 # Objective function to minimize total costs associated with unmet demand and leftover inventory
-            """
+            """,
+            transform=True,
         )
 
-    def class1_objective_with_shelf_life(self):
-        return self._transform(
+    def add_class1_objective_with_shelf_life(self):
+        self.add(
             r"""
             param UnmetDemandPenalty default 10;
                 # Penalty cost per unit for unmet demand (impacts decision to meet demand)
@@ -907,10 +1379,11 @@ class ModelBuilder:
                 sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS}
                     (UnmetDemandPenalty * UnmetDemand[p, l, t] + EndingInventoryPenalty * EndingInventory[p, l, t] + LostInventoryPenalty * LostInventory[p, l, t]);
                 # Objective function to minimize total costs associated with unmet demand, leftover inventory, and lost inventory
-            """
+            """,
+            transform=True,
         )
 
-    def class3_objective(self, layered_storage_capacity, layered_targets):
+    def add_class3_objective(self, layered_storage_capacity, layered_targets):
         parameters = r"""
             param BelowTargetPenalty default 3;
                 # Penalty for having inventory below target
@@ -976,6 +1449,27 @@ class ModelBuilder:
             """
         )
         if layered_targets:
-            return self._transform(layered_penalties_objective)
+            self.add(layered_penalties_objective, transform=True)
         else:
-            return self._transform(linear_penalties_objective)
+            self.add(linear_penalties_objective, transform=True)
+
+    def display_exercises(self, ampl, require_rerun=False):
+        if self.exercises == []:
+            return
+        st.markdown("## 🧑‍🏫 Exercises")
+
+        exercises_lst = ["", "All"] + [e.title() for e in self.exercises]
+        selected_exercise = (
+            exercises_lst.index(
+                st.selectbox(
+                    "Select the exercise(s) you want to complete 👇",
+                    exercises_lst,
+                    key="exercise",
+                    index=0,
+                    on_change=require_rerun,
+                )
+            )
+            - 1
+        )
+        for e in self.exercises:
+            e.render(ampl=ampl, selected_exercise=selected_exercise)
