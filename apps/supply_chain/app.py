@@ -225,7 +225,7 @@ def main():
                     "BelowTargetPenalty:",
                     min_value=0,
                     max_value=50,
-                    value=3,
+                    value=10,
                     on_change=require_rerun,
                 )
 

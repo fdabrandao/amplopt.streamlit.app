@@ -1385,7 +1385,7 @@ class ModelBuilder:
 
     def add_class3_objective(self, layered_storage_capacity, layered_targets):
         parameters = r"""
-            param BelowTargetPenalty default 3;
+            param BelowTargetPenalty default 10;
                 # Penalty for having inventory below target
             param UnmetDemandPenalty default 10;
                 # Penalty cost per unit for unmet demand (impacts decision to meet demand)
