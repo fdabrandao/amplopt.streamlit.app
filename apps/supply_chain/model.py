@@ -21,6 +21,18 @@ class Exercise:
         )
 
 
+class Parameter:
+    def __init__(self, name, render_controller):
+        self._name = name
+        self.render_controller = render_controller
+
+    def name(self):
+        return self._name
+
+    def render(self):
+        return self.render_controller()
+
+
 class ModelBuilder:
     def __init__(
         self,
@@ -36,6 +48,7 @@ class ModelBuilder:
     ):
         self.model = ""
         self.exercises = []
+        self.parameters = []
         self.on_change = on_change
         self.class_number = class_number
         self.use_restrict_table = use_restrict_table
@@ -1453,7 +1466,7 @@ class ModelBuilder:
         else:
             self.add(linear_penalties_objective, transform=True)
 
-    def display_exercises(self, ampl, require_rerun=False):
+    def display_exercises(self, ampl):
         if self.exercises == []:
             return
         st.markdown("## 🧑‍🏫 Exercises")
@@ -1466,10 +1479,77 @@ class ModelBuilder:
                     exercises_lst,
                     key="exercise",
                     index=0,
-                    on_change=require_rerun,
+                    on_change=self.on_change,
                 )
             )
             - 1
         )
         for e in self.exercises:
             e.render(ampl=ampl, selected_exercise=selected_exercise)
+
+    def adjust_parameters(self, ampl):
+        parameter_controllers = {
+            "UnmetDemandPenalty": lambda: st.slider(
+                "UnmetDemandPenalty:",
+                min_value=0,
+                max_value=50,
+                value=10,
+                on_change=self.on_change,
+            ),
+            "MaxShelfLife": lambda: st.slider(
+                "MaxShelfLife:",
+                min_value=0,
+                max_value=5,
+                value=3,
+                on_change=self.on_change,
+            ),
+            "EnsureOldStockGoesFirst": lambda: st.checkbox(
+                "Sell old inventory first", value=True
+            ),
+            "EndingInventoryPenalty": lambda: st.slider(
+                "EndingInventoryPenalty:",
+                min_value=0,
+                max_value=50,
+                value=5,
+                on_change=self.on_change,
+            ),
+            "LostInventoryPenalty": lambda: st.slider(
+                "LostInventoryPenalty:",
+                min_value=0,
+                max_value=50,
+                value=10,
+                on_change=self.on_change,
+            ),
+            "AboveTargetPenalty": lambda: st.slider(
+                "AboveTargetPenalty:",
+                min_value=0,
+                max_value=50,
+                value=2,
+                on_change=self.on_change,
+            ),
+            "BelowTargetPenalty": lambda: st.slider(
+                "BelowTargetPenalty:",
+                min_value=0,
+                max_value=50,
+                value=10,
+                on_change=self.on_change,
+            ),
+            "TransferPenalty": lambda: st.slider(
+                "TransferPenalty:",
+                min_value=0,
+                max_value=50,
+                value=1,
+                on_change=self.on_change,
+            ),
+        }
+
+        p = 0
+        with st.expander("Adjust parameters"):
+            cols = st.columns(2)
+            model_parameters = set(ampl.get_data("_PARS").to_list())  # FIXME
+            for parameter, controller in parameter_controllers.items():
+                if parameter not in model_parameters:
+                    continue
+                with cols[p % 2]:
+                    ampl.param[parameter] = controller()
+                    p += 1

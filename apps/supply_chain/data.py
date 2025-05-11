@@ -344,3 +344,51 @@ class InputData:
 
     def _filter_dimensions_class4(self):
         pass
+
+    def load_data(self, ampl):
+        model_sets = set(ampl.get_data("_SETS").to_list())  # FIXME
+        demand = self.demand[["Product", "Location", "Period", "Quantity"]].copy()
+        starting_inventory = self.starting_inventory[
+            ["Product", "Location", "Quantity"]
+        ].copy()
+        demand["Period"] = demand["Period"].dt.strftime("%Y-%m-%d")
+        periods = list(sorted(set(demand["Period"])))
+        demand.set_index(["Product", "Location", "Period"], inplace=True)
+        starting_inventory.set_index(["Product", "Location"], inplace=True)
+
+        try:
+            ampl.set["PRODUCTS"] = self.selected_products
+            ampl.set["LOCATIONS"] = self.selected_locations
+            ampl.set["PRODUCTS_LOCATIONS"] = self.products_locations
+            ampl.set["PERIODS"] = periods
+            ampl.param["Demand"] = demand["Quantity"]
+            ampl.param["InitialInventory"] = starting_inventory["Quantity"]
+
+            if "RESOURCES" in model_sets:
+                ampl.set["RESOURCES"] = self.all_resources
+                ampl.param["ProductionRate"] = self.production_rate.set_index(
+                    ["Product", "Location", "Resource"]
+                )[["Rate"]]
+                ampl.param["AvailableCapacity"] = self.available_capacity.set_index(
+                    ["Resource", "Location"]
+                )
+
+            if "TRANSFER_LANES" in model_sets:
+                ampl.set["TRANSFER_LANES"] = list(
+                    self.transfer_lanes.itertuples(index=False, name=None)
+                )
+                ampl.param["TargetStock"] = self.target_stocks.set_index(
+                    ["Product", "Location"]
+                )
+                ampl.param["MaxCapacity"] = self.location_capacity.set_index(
+                    ["Location"]
+                )
+
+        except Exception as e:
+            message = str(e)
+            if message.startswith('Error executing "let" command:'):
+                message = message[message.find(":") + 1 :].strip()
+                st.error(f"Error setting data: {message}")
+                st.stop()
+            else:
+                pass

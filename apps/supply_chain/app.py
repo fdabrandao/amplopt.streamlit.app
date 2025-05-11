@@ -108,11 +108,8 @@ def main():
 
     ampl = AMPL()
     ampl.eval(mb.model)
-
-    if show_complete_model:
-        pass
-    else:
-        mb.display_exercises(ampl=ampl, require_rerun=require_rerun)
+    if not show_complete_model:
+        mb.display_exercises(ampl=ampl)
 
     st.markdown("## Solve")
 
@@ -121,122 +118,11 @@ def main():
 
     with st.expander("Data"):
         instance.edit_data()
+        # Load data into AMPL
+        instance.load_data(ampl=ampl)
 
-    demand = instance.demand[["Product", "Location", "Period", "Quantity"]].copy()
-    starting_inventory = instance.starting_inventory[
-        ["Product", "Location", "Quantity"]
-    ].copy()
-    demand["Period"] = demand["Period"].dt.strftime("%Y-%m-%d")
-    periods = list(sorted(set(demand["Period"])))
-    demand.set_index(["Product", "Location", "Period"], inplace=True)
-    starting_inventory.set_index(["Product", "Location"], inplace=True)
-
-    try:
-        ampl.set["PRODUCTS"] = instance.selected_products
-        ampl.set["LOCATIONS"] = instance.selected_locations
-        ampl.set["PRODUCTS_LOCATIONS"] = instance.products_locations
-        ampl.set["PERIODS"] = periods
-        ampl.param["Demand"] = demand["Quantity"]
-        ampl.param["InitialInventory"] = starting_inventory["Quantity"]
-
-        if class_number >= 2:
-            ampl.set["RESOURCES"] = instance.all_resources
-            ampl.param["ProductionRate"] = instance.production_rate.set_index(
-                ["Product", "Location", "Resource"]
-            )[["Rate"]]
-            ampl.param["AvailableCapacity"] = instance.available_capacity.set_index(
-                ["Resource", "Location"]
-            )
-
-        if class_number >= 3:
-            ampl.set["TRANSFER_LANES"] = list(
-                instance.transfer_lanes.itertuples(index=False, name=None)
-            )
-            ampl.param["TargetStock"] = instance.target_stocks.set_index(
-                ["Product", "Location"]
-            )
-            ampl.param["MaxCapacity"] = instance.location_capacity.set_index(
-                ["Location"]
-            )
-
-    except Exception as e:
-        message = str(e)
-        if message.startswith('Error executing "let" command:'):
-            message = message[message.find(":") + 1 :].strip()
-            st.error(f"Error setting data: {message}")
-            st.stop()
-        else:
-            pass
-
-    with st.expander("Adjust parameters"):
-        col1, col2 = st.columns(2)
-        with col1:
-            ampl.param["UnmetDemandPenalty"] = st.slider(
-                "UnmetDemandPenalty:",
-                min_value=0,
-                max_value=50,
-                value=10,
-                on_change=require_rerun,
-            )
-
-            if model_shelf_life:
-                ampl.param["MaxShelfLife"] = st.slider(
-                    "MaxShelfLife:",
-                    min_value=0,
-                    max_value=5,
-                    value=3,
-                    on_change=require_rerun,
-                )
-
-                ampl.param["EnsureOldStockGoesFirst"] = st.checkbox(
-                    "Sell old inventory first", value=True
-                )
-
-        with col2:
-            ampl.param["EndingInventoryPenalty"] = st.slider(
-                "EndingInventoryPenalty:",
-                min_value=0,
-                max_value=50,
-                value=5,
-                on_change=require_rerun,
-            )
-
-            if model_shelf_life:
-                ampl.param["LostInventoryPenalty"] = st.slider(
-                    "LostInventoryPenalty:",
-                    min_value=0,
-                    max_value=50,
-                    value=10,
-                    on_change=require_rerun,
-                )
-
-        if class_number >= 3:
-            with col1:
-                ampl.param["AboveTargetPenalty"] = st.slider(
-                    "AboveTargetPenalty:",
-                    min_value=0,
-                    max_value=50,
-                    value=2,
-                    on_change=require_rerun,
-                )
-
-            with col2:
-                ampl.param["BelowTargetPenalty"] = st.slider(
-                    "BelowTargetPenalty:",
-                    min_value=0,
-                    max_value=50,
-                    value=10,
-                    on_change=require_rerun,
-                )
-
-            with col1:
-                ampl.param["TransferPenalty"] = st.slider(
-                    "TransferPenalty:",
-                    min_value=0,
-                    max_value=50,
-                    value=1,
-                    on_change=require_rerun,
-                )
+    # Adjust model parameters
+    mb.adjust_parameters(ampl=ampl)
 
     auto_rerun = st.checkbox(
         "Automatically rerun the solve process to update the results", value=True
