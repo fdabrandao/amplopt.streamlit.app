@@ -347,6 +347,7 @@ class InputData:
 
     def load_data(self, ampl):
         model_sets = set(ampl.get_data("_SETS").to_list())  # FIXME
+        model_params = set(ampl.get_data("_PARS").to_list())  # FIXME
         demand = self.demand[["Product", "Location", "Period", "Quantity"]].copy()
         starting_inventory = self.starting_inventory[
             ["Product", "Location", "Quantity"]
@@ -380,6 +381,8 @@ class InputData:
                 ampl.param["TargetStock"] = self.target_stocks.set_index(
                     ["Product", "Location"]
                 )
+
+            if "MaxCapacity" in model_params:
                 ampl.param["MaxCapacity"] = self.location_capacity.set_index(
                     ["Location"]
                 )

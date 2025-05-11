@@ -75,7 +75,12 @@ def main():
             )
             layered_targets = st.checkbox("Layered Targets", value=False)
     lot_sizing_mp, model_incremental_lot_sizing = False, False
+    include_homework3 = class_number >= 3
     if class_number == 4:
+        include_homework3 = st.checkbox(
+            "Model Transfers + Target Stocks + Storage Capacity (from Homework 3)",
+            value=True,
+        )
         with col1:
             options = [
                 "Min Lot-Sizing",
@@ -100,6 +105,7 @@ def main():
         layered_targets=layered_targets,
         model_incremental_lot_sizing=model_incremental_lot_sizing,
         lot_sizing_mp=lot_sizing_mp,
+        include_homework3=include_homework3,
         on_change=require_rerun,
     )
     mb = st.session_state.mb
@@ -189,14 +195,13 @@ def main():
             reports.demand_report()
 
             st.markdown("### Material Balance Report")
-            include_transfers = class_number >= 3
             reports.material_balance_report(
                 include_shelf_life=model_shelf_life,
-                include_transfers=include_transfers,
-                include_target_stock=class_number >= 3,
+                include_transfers=include_homework3,
+                include_target_stock=include_homework3,
             )
 
-            if include_transfers:
+            if include_homework3:
                 st.markdown("### Transfers Graph")
                 reports.transfers_report()
 

@@ -44,6 +44,7 @@ class ModelBuilder:
         layered_targets,
         model_incremental_lot_sizing,
         lot_sizing_mp,
+        include_homework3,
         on_change=None,
     ):
         self.model = ""
@@ -294,32 +295,33 @@ class ModelBuilder:
             )
             self.add_resource_capacity_declaration(show=True)
 
-            self.add(
-                r"""
-            #############
-            # Transfers #
-            #############
-                """
-            )
-            self.add_material_balance_with_transfers_declaration(show=True)
+            if include_homework3:
+                self.add(
+                    r"""
+                #############
+                # Transfers #
+                #############
+                    """
+                )
+                self.add_material_balance_with_transfers_declaration(show=True)
 
-            self.add(
-                r"""
-            #################
-            # Target Stocks # 
-            #################
-                """
-            )
-            self.add_target_stock_declaration(show=True)
+                self.add(
+                    r"""
+                #################
+                # Target Stocks # 
+                #################
+                    """
+                )
+                self.add_target_stock_declaration(show=True)
 
-            self.add(
-                r"""
-            ####################
-            # Storage Capacity #
-            ####################
-                """
-            )
-            self.add_storage_capacity_declaration(show=True)
+                self.add(
+                    r"""
+                ####################
+                # Storage Capacity #
+                ####################
+                    """
+                )
+                self.add_storage_capacity_declaration(show=True)
 
             if not model_incremental_lot_sizing:
                 self.add(
@@ -353,9 +355,12 @@ class ModelBuilder:
             #############
                 """
             )
-            self.add_class3_objective(
-                self.layered_storage_capacity, self.layered_targets
-            )
+            if include_homework3:
+                self.add_class3_objective(
+                    self.layered_storage_capacity, self.layered_targets
+                )
+            else:
+                self.add_class1_objective()
         else:
             assert False
 
@@ -1539,6 +1544,20 @@ class ModelBuilder:
                 min_value=0,
                 max_value=50,
                 value=1,
+                on_change=self.on_change,
+            ),
+            "MinLotSize": lambda: st.slider(
+                "MinLotSize:",
+                min_value=0,
+                max_value=50,
+                value=10,
+                on_change=self.on_change,
+            ),
+            "IncrementLotSize": lambda: st.slider(
+                "IncrementLotSize:",
+                min_value=0,
+                max_value=50,
+                value=5,
                 on_change=self.on_change,
             ),
         }
