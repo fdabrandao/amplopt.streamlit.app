@@ -30,7 +30,7 @@ def main():
     """
     )
 
-    default_option = max(0, int(st.query_params["homework"]) - 1)
+    default_option = min(max(0, int(st.query_params["homework"]) - 1), len(options) - 1)
 
     def update_params():
         if "homework" in st.session_state:
