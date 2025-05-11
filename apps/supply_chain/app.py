@@ -21,7 +21,7 @@ def main():
     ]
 
     if "homework" not in st.query_params:
-        st.query_params["homework"] = len(options) + 1
+        st.query_params["homework"] = len(options)
 
     st.markdown(
         """
