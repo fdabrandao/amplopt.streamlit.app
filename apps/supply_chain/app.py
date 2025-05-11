@@ -21,7 +21,14 @@ def main():
     ]
 
     if "homework" not in st.query_params:
-        st.query_params["homework"] = 4
+        st.query_params["homework"] = len(options) + 1
+
+    st.markdown(
+        """
+    During our [hands-on masterclass on Supply Chain](https://dev.ampl.com/ampl/videos/supply-chain.html) we show how to build a powerful network optimization solver from scratch.
+    We begin with creating a production planning solver and progressively expand it into a full network optimization solution.
+    """
+    )
 
     default_option = max(0, int(st.query_params["homework"]) - 1)
 
@@ -34,7 +41,7 @@ def main():
     class_number = (
         options.index(
             st.selectbox(
-                "Production Optimization Class",
+                "Select the Supply Chain Optimization homework 👇",
                 options,
                 key="homework",
                 index=default_option,
