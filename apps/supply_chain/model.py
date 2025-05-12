@@ -210,7 +210,7 @@ class ModelBuilder:
             self.add(
                 r"""
             #####################
-            # Resource capacity #
+            # Resource Capacity #
             #####################
                 """
             )
@@ -289,7 +289,7 @@ class ModelBuilder:
             self.add(
                 r"""
             #####################
-            # Resource capacity #
+            # Resource Capacity #
             #####################
                 """
             )

@@ -209,7 +209,7 @@ def main():
 
                 # Allow saving the scenario
                 scenario_name = st.text_input(
-                    "Enter the name for the scenario:",
+                    "Enter a name for the scenario:",
                     value=f"Scenario #{len(st.session_state.scenarios)+1}",
                 )
                 if st.button("Save Scenario", type="primary"):
