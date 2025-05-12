@@ -88,8 +88,15 @@ def main():
             )
             layered_targets = st.checkbox("Layered Targets", value=False)
     lot_sizing_mp, model_incremental_lot_sizing = False, False
+
+    include_homework2 = class_number >= 2
     include_homework3 = class_number >= 3
+
     if class_number == 4:
+        include_homework2 = st.checkbox(
+            "Model Production Hours + Resource Capacity (from Homework 2)",
+            value=True,
+        )
         include_homework3 = st.checkbox(
             "Model Transfers + Target Stocks + Storage Capacity (from Homework 3)",
             value=True,
@@ -118,6 +125,7 @@ def main():
         layered_targets=layered_targets,
         model_incremental_lot_sizing=model_incremental_lot_sizing,
         lot_sizing_mp=lot_sizing_mp,
+        include_homework2=include_homework2,
         include_homework3=include_homework3,
         on_change=require_rerun,
     )
@@ -303,7 +311,7 @@ def main():
                     st.markdown("### Transfers Graph")
                     reports.transfers_report()
 
-                if class_number >= 2:
+                if include_homework2:
                     st.markdown("### Resource Utilization Report")
                     reports.resource_utilization_report()
 

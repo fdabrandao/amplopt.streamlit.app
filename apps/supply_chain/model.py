@@ -44,6 +44,7 @@ class ModelBuilder:
         layered_targets,
         model_incremental_lot_sizing,
         lot_sizing_mp,
+        include_homework2,
         include_homework3,
         on_change=None,
     ):
@@ -277,23 +278,24 @@ class ModelBuilder:
             )
             self.add_inventory_carryover_declaration(show=True)
 
-            self.add(
-                r"""
-            ###################################
-            # Production and Production Hours #
-            ###################################
-                """
-            )
-            self.add_production_rate_declaration(show=True)
+            if include_homework2:
+                self.add(
+                    r"""
+                ###################################
+                # Production and Production Hours #
+                ###################################
+                    """
+                )
+                self.add_production_rate_declaration(show=True)
 
-            self.add(
-                r"""
-            #####################
-            # Resource Capacity #
-            #####################
-                """
-            )
-            self.add_resource_capacity_declaration(show=True)
+                self.add(
+                    r"""
+                #####################
+                # Resource Capacity #
+                #####################
+                    """
+                )
+                self.add_resource_capacity_declaration(show=True)
 
             if include_homework3:
                 self.add(
