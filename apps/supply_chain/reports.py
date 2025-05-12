@@ -5,9 +5,10 @@ import matplotlib.pyplot as plt
 
 
 class Reports:
-    def __init__(self, instance, ampl):
+    def __init__(self, instance, ampl, key=""):
         self.instance = instance
         self.ampl = ampl
+        self.key = key
 
     def _planning_view(
         self,
@@ -17,34 +18,38 @@ class Reports:
         filter_products=False,
         filter_locations=False,
         filter_resources=False,
+        product_location=None,
     ):
-        if filter_products:
-            product = st.selectbox(
-                "Pick the product 👇",
-                [""] + self.instance.selected_products,
-                key=f"{key}_view_product",
-            )
+        if product_location is not None:
+            product, location = product_location
         else:
-            product = ""
+            if filter_products:
+                product = st.selectbox(
+                    "Pick the product 👇",
+                    [""] + self.instance.selected_products,
+                    key=f"{self.key}_{key}_view_product",
+                )
+            else:
+                product = ""
 
-        if filter_locations:
-            location = st.selectbox(
-                "Pick the location 👇",
-                [""]
-                + self.instance.locations_with.get(
-                    product, self.instance.selected_locations
-                ),
-                key=f"{key}_view_location",
-            )
-        else:
-            location = ""
+            if filter_locations:
+                location = st.selectbox(
+                    "Pick the location 👇",
+                    [""]
+                    + self.instance.locations_with.get(
+                        product, self.instance.selected_locations
+                    ),
+                    key=f"{self.key}_{key}_view_location",
+                )
+            else:
+                location = ""
 
         if filter_resources:
             resource = st.selectbox(
                 "Pick the resource 👇",
                 [""]
                 + self.instance.resources_at.get(location, self.instance.all_resources),
-                key=f"{key}_view_resource",
+                key=f"{self.key}_{key}_view_resource",
             )
         else:
             resource = ""
@@ -318,12 +323,13 @@ class Reports:
 
     def material_balance_report(
         self,
-        include_transfers=False,
-        include_target_stock=False,
-        include_shelf_life=False,
         include_demand=False,
+        product_location=None,
         extra_columns=[],
     ):
+        model_parameters = set(self.ampl.get_data("_PARS").to_list())  # FIXME
+        model_vars = set(self.ampl.get_data("_VARS").to_list())  # FIXME
+        model_entities = model_parameters | model_vars
         columns = [
             "StartingInventory",
             "MetDemand",
@@ -332,9 +338,9 @@ class Reports:
         ] + extra_columns
         if include_demand:
             columns += ["Demand", "UnmetDemand"]
-        if include_transfers:
+        if "TransfersIN" in model_entities:
             columns += ["TransfersIN", "TransfersOUT"]
-        if include_shelf_life:
+        if "LostInventory" in model_entities:
             columns = columns + ["LostInventory"]
         columns = list(set(columns))
         order = [
@@ -357,7 +363,7 @@ class Reports:
         material_df.columns = ["Product", "Location", "Period"] + list(
             material_df.columns[3:]
         )
-        if include_target_stock:
+        if "TargetStock" in model_entities:
             columns = columns + ["TargetStock"]
             target_stock = self.ampl.get_data(
                 "{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} TargetStock[p, l]"
@@ -374,16 +380,6 @@ class Reports:
         # Reorder the columns
         assert set(columns) - set(order) == set()
         columns = [c for c in order if c in columns]
-
-        view = st.selectbox(
-            "Material Balance Report",
-            [
-                "Planning View",
-                "Planning View Per Product",
-                "Planning View Per Location",
-                "Full Report",
-            ],
-        )
 
         def material_balance(df, label):
             pivot_table = pd.pivot_table(
@@ -415,36 +411,55 @@ class Reports:
             # Show the table
             st.dataframe(pivot_table.T)
 
-        if view == "Planning View":
+        if product_location is not None:
             self._planning_view(
                 "material",
                 material_df,
                 material_balance,
-                filter_products=True,
-                filter_locations=True,
-            )
-        elif view == "Planning View Per Product":
-            self._planning_view(
-                "material", material_df, material_balance, filter_products=True
-            )
-        elif view == "Planning View Per Location":
-            self._planning_view(
-                "material", material_df, material_balance, filter_locations=True
+                product_location=product_location,
             )
         else:
-            st.dataframe(material_df, hide_index=True)
+            view = st.selectbox(
+                "Material Balance Report",
+                [
+                    "Planning View",
+                    "Planning View Per Product",
+                    "Planning View Per Location",
+                    "Full Report",
+                ],
+                key=f"{self.key}_material_balance_report_view",
+            )
+
+            if view == "Planning View":
+                self._planning_view(
+                    "material",
+                    material_df,
+                    material_balance,
+                    filter_products=True,
+                    filter_locations=True,
+                )
+            elif view == "Planning View Per Product":
+                self._planning_view(
+                    "material", material_df, material_balance, filter_products=True
+                )
+            elif view == "Planning View Per Location":
+                self._planning_view(
+                    "material", material_df, material_balance, filter_locations=True
+                )
+            else:
+                st.dataframe(material_df, hide_index=True)
 
     def transfers_report(self):
         product = st.selectbox(
             "Pick the product 👇",
             [""] + self.instance.selected_products,
-            key=f"transfers_view_product",
+            key=f"{self.key}_transfers_view_product",
         )
         periods = self.ampl.set["PERIODS"].to_list()
         period = st.selectbox(
             "Pick the time period 👇",
             periods,
-            key=f"transfers_view_period",
+            key=f"{self.key}_transfers_view_period",
         )
 
         nodes = self.ampl.set["LOCATIONS"].to_list()

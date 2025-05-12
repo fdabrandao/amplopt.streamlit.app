@@ -58,6 +58,12 @@ def main():
     )
     instance = st.session_state.instance
 
+    # Initialize the scenario list
+    if "scenarios" not in st.session_state:
+        st.session_state.scenarios = []
+    if "last_scenario" not in st.session_state:
+        st.session_state.last_scenario = None
+
     st.markdown("## Production Optimization")
 
     col1, col2 = st.columns(2)
@@ -153,6 +159,7 @@ def main():
         output = ampl.solve(
             solver=solver, mp_options="outlev=1 timelim=10", return_output=True
         )
+
         if ampl.solve_result not in ["solved", "limit"]:
             st.error(f"The model could not be solved:\n```\n{output}\n```")
         else:
@@ -194,27 +201,111 @@ def main():
                         use_container_width=True,
                     )
 
-            # Reports
-            st.markdown("## Reports")
-            reports = Reports(instance, ampl)
+                st.session_state.last_scenario = {
+                    "name": None,
+                    "snapshot": ampl.snapshot(),
+                    "output": output,
+                }
 
-            st.markdown("### Demand Report")
-            reports.demand_report()
+                # Allow saving the scenario
+                scenario_name = st.text_input(
+                    "Enter the name for the scenario:",
+                    value=f"Scenario #{len(st.session_state.scenarios)+1}",
+                )
+                if st.button("Save Scenario"):
+                    if scenario_name:
+                        st.session_state.scenarios.append(
+                            {
+                                "name": scenario_name,
+                                "snapshot": st.session_state.last_scenario["snapshot"],
+                                "output": st.session_state.last_scenario["output"],
+                            }
+                        )
+                        st.success("Scenario saved!")
+                    else:
+                        st.warning("Please enter a scenario name before saving.")
 
-            st.markdown("### Material Balance Report")
-            reports.material_balance_report(
-                include_shelf_life=model_shelf_life,
-                include_transfers=include_homework3,
-                include_target_stock=include_homework3,
-            )
+            st.markdown("## Scenarios")
 
-            if include_homework3:
-                st.markdown("### Transfers Graph")
-                reports.transfers_report()
+            def select_scenario(label="", key=""):
+                scenario = None
+                options = [""] + [s["name"] for s in st.session_state.scenarios]
+                index = (
+                    options.index(
+                        st.selectbox(
+                            label or f"Select the scenario to see 👇",
+                            options,
+                            key=f"{key}_scenario",
+                            index=0,
+                        )
+                    )
+                    - 1
+                )
+                if index >= 0:
+                    scenario = st.session_state.scenarios[index]
+                else:
+                    scenario = st.session_state.last_scenario
+                return index, scenario
 
-            if class_number >= 2:
-                st.markdown("### Resource Utilization Report")
-                reports.resource_utilization_report()
+            if len(st.session_state.scenarios) >= 2 and st.checkbox(
+                "Compare scenarios?"
+            ):
+                product = st.selectbox(
+                    "Pick the product 👇",
+                    [""] + instance.selected_products,
+                    key=f"scenario_compare_product",
+                )
+                location = st.selectbox(
+                    "Pick the location 👇",
+                    [""]
+                    + instance.locations_with.get(product, instance.selected_locations),
+                    key=f"scenario_compare_location",
+                )
+                product_location = (product, location)
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    _, scenario = select_scenario(f"Select scenario A 👇", "scenario_A")
+                    ampl.reset()
+                    ampl.eval(scenario["snapshot"])
+
+                    reports = Reports(instance, ampl, key="scenario_A")
+                    reports.material_balance_report(
+                        include_demand=True, product_location=product_location
+                    )
+
+                with col2:
+                    _, scenario = select_scenario(f"Select scenario B 👇", "scenario_B")
+                    ampl.reset()
+                    ampl.eval(scenario["snapshot"])
+
+                    reports = Reports(instance, ampl, key="scenario_B")
+                    reports.material_balance_report(
+                        include_demand=True, product_location=product_location
+                    )
+            else:
+                _, scenario = select_scenario()
+                ampl.reset()
+                ampl.eval(scenario["snapshot"])
+
+                # Reports
+                st.markdown("## Reports")
+                reports = Reports(instance, ampl)
+
+                st.markdown("### Demand Report")
+                reports.demand_report()
+
+                st.markdown("### Material Balance Report")
+                reports.material_balance_report()
+
+                if include_homework3:
+                    st.markdown("### Transfers Graph")
+                    reports.transfers_report()
+
+                if class_number >= 2:
+                    st.markdown("### Resource Utilization Report")
+                    reports.resource_utilization_report()
 
     st.markdown(
         """##### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/supply_chain)] [[ChatGPT Solving Homework exercises]](https://chatgpt.com/share/e6f49ec8-3931-4586-b944-f104aebacd46)"""
