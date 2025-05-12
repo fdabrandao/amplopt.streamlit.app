@@ -63,36 +63,36 @@ class ModelBuilder:
 
             self.add(
                 r"""
-            ##################
-            # Demand Balance # 
-            ##################
+                ##################
+                # Demand Balance # 
+                ##################
                 """
             )
             self.add_demand_fulfillment_declaration(exercise=1)
 
             self.add(
                 r"""
-            #######################
-            # Inventory Carryover # 
-            #######################
+                #######################
+                # Inventory Carryover # 
+                #######################
                 """
             )
             self.add_inventory_carryover_declaration(exercise=2)
 
             self.add(
                 r"""
-            ####################
-            # Material Balance # 
-            ####################
+                ####################
+                # Material Balance # 
+                ####################
                 """
             )
             self.add_material_balance_declaration(exercise=3)
 
             self.add(
                 r"""
-            #############
-            # Objective #
-            #############
+                #############
+                # Objective #
+                #############
                 """
             )
             self.add_class1_objective()
@@ -104,74 +104,74 @@ class ModelBuilder:
 
             self.add(
                 r"""
-            ##################
-            # Demand Balance # 
-            ##################
+                ##################
+                # Demand Balance # 
+                ##################
                 """
             )
             self.add_demand_fulfillment_declaration(show=True)
 
-            inventory_carryover_header = r"""
-            #######################
-            # Inventory Carryover # 
-            #######################
-            """
-
-            inventory_carryover_with_shelf_life_header = r"""
-            #######################################
-            # Inventory Carryover With Shelf-Life # 
-            #######################################
-            """
-
             if not self.model_shelf_life:
-                self.add(inventory_carryover_header)
+                self.add(
+                    r"""
+                    #######################
+                    # Inventory Carryover # 
+                    #######################
+                    """
+                )
                 self.add_inventory_carryover_declaration(show=True)
             else:
-                self.add(inventory_carryover_with_shelf_life_header)
+                self.add(
+                    r"""
+                    #######################################
+                    # Inventory Carryover With Shelf-Life # 
+                    #######################################
+                    """
+                )
                 self.add_inventory_carryover_with_shelf_life_declaration(show=True)
 
-            material_balance_header = r"""
-            ####################
-            # Material Balance # 
-            ####################
-            """
-
-            material_balance_with_shelf_life_header = r"""
-            ####################################
-            # Material Balance With Shelf-Life # 
-            ####################################
-            """
-
             if not self.model_shelf_life:
-                self.add(material_balance_header)
+                self.add(
+                    r"""
+                    ####################
+                    # Material Balance # 
+                    ####################
+                    """
+                )
                 self.add_material_balance_declaration(show=True)
             else:
-                self.add(material_balance_with_shelf_life_header)
+                self.add(
+                    r"""
+                    ####################################
+                    # Material Balance With Shelf-Life # 
+                    ####################################
+                    """
+                )
                 self.add_material_balance_with_shelf_life_declaration(show=True)
 
             self.add(
                 r"""
-            ###########################################
-            # Part 1: Production and Production Hours #
-            ###########################################
+                ###########################################
+                # Part 1: Production and Production Hours #
+                ###########################################
                 """
             )
             self.add_production_rate_declaration(exercise=1)
 
             self.add(
                 r"""
-            #############################
-            # Part 2: Resource Capacity #
-            #############################
+                #############################
+                # Part 2: Resource Capacity #
+                #############################
                 """
             )
             self.add_resource_capacity_declaration(exercise=2)
 
             self.add(
                 r"""
-            #############
-            # Objective #
-            #############
+                #############
+                # Objective #
+                #############
                 """
             )
             if not self.model_shelf_life:
@@ -183,63 +183,63 @@ class ModelBuilder:
 
             self.add(
                 r"""
-            ##################
-            # Demand Balance # 
-            ##################
+                ##################
+                # Demand Balance # 
+                ##################
                 """
             )
             self.add_demand_fulfillment_declaration(show=True)
 
             self.add(
                 r"""
-            #######################
-            # Inventory Carryover # 
-            #######################
+                #######################
+                # Inventory Carryover # 
+                #######################
                 """
             )
             self.add_inventory_carryover_declaration(show=True)
 
             self.add(
                 r"""
-            ###################################
-            # Production and Production Hours #
-            ###################################
+                ###################################
+                # Production and Production Hours #
+                ###################################
                 """
             )
             self.add_production_rate_declaration(show=True)
 
             self.add(
                 r"""
-            #####################
-            # Resource Capacity #
-            #####################
+                #####################
+                # Resource Capacity #
+                #####################
                 """
             )
             self.add_resource_capacity_declaration(show=True)
 
             self.add(
                 r"""
-            #####################
-            # Part 1: Transfers #
-            #####################
+                #####################
+                # Part 1: Transfers #
+                #####################
                 """
             )
             self.add_material_balance_with_transfers_declaration(exercise=1)
 
             self.add(
                 r"""
-            #########################
-            # Part 2: Target Stocks # 
-            #########################
+                #########################
+                # Part 2: Target Stocks # 
+                #########################
                 """
             )
             self.add_target_stock_declaration(exercise=2)
 
             self.add(
                 r"""
-            ############################
-            # Part 3: Storage Capacity #
-            ############################
+                ############################
+                # Part 3: Storage Capacity #
+                ############################
                 """
             )
             if not self.layered_storage_capacity:
@@ -249,9 +249,9 @@ class ModelBuilder:
 
             self.add(
                 r"""
-            #############
-            # Objective #
-            #############
+                #############
+                # Objective #
+                #############
                 """
             )
             self.add_class3_objective(
@@ -262,18 +262,18 @@ class ModelBuilder:
 
             self.add(
                 r"""
-            ##################
-            # Demand Balance # 
-            ##################
+                ##################
+                # Demand Balance # 
+                ##################
                 """
             )
             self.add_demand_fulfillment_declaration(show=True)
 
             self.add(
                 r"""
-            #######################
-            # Inventory Carryover # 
-            #######################
+                #######################
+                # Inventory Carryover # 
+                #######################
                 """
             )
             self.add_inventory_carryover_declaration(show=True)
@@ -281,18 +281,18 @@ class ModelBuilder:
             if include_homework2:
                 self.add(
                     r"""
-                ###################################
-                # Production and Production Hours #
-                ###################################
+                    ###################################
+                    # Production and Production Hours #
+                    ###################################
                     """
                 )
                 self.add_production_rate_declaration(show=True)
 
                 self.add(
                     r"""
-                #####################
-                # Resource Capacity #
-                #####################
+                    #####################
+                    # Resource Capacity #
+                    #####################
                     """
                 )
                 self.add_resource_capacity_declaration(show=True)
@@ -300,36 +300,36 @@ class ModelBuilder:
             if include_homework3:
                 self.add(
                     r"""
-                #############
-                # Transfers #
-                #############
+                    #############
+                    # Transfers #
+                    #############
                     """
                 )
                 self.add_material_balance_with_transfers_declaration(show=True)
 
                 self.add(
                     r"""
-                #################
-                # Target Stocks # 
-                #################
+                    #################
+                    # Target Stocks # 
+                    #################
                     """
                 )
                 self.add_target_stock_declaration(show=True)
 
                 self.add(
                     r"""
-                ####################
-                # Storage Capacity #
-                ####################
+                    ####################
+                    # Storage Capacity #
+                    ####################
                     """
                 )
                 self.add_storage_capacity_declaration(show=True)
             else:
                 self.add(
                     r"""
-                ####################
-                # Material Balance #
-                ####################
+                    ####################
+                    # Material Balance #
+                    ####################
                     """
                 )
                 self.add_material_balance_declaration(show=True)
@@ -361,9 +361,9 @@ class ModelBuilder:
 
             self.add(
                 r"""
-            #############
-            # Objective #
-            #############
+                #############
+                # Objective #
+                #############
                 """
             )
             if include_homework3:
