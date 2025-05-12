@@ -212,7 +212,7 @@ def main():
                     "Enter the name for the scenario:",
                     value=f"Scenario #{len(st.session_state.scenarios)+1}",
                 )
-                if st.button("Save Scenario"):
+                if st.button("Save Scenario", type="primary"):
                     if scenario_name:
                         st.session_state.scenarios.append(
                             {
@@ -306,6 +306,9 @@ def main():
                 if class_number >= 2:
                     st.markdown("### Resource Utilization Report")
                     reports.resource_utilization_report()
+
+            if st.session_state.scenarios != [] and st.button("Delete all scenarios"):
+                st.session_state.scenarios = []
 
     st.markdown(
         """##### [[App Source Code on GitHub](https://github.com/fdabrandao/amplopt.streamlit.app/tree/master/apps/supply_chain)] [[ChatGPT Solving Homework exercises]](https://chatgpt.com/share/e6f49ec8-3931-4586-b944-f104aebacd46)"""
