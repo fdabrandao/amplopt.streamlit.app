@@ -160,7 +160,7 @@ class ModelBuilder:
             self.add(
                 r"""
             #############################
-            # Part 2: Resource capacity #
+            # Part 2: Resource Capacity #
             #############################
                 """
             )
@@ -322,6 +322,15 @@ class ModelBuilder:
                     """
                 )
                 self.add_storage_capacity_declaration(show=True)
+            else:
+                self.add(
+                    r"""
+                ####################
+                # Material Balance #
+                ####################
+                    """
+                )
+                self.add_material_balance_declaration(show=True)
 
             if not model_incremental_lot_sizing:
                 self.add(
@@ -868,7 +877,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        exercise_name = "Resource capacity"
+        exercise_name = "Resource Capacity"
 
         def render_exercise(ampl, name, number, selected_exercise):
             self._exercise(
