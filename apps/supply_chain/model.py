@@ -1268,7 +1268,7 @@ class ModelBuilder:
                 !exercise!
                 s.t. LotSizing{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
                     Production[p, l, t] = 0 or
-                    Production[p, l, t] >= MinLotSize + IncrementLotSize * LSIncrements[p, l, t];
+                    Production[p, l, t] = MinLotSize + IncrementLotSize * LSIncrements[p, l, t];
                     # Ensure that the production is either 0 or above MinLotSize + IncrementLotSize * Integer
                 """,
                 exercise=exercise,
@@ -1289,7 +1289,6 @@ class ModelBuilder:
                         "=",
                         "0",
                         "or",
-                        ">=",
                         "MinLotSize",
                         "+",
                         "IncrementLotSize",
