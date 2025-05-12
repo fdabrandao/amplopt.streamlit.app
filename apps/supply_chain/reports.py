@@ -320,49 +320,43 @@ class Reports:
         self,
         include_transfers=False,
         include_target_stock=False,
-        include_shelf_life=True,
+        include_shelf_life=False,
+        include_demand=False,
+        extra_columns=[],
     ):
-        columns = ["StartingInventory", "MetDemand", "Production", "EndingInventory"]
+        columns = [
+            "StartingInventory",
+            "MetDemand",
+            "Production",
+            "EndingInventory",
+        ] + extra_columns
+        if include_demand:
+            columns += ["Demand", "UnmetDemand"]
+        if include_transfers:
+            columns += ["TransfersIN", "TransfersOUT"]
+        if include_shelf_life:
+            columns = columns + ["LostInventory"]
+        columns = list(set(columns))
+        order = [
+            "Product",
+            "Location",
+            "Period",
+            "StartingInventory",
+            "Production",
+            "TransfersIN",
+            "TransfersOUT",
+            "Demand",
+            "MetDemand",
+            "UnmetDemand",
+            "LostInventory",
+            "EndingInventory",
+            "TargetStock",
+        ]
         material_df = self.ampl.get_data(*columns).to_pandas()
         material_df.reset_index(inplace=True)
         material_df.columns = ["Product", "Location", "Period"] + list(
             material_df.columns[3:]
         )
-        if include_shelf_life:
-            columns = columns + ["LostInventory"]
-            lost = self.ampl.get_data("LostInventory").to_dict()
-            material_df["LostInventory"] = [
-                lost.get((p, l, t), 0)
-                for p, l, t in zip(
-                    material_df["Product"],
-                    material_df["Location"],
-                    material_df["Period"],
-                )
-            ]
-            columns.remove("EndingInventory")
-            columns.append("EndingInventory")
-        if include_transfers:
-            columns = columns + ["TransfersIN", "TransfersOUT"]
-            transfers_in = self.ampl.get_data("TransfersIN").to_dict()
-            transfers_out = self.ampl.get_data("TransfersOUT").to_dict()
-            material_df["TransfersIN"] = [
-                transfers_in.get((p, l, t), 0)
-                for p, l, t in zip(
-                    material_df["Product"],
-                    material_df["Location"],
-                    material_df["Period"],
-                )
-            ]
-            material_df["TransfersOUT"] = [
-                transfers_out.get((p, l, t), 0)
-                for p, l, t in zip(
-                    material_df["Product"],
-                    material_df["Location"],
-                    material_df["Period"],
-                )
-            ]
-            columns.remove("EndingInventory")
-            columns.append("EndingInventory")
         if include_target_stock:
             columns = columns + ["TargetStock"]
             target_stock = self.ampl.get_data(
@@ -376,6 +370,10 @@ class Reports:
                     material_df["Period"],
                 )
             ]
+
+        # Reorder the columns
+        assert set(columns) - set(order) == set()
+        columns = [c for c in order if c in columns]
 
         view = st.selectbox(
             "Material Balance Report",
@@ -396,42 +394,14 @@ class Reports:
             )[columns]
 
             df = pivot_table.T
-            fig, ax = plt.subplots(figsize=(12, 3))
+            fig, ax = plt.subplots(figsize=(12, 4))
 
-            # Plot lines for Starting Inventory, Production, and Ending Inventory
-            ax.plot(
-                df.columns,
-                df.loc["StartingInventory", :],
-                label="StartingInventory",
-                marker="o",
-            )
-            ax.plot(df.columns, df.loc["Production", :], label="Production", marker="o")
-            ax.plot(
-                df.columns,
-                df.loc["EndingInventory", :],
-                label="EndingInventory",
-                marker="o",
-            )
-
-            if include_transfers:
+            # Plot lines for all columns
+            for column in columns:
                 ax.plot(
                     df.columns,
-                    df.loc["TransfersIN", :],
-                    label="TransfersIN",
-                    marker="o",
-                )
-                ax.plot(
-                    df.columns,
-                    df.loc["TransfersOUT", :],
-                    label="TransfersOUT",
-                    marker="o",
-                )
-
-            if include_target_stock:
-                ax.plot(
-                    df.columns,
-                    df.loc["TargetStock", :],
-                    label="TargetStock",
+                    df.loc[column, :],
+                    label=column,
                     marker="o",
                 )
 
