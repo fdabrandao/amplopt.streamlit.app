@@ -72,7 +72,7 @@ def main():
             "Use restrict table Product x Locations", value=True
         )
     with col2:
-        show_complete_model = st.checkbox("Show complete model", value=False)
+        show_complete_model = st.checkbox("Show complete model", value=True)
 
     model_shelf_life = False
     if class_number == 2:
@@ -165,7 +165,9 @@ def main():
         solver, _ = solver_selector(mp_only=True)
         # Solve the problem
         output = ampl.solve(
-            solver=solver, mp_options="outlev=1 timelim=10", return_output=True
+            solver=solver,
+            mp_options="outlev=1 timelim=4 cvt:bigM=1e6",
+            return_output=True,
         )
 
         if ampl.solve_result not in ["solved", "limit"]:

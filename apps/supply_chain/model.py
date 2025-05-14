@@ -1466,9 +1466,9 @@ class ModelBuilder:
                     UnmetDemandPenalty * UnmetDemand[p, l, t] 
                     + EndingInventoryPenalty * EndingInventory[p, l, t]
                     + (if AboveTarget[p, l, t] <= 5 then AboveTarget[p, l, t] * AboveTargetPenalty
-                                                    else 10 * AboveTargetPenalty)
+                                                    else 1000 * AboveTargetPenalty)
                     + (if BelowTarget[p, l, t] <= 5 then BelowTarget[p, l, t] * BelowTargetPenalty
-                                                    else 10 * BelowTargetPenalty)
+                                                    else 1000 * BelowTargetPenalty)
                     + TransferPenalty * TransfersOUT[p, l, t]
                 )"""
             + layered_storage_component
