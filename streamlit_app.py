@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
 
 
 def redirect_link():
-    if not os.environ.get("DEPLOYMENT_METHOD", "") != "docker-deployment":
+    if os.environ.get("DEPLOYMENT_METHOD", "") != "docker-deployment":
         return
     components.html(
         """
