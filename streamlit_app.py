@@ -1,8 +1,32 @@
 import streamlit as st
 import sys
 import os
+import streamlit.components.v1 as components
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
+
+
+def redirect_link():
+    if not os.environ.get("DEPLOYMENT_METHOD", "") == "docker-deployment":
+        return
+    components.html(
+        """
+        <script>
+        const currentUrl = window.top.location.href;
+        const url = new URL(currentUrl);
+
+        const oldPrefix = "http://localhost:8501";
+        const newPrefix = "https://amplopt.streamlit.app";
+
+        if (url.origin != newPrefix) {
+            const newUrl = newPrefix + url.pathname + url.search + url.hash;
+            document.write("<b><p>Please go to the official URL: <a href='" + newUrl+"'>"+newUrl+"</a></p></b>");
+        }
+        </script>
+        """,
+        height=50,
+    )
+
 
 from apps import common_header
 from apps import (
@@ -93,6 +117,7 @@ def app_page(app, icon, title, url_path=None):
         url_path = ""
 
     def page():
+        redirect_link()
         common_header(url_path)
         app()
         st.markdown(

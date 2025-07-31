@@ -16,5 +16,8 @@ COPY . .
 # Expose the port that the Streamlit app will run on
 EXPOSE 8501
 
+# Set environment variable to identify the deployment method
+ENV DEPLOYMENT_METHOD "docker-deployment" 
+
 # Command to run the Streamlit app
 CMD ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
