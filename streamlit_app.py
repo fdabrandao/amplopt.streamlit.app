@@ -20,7 +20,7 @@ def redirect_link():
 
         if (url.origin != newPrefix) {
             const newUrl = newPrefix + url.pathname + url.search + url.hash;
-            document.write("<b><p>Please go to the official URL: <a href='" + newUrl+"'>"+newUrl+"</a></p></b>");
+            document.write("<b><p>Please go to the official URL: <a href='" + newUrl+"' target='_blank'>"+newUrl+"</a></p></b>");
         }
         </script>
         """,
