@@ -514,8 +514,9 @@ class ModelBuilder:
             r"""
             set PRODUCTS;  # Set of products
             set LOCATIONS;  # Set of distribution or production locations
-            set PRODUCTS_LOCATIONS within {PRODUCTS, LOCATIONS};  # Restrict table
             set PERIODS ordered;  # Ordered set of time periods for planning
+            !empty!
+            set PRODUCTS_LOCATIONS within {PRODUCTS, LOCATIONS};  # Restrict table
             !empty!
             param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
                 # Demand for each product at each location during each time period
@@ -542,20 +543,22 @@ class ModelBuilder:
             set PRODUCTS;  # Set of products
             set LOCATIONS;  # Set of distribution or production locations
             set CUSTOMERS;  # Set of customers
+            set PERIODS ordered;  # Ordered set of time periods for planning
+            !empty!
             set PRODUCTS_LOCATIONS within {PRODUCTS, LOCATIONS};  # Restrict table for product-location pairs
             set PRODUCTS_CUSTOMERS within {PRODUCTS, CUSTOMERS};  # Restrict table for product-customer pairs
             set LOCATIONS_CUSTOMERS within {LOCATIONS, CUSTOMERS};  # Restrict table for location-customer pairs
             set PRODUCTS_LOCATIONS_CUSTOMERS within {PRODUCTS, LOCATIONS, CUSTOMERS}; # Restrict table for product-location-customer triplets
-            set PERIODS ordered;  # Ordered set of time periods for planning
             !empty!
             param Demand{p in PRODUCTS, c in CUSTOMERS, t in PERIODS} >= 0 default 0;
                 # Demand for each product-customer pair in each time period
+            var UnmetDemand{p in PRODUCTS, c in CUSTOMERS, t in PERIODS} >= 0;
+                # Quantity of demand that is not met for a product-customer pair in a time period
+            !empty!
             param ShipmentCost{l in LOCATIONS, c in CUSTOMERS} >= 0 default 1e6;
                 # The cost of shipping products from a location to a customer
             var Shipments{p in PRODUCTS, l in LOCATIONS, c in CUSTOMERS, t in PERIODS} >= 0;
                 # Quantity of a product shipped from a location to a customer in a given time period
-            var UnmetDemand{p in PRODUCTS, c in CUSTOMERS, t in PERIODS} >= 0;
-                # Quantity of demand that is not met for a product-customer pair in a time period
             !empty!
             param InitialInventory{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
                 # Initial inventory levels for each product at each location
@@ -675,7 +678,8 @@ class ModelBuilder:
             var MetDemand{p in PRODUCTS, c in CUSTOMERS, t in PERIODS} =
                     sum {(p, l, c) in PRODUCTS_LOCATIONS_CUSTOMERS} Shipments[p, l, c, t];
                 # Quantity of demand that is met for a product-customer pair in a time period
-            """
+            """,
+            transform=True,
         )
         demand_fulfillment = self._transform(
             """
@@ -832,7 +836,8 @@ class ModelBuilder:
             var ShipmentsOut{p in PRODUCTS, l in LOCATIONS, t in PERIODS} =
                 sum {(p, l, c) in PRODUCTS_LOCATIONS_CUSTOMERS} Shipments[p, l, c, t];
             # Quantity of a product shipped from a location to all customers in a given time period
-            """
+            """,
+            transform=True,
         )
 
     def add_material_balance_declaration(self, exercise=None, show=None):
@@ -1535,12 +1540,12 @@ class ModelBuilder:
     def add_network_objective(self):
         self.add(
             r"""
-                minimize TotalShipmentCost:
-                    sum {p in PRODUCTS, l in LOCATIONS, c in CUSTOMERS, t in PERIODS}
-                        ShipmentCost[l, c] * Shipments[p, l, c, t]
-                    suffix objpriority -2;
-                    # Objective function to minimize shipment costs
-                """,
+            minimize TotalShipmentCost:
+                sum {p in PRODUCTS, l in LOCATIONS, c in CUSTOMERS, t in PERIODS}
+                    ShipmentCost[l, c] * Shipments[p, l, c, t]
+                suffix objpriority -2;
+                # Objective function to minimize shipment costs
+            """,
             transform=True,
         )
 
