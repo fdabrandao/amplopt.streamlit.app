@@ -10,10 +10,46 @@ from .model import ModelBuilder
 def main():
     st.title("📦 Supply Chain Optimization")
 
+    st.markdown(
+        """
+        During our [hands-on masterclass on Supply Chain](https://dev.ampl.com/ampl/videos/supply-chain.html) we show how to build a powerful network optimization solver from scratch.
+        We begin with creating a production planning solver and progressively expand it into a full network optimization solution.
+        """
+    )
+
     def require_rerun():
         st.session_state["needs_rerun"] = True
 
-    options = [
+    problems = [
+        "Part 1: Production Optimization: The demand has a location (item/location)",
+        "Part 2: Network Optimization: The Demand has no location assigned (item/customer)",
+    ]
+
+    if "problem" not in st.query_params:
+        st.query_params["problem"] = len(problems)
+
+    default_problem = min(
+        max(0, int(st.query_params.get("problem", 0)) - 1), len(problems) - 1
+    )
+
+    def update_problem_param():
+        if "problem" in st.session_state:
+            st.query_params["problem"] = problems.index(st.session_state["problem"]) + 1
+
+    problem_number = (
+        problems.index(
+            st.selectbox(
+                "Select the Supply Chain Optimization Problem 👇",
+                problems,
+                key="problem",
+                index=default_problem,
+                on_change=update_problem_param(),
+            )
+        )
+        + 1
+    )
+
+    homeworks = [
         "Homework 1: Demand Balance + Inventory Carryover + Material Balance",
         "Homework 2: Shelf-Life + Production Hours + Resource Capacity",
         "Homework 3: Transfers + Target Stocks + Storage Capacity",
@@ -21,31 +57,26 @@ def main():
     ]
 
     if "homework" not in st.query_params:
-        st.query_params["homework"] = len(options)
+        st.query_params["homework"] = len(homeworks)
 
-    st.markdown(
-        """
-    During our [hands-on masterclass on Supply Chain](https://dev.ampl.com/ampl/videos/supply-chain.html) we show how to build a powerful network optimization solver from scratch.
-    We begin with creating a production planning solver and progressively expand it into a full network optimization solution.
-    """
+    default_homework = min(
+        max(0, int(st.query_params.get("homework", 0)) - 1), len(homeworks) - 1
     )
 
-    default_option = min(max(0, int(st.query_params["homework"]) - 1), len(options) - 1)
-
-    def update_params():
+    def update_homework_param():
         if "homework" in st.session_state:
             st.query_params["homework"] = (
-                options.index(st.session_state["homework"]) + 1
+                homeworks.index(st.session_state["homework"]) + 1
             )
 
-    class_number = (
-        options.index(
+    homework_number = (
+        homeworks.index(
             st.selectbox(
                 "Select the Supply Chain Optimization homework 👇",
-                options,
+                homeworks,
                 key="homework",
-                index=default_option,
-                on_change=update_params(),
+                index=default_homework,
+                on_change=update_homework_param(),
             )
         )
         + 1
@@ -53,7 +84,8 @@ def main():
 
     st.session_state.instance = InputData(
         os.path.join(os.path.dirname(__file__), "InputDataProductionSolver.xlsx"),
-        class_number,
+        problem_number=problem_number,
+        homework_number=homework_number,
         on_change=require_rerun,
     )
     instance = st.session_state.instance
@@ -64,24 +96,25 @@ def main():
     if "last_scenario" not in st.session_state:
         st.session_state.last_scenario = None
 
-    st.markdown("## Production Optimization")
+    if problem_number == 1:
+        st.markdown("## Production Optimization")
+    else:
+        st.markdown("## Network Optimization")
 
     col1, col2 = st.columns(2)
     with col1:
-        use_restrict_table = st.checkbox(
-            "Use restrict table Product x Locations", value=True
-        )
+        use_restrict_table = st.checkbox("Use restrict tables", value=True)
     with col2:
         show_complete_model = st.checkbox("Show complete model", value=True)
 
     model_shelf_life = False
-    if class_number == 2:
+    if homework_number == 2:
         with col1:
             model_shelf_life = st.checkbox("Model shelf-life", value=True)
 
     layered_targets = False
     layered_storage_capacity = False
-    if class_number == 3:
+    if homework_number == 3:
         with col1:
             layered_storage_capacity = st.checkbox(
                 "Layered Max Storage Capacity", value=False
@@ -89,10 +122,10 @@ def main():
             layered_targets = st.checkbox("Layered Targets", value=False)
     lot_sizing_mp, model_incremental_lot_sizing = False, False
 
-    include_homework2 = class_number >= 2
-    include_homework3 = class_number >= 3
+    include_homework2 = homework_number >= 2
+    include_homework3 = homework_number >= 3
 
-    if class_number == 4:
+    if homework_number == 4:
         include_homework2 = st.checkbox(
             "Model Production Hours + Resource Capacity (from Homework 2)",
             value=True,
@@ -102,22 +135,23 @@ def main():
             value=True,
         )
         with col1:
-            options = [
+            homeworks = [
                 "Min Lot-Sizing",
                 "Min+Incremental Lot-Sizing",
             ]
-            choice = st.radio("Type of lot-sizing?", options)
-            model_incremental_lot_sizing = options.index(choice) == 1
+            choice = st.radio("Type of lot-sizing?", homeworks)
+            model_incremental_lot_sizing = homeworks.index(choice) == 1
 
-            options = [
+            homeworks = [
                 "High-Level Logic Modeling (via AMPL MP)",
                 "Old-School Big-M Method",
             ]
-            choice = st.radio("How to model lot-sizing?", options)
-            lot_sizing_mp = options.index(choice) == 0
+            choice = st.radio("How to model lot-sizing?", homeworks)
+            lot_sizing_mp = homeworks.index(choice) == 0
 
     st.session_state.mb = ModelBuilder(
-        class_number=class_number,
+        problem_number=problem_number,
+        homework_number=homework_number,
         use_restrict_table=use_restrict_table,
         show_complete_model=show_complete_model,
         model_shelf_life=model_shelf_life,
@@ -164,11 +198,10 @@ def main():
         # Select the solver to use
         solver, _ = solver_selector(mp_only=True)
         # Solve the problem
-        output = ampl.solve(
-            solver=solver,
-            mp_options="outlev=1 timelim=4 cvt:bigM=1e6",
-            return_output=True,
-        )
+        mp_options = "outlev=1 timelim=4 cvt:bigM=1e6"
+        if problem_number == 2:
+            mp_options += " multiobj=1"
+        output = ampl.solve(solver=solver, mp_options=mp_options, return_output=True)
 
         if ampl.solve_result not in ["solved", "limit"]:
             st.error(f"The model could not be solved:\n```\n{output}\n```")
@@ -301,17 +334,20 @@ def main():
 
                 # Reports
                 st.markdown("## Reports")
-                reports = Reports(instance, ampl)
+                reports = Reports(problem_number, instance, ampl)
 
                 st.markdown("### Demand Report")
-                reports.demand_report()
+                if problem_number == 1:
+                    reports.demand_report(by="location")
+                else:
+                    reports.demand_report(by="customer")
 
                 st.markdown("### Material Balance Report")
                 reports.material_balance_report()
 
                 if include_homework3:
-                    st.markdown("### Transfers Graph")
-                    reports.transfers_report()
+                    st.markdown("### Network Graph")
+                    reports.network_report()
 
                 if include_homework2:
                     st.markdown("### Resource Utilization Report")

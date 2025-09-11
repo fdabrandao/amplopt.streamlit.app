@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 
 
 class Reports:
-    def __init__(self, instance, ampl, key=""):
+    def __init__(self, problem_number, instance, ampl, key=""):
+        self.problem_number = problem_number
         self.instance = instance
         self.ampl = ampl
         self.key = key
@@ -18,6 +19,7 @@ class Reports:
         filter_products=False,
         filter_locations=False,
         filter_resources=False,
+        filter_customers=False,
         product_location=None,
     ):
         if product_location is not None:
@@ -44,6 +46,18 @@ class Reports:
             else:
                 location = ""
 
+        if filter_customers:
+            customer = st.selectbox(
+                "Pick the customer 👇",
+                [""]
+                + self.instance.customers_buying.get(
+                    product, self.instance.all_customers
+                ),
+                key=f"{self.key}_{key}_view_customer",
+            )
+        else:
+            customer = ""
+
         if filter_resources:
             resource = st.selectbox(
                 "Pick the resource 👇",
@@ -56,41 +70,59 @@ class Reports:
 
         label = ""
         filter = True
-        if product != "":
-            filter = df["Product"] == product
-            label = product
-        if resource != "":
-            filter = df["Resource"] == resource
-            label = resource
-
         if location != "" and product != "":
-            filter = (df["Location"] == location) & filter
+            filter = (df["Location"] == location) & (df["Product"] == product)
             if label == "":
                 label = location
             else:
                 label = f"{product} at {location}"
+        elif product != "" and customer != "":
+            filter = (df["Product"] == product) & (df["Customer"] == customer)
+            if label == "":
+                label = customer
+            else:
+                label = f"{product} for {customer}"
         elif location != "" and resource != "":
-            filter = (df["Location"] == location) & filter
+            filter = (df["Location"] == location) & (df["Resource"] == resource)
             if label == "":
                 label = location
             else:
                 label = f"{resource} at {location}"
         elif location != "":
-            filter = (df["Location"] == location) & filter
+            filter = df["Location"] == location
             if label == "":
                 label = location
+        elif customer != "":
+            filter = df["Customer"] == customer
+            if label == "":
+                label = customer
+        elif product != "":
+            filter = df["Product"] == product
+            if label == "":
+                label = product
+        elif resource != "":
+            filter = df["Resource"] == resource
+            if label == "":
+                label = resource
 
         if filter is True:
             view_func(df, label)
         else:
             view_func(df[filter], label)
 
-    def demand_report(self):
+    def demand_report(self, by):
         demand_df = self.ampl.get_data("Demand", "MetDemand", "UnmetDemand").to_pandas()
         demand_df.reset_index(inplace=True)
-        demand_df.columns = ["Product", "Location", "Period"] + list(
-            demand_df.columns[3:]
-        )
+        if by == "location":
+            demand_df.columns = ["Product", "Location", "Period"] + list(
+                demand_df.columns[3:]
+            )
+        elif by == "customer":
+            demand_df.columns = ["Product", "Customer", "Period"] + list(
+                demand_df.columns[3:]
+            )
+        else:
+            raise ValueError("'by' must be 'location' or 'customer'")
 
         def demand_planning_view(df, label):
             columns = [
@@ -166,15 +198,26 @@ class Reports:
             # Show the table
             st.dataframe(pivot_table.T)
 
-        view = st.selectbox(
-            "Demand Report",
-            [
-                "Planning View",
-                "Planning View Per Product",
-                "Planning View Per Location",
-                "Full Report",
-            ],
-        )
+        if by == "location":
+            view = st.selectbox(
+                "Demand Report",
+                [
+                    "Planning View",
+                    "Planning View Per Product",
+                    "Planning View Per Location",
+                    "Full Report",
+                ],
+            )
+        else:
+            view = st.selectbox(
+                "Demand Report",
+                [
+                    "Planning View",
+                    "Planning View Per Product",
+                    "Planning View Per Customer",
+                    "Full Report",
+                ],
+            )
 
         if view == "Planning View":
             self._planning_view(
@@ -182,7 +225,8 @@ class Reports:
                 demand_df,
                 demand_planning_view,
                 filter_products=True,
-                filter_locations=True,
+                filter_locations=(by == "location"),
+                filter_customers=(by == "customer"),
             )
         elif view == "Planning View Per Product":
             self._planning_view(
@@ -191,6 +235,10 @@ class Reports:
         elif view == "Planning View Per Location":
             self._planning_view(
                 "demand", demand_df, demand_planning_view, filter_locations=True
+            )
+        elif view == "Planning View Per Customer":
+            self._planning_view(
+                "demand", demand_df, demand_planning_view, filter_customers=True
             )
         else:
             st.dataframe(demand_df, hide_index=True)
@@ -449,7 +497,7 @@ class Reports:
             else:
                 st.dataframe(material_df, hide_index=True)
 
-    def transfers_report(self):
+    def network_report(self):
         product = st.selectbox(
             "Pick the product 👇",
             [""] + self.instance.selected_products,
@@ -475,10 +523,30 @@ class Reports:
 
         edge_labels = {(i, j): f"{value:.2f}" for (i, j), value in transfers.items()}
 
+        if self.problem_number == 2:
+            all_shipments = self.ampl.var["Shipments"].to_dict()
+            shipments = {}
+            for (p, i, j, t), value in all_shipments.items():
+                if t != period or value <= 1e-5:
+                    continue
+                if p == product or product == "":
+                    if (i, j) not in shipments:
+                        shipments[i, j] = 0
+                    shipments[i, j] += value
+
+            edge_labels.update(
+                {(i, j): f"{value:.2f}" for (i, j), value in shipments.items()}
+            )
+
         G = nx.DiGraph()
         G.add_nodes_from(sorted(nodes))
         G.add_edges_from(sorted(edge_labels.keys()))
         pos = nx.circular_layout(G)
+
+        node_colors = [
+            "yellow" if node in self.instance.selected_customers else "orange"
+            for node in G.nodes()
+        ]
 
         fig, ax = plt.subplots(figsize=(8, 4))
         ax.axis("off")
@@ -489,8 +557,8 @@ class Reports:
             pos,
             ax=ax,
             with_labels=True,
-            node_color="orange",
-            node_size=2000,
+            node_color=node_colors,
+            node_size=3000,
             font_size=10,
             # labels=node_labels,
         )

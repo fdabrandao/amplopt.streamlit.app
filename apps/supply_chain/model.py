@@ -36,7 +36,8 @@ class Parameter:
 class ModelBuilder:
     def __init__(
         self,
-        class_number,
+        problem_number,
+        homework_number,
         use_restrict_table,
         show_complete_model,
         model_shelf_life,
@@ -52,13 +53,14 @@ class ModelBuilder:
         self.exercises = []
         self.parameters = []
         self.on_change = on_change
-        self.class_number = class_number
+        self.problem_number = problem_number
+        self.homework_number = homework_number
         self.use_restrict_table = use_restrict_table
         self.show_complete_model = show_complete_model
         self.model_shelf_life = model_shelf_life
         self.layered_storage_capacity = layered_storage_capacity
         self.layered_targets = layered_targets
-        if class_number == 1:
+        if homework_number == 1:
             self.add_base_model()
 
             self.add(
@@ -90,13 +92,13 @@ class ModelBuilder:
 
             self.add(
                 r"""
-                #############
-                # Objective #
-                #############
+                ##############
+                # Objectives #
+                ##############
                 """
             )
             self.add_class1_objective()
-        elif class_number == 2:
+        elif homework_number == 2:
             if not self.model_shelf_life:
                 self.add_base_model()
             else:
@@ -169,16 +171,16 @@ class ModelBuilder:
 
             self.add(
                 r"""
-                #############
-                # Objective #
-                #############
+                ##############
+                # Objectives #
+                ##############
                 """
             )
             if not self.model_shelf_life:
                 self.add_class1_objective()
             else:
                 self.add_class1_objective_with_shelf_life()
-        elif class_number == 3:
+        elif homework_number == 3:
             self.add_base_model()
 
             self.add(
@@ -249,15 +251,15 @@ class ModelBuilder:
 
             self.add(
                 r"""
-                #############
-                # Objective #
-                #############
+                ##############
+                # Objectives #
+                ##############
                 """
             )
             self.add_class3_objective(
                 self.layered_storage_capacity, self.layered_targets
             )
-        elif class_number == 4:
+        elif homework_number == 4:
             self.add_base_model()
 
             self.add(
@@ -361,9 +363,9 @@ class ModelBuilder:
 
             self.add(
                 r"""
-                #############
-                # Objective #
-                #############
+                ##############
+                # Objectives #
+                ##############
                 """
             )
             if include_homework3:
@@ -384,8 +386,19 @@ class ModelBuilder:
         declaration = textwrap.dedent(declaration)
         if self.use_restrict_table:
             declaration = declaration.replace(
+                "p in PRODUCTS, l in LOCATIONS, c in CUSTOMERS",
+                "(p, l, c) in PRODUCTS_LOCATIONS_CUSTOMERS",
+            )
+            declaration = declaration.replace(
                 "p in PRODUCTS, l in LOCATIONS", "(p, l) in PRODUCTS_LOCATIONS"
             )
+            declaration = declaration.replace(
+                "p in PRODUCTS, c in CUSTOMERS", "(p, c) in PRODUCTS_CUSTOMERS"
+            )
+            declaration = declaration.replace(
+                "l in LOCATIONS, c in CUSTOMERS", "(l, c) in LOCATIONS_CUSTOMERS"
+            )
+
         if exercise is not None:
             assert "!exercise!" in declaration
             declaration = declaration.replace(
@@ -491,6 +504,12 @@ class ModelBuilder:
                 #     st.error(f"❌ Error: {output}")
 
     def add_base_model(self):
+        if self.problem_number == 1:
+            self.add_base_model_by_location()
+        else:
+            self.add_base_model_by_customer()
+
+    def add_base_model_by_location(self):
         self.add(
             r"""
             set PRODUCTS;  # Set of products
@@ -500,10 +519,43 @@ class ModelBuilder:
             !empty!
             param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
                 # Demand for each product at each location during each time period
-            var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                # Quantity of demand that is not met for a product at a location in a time period
             var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Quantity of demand that is met for a product at a location in a time period
+            var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+                # Quantity of demand that is not met for a product at a location in a time period
+            !empty!
+            param InitialInventory{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
+                # Initial inventory levels for each product at each location
+            var StartingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+                # Inventory at the beginning of each time period
+            var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+                # Inventory at the end of each time period
+            var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+                # Production volume for each product at each location during each time period
+            """,
+            transform=True,
+        )
+
+    def add_base_model_by_customer(self):
+        self.add(
+            r"""
+            set PRODUCTS;  # Set of products
+            set LOCATIONS;  # Set of distribution or production locations
+            set CUSTOMERS;  # Set of customers
+            set PRODUCTS_LOCATIONS within {PRODUCTS, LOCATIONS};  # Restrict table for product-location pairs
+            set PRODUCTS_CUSTOMERS within {PRODUCTS, CUSTOMERS};  # Restrict table for product-customer pairs
+            set LOCATIONS_CUSTOMERS within {LOCATIONS, CUSTOMERS};  # Restrict table for location-customer pairs
+            set PRODUCTS_LOCATIONS_CUSTOMERS within {PRODUCTS, LOCATIONS, CUSTOMERS}; # Restrict table for product-location-customer triplets
+            set PERIODS ordered;  # Ordered set of time periods for planning
+            !empty!
+            param Demand{p in PRODUCTS, c in CUSTOMERS, t in PERIODS} >= 0 default 0;
+                # Demand for each product-customer pair in each time period
+            param ShipmentCost{l in LOCATIONS, c in CUSTOMERS} >= 0 default 1e6;
+                # The cost of shipping products from a location to a customer
+            var Shipments{p in PRODUCTS, l in LOCATIONS, c in CUSTOMERS, t in PERIODS} >= 0;
+                # Quantity of a product shipped from a location to a customer in a given time period
+            var UnmetDemand{p in PRODUCTS, c in CUSTOMERS, t in PERIODS} >= 0;
+                # Quantity of demand that is not met for a product-customer pair in a time period
             !empty!
             param InitialInventory{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
                 # Initial inventory levels for each product at each location
@@ -559,6 +611,16 @@ class ModelBuilder:
         )
 
     def add_demand_fulfillment_declaration(self, exercise=None, show=None):
+        if self.problem_number == 1:
+            self.add_demand_by_location_fulfillment_declaration(
+                exercise=exercise, show=show
+            )
+        else:
+            self.add_demand_by_customer_fulfillment_declaration(
+                exercise=exercise, show=show
+            )
+
+    def add_demand_by_location_fulfillment_declaration(self, exercise=None, show=None):
         demand_fulfillment = self._transform(
             """
             !exercise!
@@ -577,7 +639,7 @@ class ModelBuilder:
             exercise=exercise,
         )
 
-        exercise_name = "Demand Balance Constraint"
+        exercise_name = "Demand (By Location) Balance Constraint"
 
         def render_exercise(ampl, name, number, selected_exercise):
             self._exercise(
@@ -591,6 +653,62 @@ class ModelBuilder:
                     "Demand[p, l, t]",
                     "MetDemand[p, l, t]",
                     "UnmetDemand[p, l, t]",
+                    "=",
+                ],
+            )
+
+        if show or self.show_complete_model:
+            self.add(demand_fulfillment)
+        else:
+            self.add(demand_fulfillment_placeholder)
+            self.exercises.append(
+                Exercise(
+                    number=exercise,
+                    name=exercise_name,
+                    render_exercise=render_exercise,
+                )
+            )
+
+    def add_demand_by_customer_fulfillment_declaration(self, exercise=None, show=None):
+        self.add(
+            """
+            var MetDemand{p in PRODUCTS, c in CUSTOMERS, t in PERIODS} =
+                    sum {(p, l, c) in PRODUCTS_LOCATIONS_CUSTOMERS} Shipments[p, l, c, t];
+                # Quantity of demand that is met for a product-customer pair in a time period
+            """
+        )
+        demand_fulfillment = self._transform(
+            """
+            !exercise!
+            s.t. DemandBalance{p in PRODUCTS, c in CUSTOMERS, t in PERIODS}:
+                Demand[p, c, t] = MetDemand[p, c, t] + UnmetDemand[p, c, t];
+                # Ensure that all demand is accounted for either as met or unmet
+            """,
+            exercise=exercise,
+        )
+
+        demand_fulfillment_placeholder = self._transform(
+            r"""
+            # s.t. DemandBalance{p in PRODUCTS, c in CUSTOMERS, t in PERIODS}:
+            # ... !exercise!Ensure that all demand is accounted for either as met or unmet
+            """,
+            exercise=exercise,
+        )
+
+        exercise_name = "Demand (By Customer) Balance Constraint"
+
+        def render_exercise(ampl, name, number, selected_exercise):
+            self._exercise(
+                ampl,
+                name=name,
+                description="Ensure that all demand is accounted for either as met or unmet.",
+                exercise=number,
+                selected_exercise=selected_exercise,
+                constraint=demand_fulfillment,
+                needs=[
+                    "Demand[p, c, t]",
+                    "MetDemand[p, c, t]",
+                    "UnmetDemand[p, c, t]",
                     "=",
                 ],
             )
@@ -708,7 +826,19 @@ class ModelBuilder:
         else:
             self.add(inventory_carryover_placeholder)
 
+    def add_shipments_out(self):
+        self.add(
+            """
+            var ShipmentsOut{p in PRODUCTS, l in LOCATIONS, t in PERIODS} =
+                sum {(p, l, c) in PRODUCTS_LOCATIONS_CUSTOMERS} Shipments[p, l, c, t];
+            # Quantity of a product shipped from a location to all customers in a given time period
+            """
+        )
+
     def add_material_balance_declaration(self, exercise=None, show=None):
+        if self.problem_number == 2:
+            self.add_shipments_out()
+
         material_balance = self._transform(
             r"""
             !exercise!
@@ -718,6 +848,10 @@ class ModelBuilder:
             """,
             exercise=exercise,
         )
+        if self.problem_number == 2:
+            material_balance = material_balance.replace(
+                "MetDemand[p, l, t]", "ShipmentsOut[p, l, t]"
+            )
 
         material_balance_placeholder = self._transform(
             r"""
@@ -740,7 +874,11 @@ class ModelBuilder:
                 needs=[
                     "StartingInventory[p, l, t]",
                     "Production[p, l, t]",
-                    "MetDemand[p, l, t]",
+                    (
+                        "MetDemand[p, l, t]"
+                        if self.problem_number == 1
+                        else "ShipmentsOut[p, l, t]"
+                    ),
                     "EndingInventory[p, l, t]",
                     "=",
                 ],
@@ -761,6 +899,8 @@ class ModelBuilder:
     def add_material_balance_with_shelf_life_declaration(
         self, exercise=None, show=None
     ):
+        if self.problem_number == 2:
+            self.add_shipments_out()
         material_balance = self._transform(
             r"""
             !exercise!
@@ -807,7 +947,7 @@ class ModelBuilder:
             r"""
             !exercise!
             s.t. ProductionRateConstraint{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-                Production[p,l,t] = sum{r in RESOURCES} ProductionHours[p,l,r,t] * ProductionRate[p,l,r];
+                Production[p, l, t] = sum{r in RESOURCES} ProductionHours[p, l, r, t] * ProductionRate[p, l, r];
                 # Ensure that the total production quantity is equal to the production hours multiplied by the production rate
             """,
             exercise=exercise,
@@ -832,12 +972,12 @@ class ModelBuilder:
                 selected_exercise=selected_exercise,
                 constraint=production_rate,
                 needs=[
-                    "Production[p,l,t]",
+                    "Production[p, l, t]",
                     "=",
                     "sum{r in RESOURCES}",
-                    "ProductionHours[p,l,r,t]",
+                    "ProductionHours[p, l, r, t]",
                     "*",
-                    "ProductionRate[p,l,r]",
+                    "ProductionRate[p, l, r]",
                 ],
             )
 
@@ -865,7 +1005,7 @@ class ModelBuilder:
             r"""
             !exercise!
             s.t. ProductionCapacity{r in RESOURCES, l in LOCATIONS, t in PERIODS}:
-                sum{(p, l) in PRODUCTS_LOCATIONS} ProductionHours[p,l,r,t] <= AvailableCapacity[r,l];
+                sum{(p, l) in PRODUCTS_LOCATIONS} ProductionHours[p, l, r, t] <= AvailableCapacity[r, l];
                 # Ensure that the total hours used by all products do not exceed the available capacity for a given resource at each location
             """,
             exercise=exercise,
@@ -891,9 +1031,9 @@ class ModelBuilder:
                 constraint=resource_capacity,
                 needs=[
                     "sum{(p, l) in PRODUCTS_LOCATIONS}",
-                    "ProductionHours[p,l,r,t]",
+                    "ProductionHours[p, l, r, t]",
                     "<=",
-                    "AvailableCapacity[r,l]",
+                    "AvailableCapacity[r, l]",
                 ],
             )
 
@@ -916,9 +1056,9 @@ class ModelBuilder:
                 # Valid transfer lanes (From_Location, To_Location)
             var Transfers{(p, i, j) in TRANSFER_LANES, t in PERIODS} >= 0;
                 # Transfers of product 'p' leaving from location 'i' to location 'j'
-            var TransfersIN{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} = sum {(p, i, l) in TRANSFER_LANES} Transfers[p, i, l, t];
+            var TransfersIn{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {(p, i, l) in TRANSFER_LANES} Transfers[p, i, l, t];
                 # Total amount of transfers of product 'p' into location 'l' at period 't'
-            var TransfersOUT{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} = sum {(p, l, i) in TRANSFER_LANES} Transfers[p, l, i, t];
+            var TransfersOut{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {(p, l, i) in TRANSFER_LANES} Transfers[p, l, i, t];
                 # Total amount of transfers of product 'p' out of location 'l' at period 't'
             """
         )
@@ -927,13 +1067,17 @@ class ModelBuilder:
             r"""
             !exercise!
             s.t. MaterialBalanceWithTransfers{p in PRODUCTS, l in LOCATIONS, t in PERIODS}:
-                StartingInventory[p,l,t] - MetDemand[p,l,t] + Production[p,l,t]
-                + TransfersIN[p,l,t] - TransfersOUT[p,l,t]
-                = EndingInventory[p,l,t];
+                StartingInventory[p, l, t] - MetDemand[p, l, t] + Production[p, l, t]
+                + TransfersIn[p, l, t] - TransfersOut[p, l, t]
+                = EndingInventory[p, l, t];
                 # Ensure material balance by accounting for starting inventory, production, transfers in and out, and demand fulfillment
             """,
             exercise=exercise,
         )
+        if self.problem_number == 2:
+            material_balance_with_transfers = material_balance_with_transfers.replace(
+                "MetDemand[p, l, t]", "ShipmentsOut[p, l, t]"
+            )
 
         material_balance_with_transfers_placeholder = self._transform(
             r"""
@@ -954,20 +1098,27 @@ class ModelBuilder:
                 selected_exercise=selected_exercise,
                 constraint=material_balance_with_transfers,
                 needs=[
-                    "StartingInventory[p,l,t]",
-                    "MetDemand[p,l,t]",
-                    "Production[p,l,t]",
-                    "TransfersIN[p,l,t]",
-                    "TransfersOUT[p,l,t]",
+                    "StartingInventory[p, l, t]",
+                    (
+                        "MetDemand[p, l, t]"
+                        if self.problem_number == 1
+                        else "ShipmentsOut[p, l, t]"
+                    ),
+                    "Production[p, l, t]",
+                    "TransfersIn[p, l, t]",
+                    "TransfersOut[p, l, t]",
                     "=",
-                    "EndingInventory[p,l,t]",
+                    "EndingInventory[p, l, t]",
                 ],
             )
 
+        self.add(header)
+        if self.problem_number == 2:
+            self.add_shipments_out()
         if show or self.show_complete_model:
-            self.add(header + material_balance_with_transfers)
+            self.add(material_balance_with_transfers)
         else:
-            self.add(header + material_balance_with_transfers_placeholder)
+            self.add(material_balance_with_transfers_placeholder)
             self.exercises.append(
                 Exercise(
                     number=exercise,
@@ -1134,7 +1285,7 @@ class ModelBuilder:
                 selected_exercise=selected_exercise,
                 constraint=layered_storage_capacity,
                 needs=[
-                    "sum{(p, l) in PRODUCTS_LOCATIONS}",
+                    "sum{p in PRODUCTS, l in LOCATIONS}",
                     "EndingInventory[p, l, t]",
                     "<=",
                     "MaxCapacity[l]",
@@ -1381,42 +1532,110 @@ class ModelBuilder:
                 )
             )
 
+    def add_network_objective(self):
+        self.add(
+            r"""
+                minimize TotalShipmentCost:
+                    sum {p in PRODUCTS, l in LOCATIONS, c in CUSTOMERS, t in PERIODS}
+                        ShipmentCost[l, c] * Shipments[p, l, c, t]
+                    suffix objpriority -2;
+                    # Objective function to minimize shipment costs
+                """,
+            transform=True,
+        )
+
     def add_class1_objective(self):
         self.add(
             r"""
+            suffix objpriority; # For hierarchical objectives
+            !empty!
             param UnmetDemandPenalty default 10;
                 # Penalty cost per unit for unmet demand (impacts decision to meet demand)
             param EndingInventoryPenalty default 5;
                 # Penalty cost per unit for ending inventory (reflects carrying cost)
-
-            minimize TotalCost:
-                sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS}
-                    (UnmetDemandPenalty * UnmetDemand[p, l, t] + EndingInventoryPenalty * EndingInventory[p, l, t]);
-                # Objective function to minimize total costs associated with unmet demand and leftover inventory
-            """,
-            transform=True,
+            """
         )
+        if self.problem_number == 1:
+            self.add(
+                r"""
+                minimize TotalProductionCost:
+                    sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
+                        UnmetDemandPenalty * UnmetDemand[p, l, t]
+                        + EndingInventoryPenalty * EndingInventory[p, l, t]
+                    )
+                    suffix objpriority -1;
+                    # Objective function to minimize total costs associated with unmet demand and leftover inventory
+                """,
+                transform=True,
+            )
+        else:
+            self.add(
+                r"""
+                minimize TotalProductionCost:
+                    sum {p in PRODUCTS, c in CUSTOMERS, t in PERIODS}
+                        UnmetDemandPenalty * UnmetDemand[p, c, t]
+                    + sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS}
+                        EndingInventoryPenalty * EndingInventory[p, l, t]
+                    suffix objpriority -1;
+                    # Objective function to minimize total costs associated with unmet demand and leftover inventory
+                """,
+                transform=True,
+            )
+
+        if self.problem_number == 2:
+            self.add_network_objective()
 
     def add_class1_objective_with_shelf_life(self):
         self.add(
             r"""
+            suffix objpriority; # For hierarchical objectives
+            !empty!
             param UnmetDemandPenalty default 10;
                 # Penalty cost per unit for unmet demand (impacts decision to meet demand)
             param EndingInventoryPenalty default 5;
                 # Penalty cost per unit for ending inventory (reflects carrying cost)
             param LostInventoryPenalty default 5;
                 # Penalty cost per unit for lost inventory (reflects waste cost)
-
-            minimize TotalCost:
-                sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS}
-                    (UnmetDemandPenalty * UnmetDemand[p, l, t] + EndingInventoryPenalty * EndingInventory[p, l, t] + LostInventoryPenalty * LostInventory[p, l, t]);
-                # Objective function to minimize total costs associated with unmet demand, leftover inventory, and lost inventory
-            """,
-            transform=True,
+            """
         )
+
+        if self.problem_number == 1:
+            self.add(
+                r"""
+                minimize TotalProductionCost:
+                    sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
+                        UnmetDemandPenalty * UnmetDemand[p, l, t] 
+                        + EndingInventoryPenalty * EndingInventory[p, l, t] 
+                        + LostInventoryPenalty * LostInventory[p, l, t]
+                    )
+                    suffix objpriority -1;
+                    # Objective function to minimize total costs associated with unmet demand, leftover inventory, and lost inventory
+                """,
+                transform=True,
+            )
+        else:
+            self.add(
+                r"""
+                minimize TotalProductionCost:
+                    sum {p in PRODUCTS, c in CUSTOMERS, t in PERIODS}
+                        UnmetDemandPenalty * UnmetDemand[p, c, t]
+                    + sum {p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
+                        EndingInventoryPenalty * EndingInventory[p, l, t] 
+                        + LostInventoryPenalty * LostInventory[p, l, t]
+                    )
+                    suffix objpriority -1;
+                    # Objective function to minimize total costs associated with unmet demand, leftover inventory, and lost inventory
+                """,
+                transform=True,
+            )
+
+        if self.problem_number == 2:
+            self.add_network_objective()
 
     def add_class3_objective(self, layered_storage_capacity, layered_targets):
         parameters = r"""
+            suffix objpriority; # For hierarchical objectives
+            !empty!
             param BelowTargetPenalty default 10;
                 # Penalty for having inventory below target
             param UnmetDemandPenalty default 10;
@@ -1439,21 +1658,35 @@ class ModelBuilder:
                                                           else 50)
                 )"""
 
+        demand_component = ""
+        if self.problem_number == 1:
+            demand_component = r"""
+                sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS}
+                    UnmetDemandPenalty * UnmetDemand[p, l, t]
+                """
+        else:
+            demand_component = r"""
+                sum{p in PRODUCTS, c in CUSTOMERS, t in PERIODS}
+                    UnmetDemandPenalty * UnmetDemand[p, c, t]
+                """
+
         linear_penalties_objective = (
             parameters
             + r"""
             # Minimize total cost objective
-            minimize TotalCost:
-                sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
-                    UnmetDemandPenalty * UnmetDemand[p, l, t] 
+            minimize TotalProductionCost:"""
+            + demand_component
+            + r"""
+                + sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
                     + EndingInventoryPenalty * EndingInventory[p, l, t] 
                     + AboveTargetPenalty * AboveTarget[p, l, t] 
                     + BelowTargetPenalty * BelowTarget[p, l, t]
-                    + TransferPenalty * TransfersOUT[p, l, t]
+                    + TransferPenalty * TransfersOut[p, l, t]
                 )"""
             + layered_storage_component
-            + r""";
-                # Objective: Minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
+            + r"""
+                suffix objpriority -1;
+                # Objective function to minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
             """
         )
 
@@ -1461,25 +1694,30 @@ class ModelBuilder:
             parameters
             + r"""
             # Minimize total cost objective
-            minimize TotalCost:
+            minimize TotalProductionCost:"""
+            + demand_component
+            + r"""
                 sum{p in PRODUCTS, l in LOCATIONS, t in PERIODS} (
-                    UnmetDemandPenalty * UnmetDemand[p, l, t] 
-                    + EndingInventoryPenalty * EndingInventory[p, l, t]
+                    EndingInventoryPenalty * EndingInventory[p, l, t]
                     + (if AboveTarget[p, l, t] <= 5 then AboveTarget[p, l, t] * AboveTargetPenalty
                                                     else 1000 * AboveTargetPenalty)
                     + (if BelowTarget[p, l, t] <= 5 then BelowTarget[p, l, t] * BelowTargetPenalty
                                                     else 1000 * BelowTargetPenalty)
-                    + TransferPenalty * TransfersOUT[p, l, t]
+                    + TransferPenalty * TransfersOut[p, l, t]
                 )"""
             + layered_storage_component
-            + r""";
-                # Objective: Minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
+            + r"""
+                suffix objpriority -1;;
+                # Objective function to minimize total cost, which includes penalties for unmet demand, ending inventory, deviations from target stock, and transfers
             """
         )
         if layered_targets:
             self.add(layered_penalties_objective, transform=True)
         else:
             self.add(linear_penalties_objective, transform=True)
+
+        if self.problem_number == 2:
+            self.add_network_objective()
 
     def display_exercises(self, ampl):
         if self.exercises == []:
