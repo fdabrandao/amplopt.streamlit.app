@@ -627,11 +627,11 @@ class ModelBuilder:
         else:
             self.add(
                 """
-                var MetDemandSL{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
+                var MetDemandSL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
                     # Quantity of demand that is met for each product-location-period-shelf-life combination
-                var MetDemand{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE} MetDemandSL[p, l, t, d];
+                var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE} MetDemandSL[p, l, t, d];
                     # Quantity of demand that is met for a product at a location in a time period
-                var UnmetDemand{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} >= 0;
+                var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                     # Quantity of demand that is not met for a product at a location in a time period
                 """,
                 transform=True,
