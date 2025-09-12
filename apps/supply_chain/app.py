@@ -1,6 +1,7 @@
 import streamlit as st
 from amplpy import AMPL
 import os
+import re
 from ..common import solver_selector
 from .data import InputData
 from .reports import Reports
@@ -49,12 +50,17 @@ def main():
         + 1
     )
 
-    homeworks = [
+    homeworks1 = [
         "Homework 1: Demand Balance + Inventory Carryover + Material Balance",
         "Homework 2: Shelf-Life + Production Hours + Resource Capacity",
         "Homework 3: Transfers + Target Stocks + Storage Capacity",
         "Homework 4: Min and Min+Incremental Lot-sizing",
     ]
+    homeworks2 = [h.replace("Shelf-Life + ", "") for h in homeworks1]
+    if problem_number == 1:
+        homeworks = homeworks1
+    else:
+        homeworks = homeworks2
 
     if "homework" not in st.query_params:
         st.query_params["homework"] = len(homeworks)
@@ -65,9 +71,9 @@ def main():
 
     def update_homework_param():
         if "homework" in st.session_state:
-            st.query_params["homework"] = (
-                homeworks.index(st.session_state["homework"]) + 1
-            )
+            match = re.search(r"Homework\s+(\d+):", st.session_state["homework"])
+            if match:
+                st.query_params["homework"] = match.group(1)
 
     homework_number = (
         homeworks.index(
@@ -108,7 +114,7 @@ def main():
         show_complete_model = st.checkbox("Show complete model", value=True)
 
     model_shelf_life = False
-    if homework_number == 2:
+    if problem_number == 1 and homework_number == 2:
         with col1:
             model_shelf_life = st.checkbox("Model shelf-life", value=True)
 
@@ -345,7 +351,7 @@ def main():
                 st.markdown("### Material Balance Report")
                 reports.material_balance_report()
 
-                if include_homework3:
+                if problem_number == 2 or include_homework3:
                     st.markdown("### Network Graph")
                     reports.network_report()
 

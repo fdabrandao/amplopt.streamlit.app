@@ -52,18 +52,10 @@ class InputData:
             return self.dfs[name][columns].dropna().copy()
 
         # Data
-        df = load_sheet("DemandByLocation", self.DEMAND_BY_LOCATION_COLUMNS)
-        pivot_df = df.pivot(
-            index=("Product", "Location", "Period"),
-            columns="DemandType",
-            values="Quantity",
-        )
-        pivot_df["Quantity"] = pivot_df.max(axis=1)
-        self.demand_by_location = pivot_df[["Quantity"]].reset_index()
-
         self.demand_by_customer = load_sheet(
             "DemandByCustomer", self.DEMAND_BY_CUSTOMER_COLUMNS
         )
+        self.demand_by_customer.sort_values(["Product", "Customer", "Period"])
 
         self.shipment_lanes = load_sheet("ShipmentLanes", self.SHIPMENT_LANES_COLUMNS)
 
@@ -87,9 +79,9 @@ class InputData:
         )
 
         # Dimensions
-        self.all_products = list(sorted(set(self.demand_by_location["Product"])))
+        self.all_products = ["Biscuit", "Bread", "Cookie", "Croissant", "Donut"]
         self.all_components = ["Flour", "Sugar", "Chocolate"]
-        self.all_locations = list(sorted(set(self.demand_by_location["Location"])))
+        self.all_locations = ["Bakery1", "Bakery2", "Market"]
         self.all_customers = ["Supermarket", "Restaurant", "Bulk"]
         self.all_resources = list(set(self.production_rate["Resource"]))
         self.all_resources_at = {l: set() for l in self.all_locations}
@@ -101,7 +93,7 @@ class InputData:
             self.all_resources_at[location] = list(
                 sorted(self.all_resources_at[location])
             )
-        self.all_periods = list(sorted(set(self.demand_by_location["Period"])))
+        self.all_periods = list(sorted(set(self.demand_by_customer["Period"])))
         self.all_suppliers = ["Flour Shop", "Chocolate Shop"]
 
     def _data_editor(self, df, columns):
@@ -120,6 +112,24 @@ class InputData:
         self._filter_dimensions_class2()
         if self.homework_number <= 2:
             return
+
+    def calculate_demand_by_location(self):
+        cheapest_lanes = self.shipment_lanes.sort_values(
+            ["Customer", "Cost", "Location"]
+        )
+        cheapest_lanes.drop_duplicates(subset="Customer", keep="first", inplace=True)
+        cheapest_lanes.reset_index(drop=True, inplace=True)
+
+        df_merged = self.demand_by_customer.merge(
+            cheapest_lanes[["Customer", "Location"]], on="Customer", how="left"
+        )
+        self.demand_by_location = df_merged[
+            ["Product", "Location", "Period", "Quantity"]
+        ]
+        self.demand_by_location = self.demand_by_location.groupby(
+            ["Product", "Location", "Period"], as_index=False
+        )["Quantity"].sum()
+        self.demand_by_location.sort_values(["Product", "Location", "Period"])
 
     def edit_data(self):
         self._edit_data_class1()
@@ -187,13 +197,6 @@ class InputData:
                 on_change=self.on_change,
             )
 
-        mask = self.demand_by_location.apply(
-            lambda row: row["Product"] in self.selected_products
-            and row["Location"] in self.selected_locations,
-            axis=1,
-        )
-        self.demand_by_location = self.demand_by_location[mask]
-
         mask = self.starting_inventory.apply(
             lambda row: row["Product"] in self.selected_products
             and row["Location"] in self.selected_locations,
@@ -233,9 +236,9 @@ class InputData:
             on_change=self.on_change,
         )
         # Filter periods
-        self.demand_by_location = self.demand_by_location[
-            (self.demand_by_location["Period"] >= self.selected_range[0])
-            & (self.demand_by_location["Period"] <= self.selected_range[1])
+        self.demand_by_customer = self.demand_by_customer[
+            (self.demand_by_customer["Period"] >= self.selected_range[0])
+            & (self.demand_by_customer["Period"] <= self.selected_range[1])
         ]
 
         self.selected_suppliers = st.multiselect(
@@ -245,6 +248,8 @@ class InputData:
             on_change=self.on_change,
         )
         # FIXME: Nothing to filter yet
+
+        self.calculate_demand_by_location()
 
         # Restrict table
         if self.problem_number == 1:
@@ -464,6 +469,7 @@ class InputData:
                     ["Location", "Customer"]
                 )[["Cost"]]
             ampl.set["PRODUCTS_LOCATIONS"] = self.products_locations
+            print("ProductsLocations:", self.products_locations)
             ampl.set["PERIODS"] = periods
             ampl.param["Demand"] = demand["Quantity"]
             ampl.param["InitialInventory"] = starting_inventory["Quantity"]

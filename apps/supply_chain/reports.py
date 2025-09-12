@@ -386,8 +386,8 @@ class Reports:
         ] + extra_columns
         if include_demand:
             columns += ["Demand", "UnmetDemand"]
-        if "TransfersIN" in model_entities:
-            columns += ["TransfersIN", "TransfersOUT"]
+        if "TransfersIn" in model_entities:
+            columns += ["TransfersIn", "TransfersOut"]
         if "LostInventory" in model_entities:
             columns = columns + ["LostInventory"]
         columns = list(set(columns))
@@ -397,8 +397,8 @@ class Reports:
             "Period",
             "StartingInventory",
             "Production",
-            "TransfersIN",
-            "TransfersOUT",
+            "TransfersIn",
+            "TransfersOut",
             "Demand",
             "MetDemand",
             "UnmetDemand",
@@ -498,6 +498,7 @@ class Reports:
                 st.dataframe(material_df, hide_index=True)
 
     def network_report(self):
+        model_vars = set(self.ampl.get_data("_VARS").to_list())  # FIXME
         product = st.selectbox(
             "Pick the product 👇",
             [""] + self.instance.selected_products,
@@ -511,17 +512,21 @@ class Reports:
         )
 
         nodes = self.ampl.set["LOCATIONS"].to_list()
-        all_transfers = self.ampl.var["Transfers"].to_dict()
-        transfers = {}
-        for (p, i, j, t), value in all_transfers.items():
-            if t != period or value <= 1e-5:
-                continue
-            if p == product or product == "":
-                if (i, j) not in transfers:
-                    transfers[i, j] = 0
-                transfers[i, j] += value
+        edge_labels = {}
+        if "Transfers" in model_vars:
+            all_transfers = self.ampl.var["Transfers"].to_dict()
+            transfers = {}
+            for (p, i, j, t), value in all_transfers.items():
+                if t != period or value <= 1e-5:
+                    continue
+                if p == product or product == "":
+                    if (i, j) not in transfers:
+                        transfers[i, j] = 0
+                    transfers[i, j] += value
 
-        edge_labels = {(i, j): f"{value:.2f}" for (i, j), value in transfers.items()}
+            edge_labels = {
+                (i, j): f"{value:.2f}" for (i, j), value in transfers.items()
+            }
 
         if self.problem_number == 2:
             all_shipments = self.ampl.var["Shipments"].to_dict()

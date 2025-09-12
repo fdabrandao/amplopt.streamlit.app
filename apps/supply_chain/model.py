@@ -99,10 +99,7 @@ class ModelBuilder:
             )
             self.add_class1_objective()
         elif homework_number == 2:
-            if not self.model_shelf_life:
-                self.add_base_model()
-            else:
-                self.add_base_model_with_shelf_life()
+            self.add_base_model()
 
             self.add(
                 r"""
@@ -511,26 +508,31 @@ class ModelBuilder:
 
     def add_base_model_by_location(self):
         self.add(
-            r"""
+            """
             set PRODUCTS;  # Set of products
             set LOCATIONS;  # Set of distribution or production locations
             set PERIODS ordered;  # Ordered set of time periods for planning
-            !empty!
+            """,
+            transform=True,
+        )
+        if self.model_shelf_life:
+            self.add(
+                """
+                param MaxShelfLife >= 0;  # Maximum shelf-life of products
+                set SHELF_LIFE ordered := 0..MaxShelfLife; # Define the set of shelf-life periods
+                """,
+                transform=True,
+            )
+        self.add(
+            """
             set PRODUCTS_LOCATIONS within {PRODUCTS, LOCATIONS};  # Restrict table
             !empty!
             param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
                 # Demand for each product at each location during each time period
-            var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                # Quantity of demand that is met for a product at a location in a time period
-            var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                # Quantity of demand that is not met for a product at a location in a time period
             !empty!
             param InitialInventory{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
                 # Initial inventory levels for each product at each location
-            var StartingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                # Inventory at the beginning of each time period
-            var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                # Inventory at the end of each time period
+            !empty!
             var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Production volume for each product at each location during each time period
             """,
@@ -539,7 +541,7 @@ class ModelBuilder:
 
     def add_base_model_by_customer(self):
         self.add(
-            r"""
+            """
             set PRODUCTS;  # Set of products
             set LOCATIONS;  # Set of distribution or production locations
             set CUSTOMERS;  # Set of customers
@@ -549,11 +551,21 @@ class ModelBuilder:
             set PRODUCTS_CUSTOMERS within {PRODUCTS, CUSTOMERS};  # Restrict table for product-customer pairs
             set LOCATIONS_CUSTOMERS within {LOCATIONS, CUSTOMERS};  # Restrict table for location-customer pairs
             set PRODUCTS_LOCATIONS_CUSTOMERS within {PRODUCTS, LOCATIONS, CUSTOMERS}; # Restrict table for product-location-customer triplets
-            !empty!
+            """,
+            transform=True,
+        )
+        if self.model_shelf_life:
+            self.add(
+                """
+                param MaxShelfLife >= 0;  # Maximum shelf-life of products
+                set SHELF_LIFE ordered := 0..MaxShelfLife; # Define the set of shelf-life periods
+                """,
+                transform=True,
+            )
+        self.add(
+            """
             param Demand{p in PRODUCTS, c in CUSTOMERS, t in PERIODS} >= 0 default 0;
                 # Demand for each product-customer pair in each time period
-            var UnmetDemand{p in PRODUCTS, c in CUSTOMERS, t in PERIODS} >= 0;
-                # Quantity of demand that is not met for a product-customer pair in a time period
             !empty!
             param ShipmentCost{l in LOCATIONS, c in CUSTOMERS} >= 0 default 1e6;
                 # The cost of shipping products from a location to a customer
@@ -562,10 +574,7 @@ class ModelBuilder:
             !empty!
             param InitialInventory{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
                 # Initial inventory levels for each product at each location
-            var StartingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                # Inventory at the beginning of each time period
-            var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                # Inventory at the end of each time period
+            !empty!
             var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Production volume for each product at each location during each time period
             """,
@@ -584,28 +593,9 @@ class ModelBuilder:
             !empty!
             param Demand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0 default 0;
                 # Demand for each product at each location during each time period
-            var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
-                # Quantity of demand that is not met for a product at a location in a time period
             !empty!
-            var MetDemandSL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
-                # Quantity of demand that is met for each product-location-period-shelf-life combination
-            var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE} MetDemandSL[p, l, t, d];
-                # Quantity of demand that is met for a product at a location in a time period
-            !empty! 
             param InitialInventory{p in PRODUCTS, l in LOCATIONS} >= 0 default 0;
                 # Initial inventory levels for each product at each location
-            !empty!
-            var StartingInventorySL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
-                # Inventory at the beginning of each time period for each shelf-life
-            var StartingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE} StartingInventorySL[p, l, t, d];
-                # Inventory at the beginning of each time period
-            !empty!
-            var EndingInventorySL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
-                # Inventory at the end of each time period
-            var LostInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = EndingInventorySL[p, l, t, last(SHELF_LIFE)];
-                # Inventory that is lost due to expiration
-            var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE: d < last(SHELF_LIFE)} EndingInventorySL[p, l, t, d];
-                # Inventory at the end of each time period
             !empty!
             var Production{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
                 # Production volume for each product at each location during each time period
@@ -624,6 +614,28 @@ class ModelBuilder:
             )
 
     def add_demand_by_location_fulfillment_declaration(self, exercise=None, show=None):
+        if not self.model_shelf_life:
+            self.add(
+                """
+                var MetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+                    # Quantity of demand that is met for a product at a location in a time period
+                var UnmetDemand{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+                    # Quantity of demand that is not met for a product at a location in a time period
+                """,
+                transform=True,
+            )
+        else:
+            self.add(
+                """
+                var MetDemandSL{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
+                    # Quantity of demand that is met for each product-location-period-shelf-life combination
+                var MetDemand{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE} MetDemandSL[p, l, t, d];
+                    # Quantity of demand that is met for a product at a location in a time period
+                var UnmetDemand{(p, l) in PRODUCTS_LOCATIONS, t in PERIODS} >= 0;
+                    # Quantity of demand that is not met for a product at a location in a time period
+                """,
+                transform=True,
+            )
         demand_fulfillment = self._transform(
             """
             !exercise!
@@ -678,9 +690,12 @@ class ModelBuilder:
             var MetDemand{p in PRODUCTS, c in CUSTOMERS, t in PERIODS} =
                     sum {(p, l, c) in PRODUCTS_LOCATIONS_CUSTOMERS} Shipments[p, l, c, t];
                 # Quantity of demand that is met for a product-customer pair in a time period
+            var UnmetDemand{p in PRODUCTS, c in CUSTOMERS, t in PERIODS} >= 0;
+                # Quantity of demand that is not met for a product-customer pair in a time period
             """,
             transform=True,
         )
+
         demand_fulfillment = self._transform(
             """
             !exercise!
@@ -730,6 +745,15 @@ class ModelBuilder:
             )
 
     def add_inventory_carryover_declaration(self, exercise=None, show=None):
+        self.add(
+            """
+            var StartingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+                # Inventory at the beginning of each time period
+            var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} >= 0;
+                # Inventory at the end of each time period
+            """,
+            transform=True,
+        )
         inventory_carryover = self._transform(
             r"""
             !exercise!
@@ -803,6 +827,21 @@ class ModelBuilder:
     def add_inventory_carryover_with_shelf_life_declaration(
         self, exercise=None, show=None
     ):
+        self.add(
+            """
+            var StartingInventorySL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
+                # Inventory at the beginning of each time period for each shelf-life
+            var StartingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE} StartingInventorySL[p, l, t, d];
+                # Inventory at the beginning of each time period
+            var EndingInventorySL{p in PRODUCTS, l in LOCATIONS, t in PERIODS, d in SHELF_LIFE} >= 0;
+                # Inventory at the end of each time period
+            var LostInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = EndingInventorySL[p, l, t, last(SHELF_LIFE)];
+                # Inventory that is lost due to expiration
+            var EndingInventory{p in PRODUCTS, l in LOCATIONS, t in PERIODS} = sum {d in SHELF_LIFE: d < last(SHELF_LIFE)} EndingInventorySL[p, l, t, d];
+                # Inventory at the end of each time period
+            """,
+            transform=True,
+        )
         inventory_carryover = self._transform(
             r"""
             !exercise!
@@ -1558,7 +1597,8 @@ class ModelBuilder:
                 # Penalty cost per unit for unmet demand (impacts decision to meet demand)
             param EndingInventoryPenalty default 5;
                 # Penalty cost per unit for ending inventory (reflects carrying cost)
-            """
+            """,
+            transform=True,
         )
         if self.problem_number == 1:
             self.add(
@@ -1601,7 +1641,8 @@ class ModelBuilder:
                 # Penalty cost per unit for ending inventory (reflects carrying cost)
             param LostInventoryPenalty default 5;
                 # Penalty cost per unit for lost inventory (reflects waste cost)
-            """
+            """,
+            transform=True,
         )
 
         if self.problem_number == 1:
