@@ -198,13 +198,18 @@ def main():
 
     # Get S&P 500 weights
     sp500_weights = get_sp500_weights()
-    st.write("## Current S&P 500 weights")
-    st.dataframe(sp500_weights.T)
 
     # Get S&P 500 symbols
     sp500 = get_sp500_symbols()
+
+    # Ensure both dataframes have the same tickers
+    sp500_weights = sp500_weights[sp500_weights.index.isin(sp500.index)]
+    sp500 = sp500[sp500.index.isin(sp500_weights.index)]
     diff_assets = set(sp500.index) - set(sp500_weights.index)
     assert len(diff_assets) == 0, diff_assets
+
+    st.write("## Current S&P 500 weights")
+    st.dataframe(sp500_weights.T)
 
     # Add Weight column to sp500 dataframe
     sp500["Weight"] = sp500_weights["Weight"]
