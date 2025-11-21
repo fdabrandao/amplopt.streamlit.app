@@ -293,7 +293,6 @@ def main():
             "Gurobi 🚀",
             "SCIP",
             "LGO",
-            "Octeract",
             "Knitro (Local)",
         ]
         solver = st.selectbox("Solver 👇", solvers, key="solver")
@@ -317,7 +316,6 @@ def main():
     optimizer.ampl.option["scip_options"] = "timelim=5 outlev=1"
     optimizer.ampl.option["lindoglobal_options"] = "maxtime=5"
     optimizer.ampl.option["knitro_options"] = "maxtime_cpu=5"
-    optimizer.ampl.option["octeract_options"] = "MAX_SOLVER_TIME=5"
     if optimizer.ampl.option[f"{solver}_options"] == "":
         optimizer.ampl.option[f"{solver}_options"] = "timelim=5"
 
