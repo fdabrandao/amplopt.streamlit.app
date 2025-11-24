@@ -68,8 +68,10 @@ def get_sp500_symbols():
     response = requests.get(url, headers=headers)
     response.raise_for_status()
 
-    table = pd.read_html(response.text)[0]
-    return table.set_index("Symbol")
+    tables = pd.read_html(response.text)
+    for table in tables:
+        if "Symbol" in table.columns:
+            return table.set_index("Symbol")
 
 
 @st.cache_data
