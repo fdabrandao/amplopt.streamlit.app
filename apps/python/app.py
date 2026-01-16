@@ -20,7 +20,7 @@ def main():
     # Install Python API for AMPL
     $ python -m pip install amplpy --upgrade
 
-    # Install solver modules (e.g., HiGHS, Gurobi, Xpress, CPLEX, etc.)
+    # Install solver modules (e.g., HiGHS, Gurobi, FICO XPRESS, CPLEX, etc.)
     $ python -m amplpy.modules install highs gurobi xpress cplex
 
     # Activate your license (e.g., free https://ampl.com/ce license)
