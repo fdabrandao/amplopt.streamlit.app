@@ -18,6 +18,7 @@ ampl_module_snopt
 amplpy>=0.14.0
 pandas==1.5.3
 numpy==1.26.2
+pyarrow==17.0.0
 amplpyfinance
 streamlit==1.37.0
 matplotlib==3.7.1
