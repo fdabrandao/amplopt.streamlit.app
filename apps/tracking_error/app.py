@@ -1,3 +1,4 @@
+import io
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -74,15 +75,50 @@ def get_sp500_symbols():
             return table.set_index("Symbol")
 
 
-@st.cache_data
-def get_sp500_weights():
-    """Scrape S&P 500 constituents and their weights from websites like SlickCharts"""
+SPY_HOLDINGS_URL = (
+    "https://www.ssga.com/us/en/intermediary/library-content/products/"
+    "fund-data/etfs/us/holdings-daily-us-en-spy.xlsx"
+)
+
+
+def _get_sp500_weights_from_spy():
+    """S&P 500 weights from the daily holdings file of the SPY ETF (State Street)"""
+    response = requests.get(SPY_HOLDINGS_URL, timeout=30)
+    response.raise_for_status()
+    raw = pd.read_excel(io.BytesIO(response.content), header=None)
+
+    # The holdings table starts after a few lines of fund metadata
+    header_rows = raw.index[raw.iloc[:, 0].astype(str).str.strip() == "Name"]
+    if len(header_rows) == 0:
+        raise ValueError("Holdings table not found in the SPY holdings file")
+    header_row = header_rows[0]
+    holdings = raw.iloc[header_row + 1 :].copy()
+    holdings.columns = [str(c).strip() for c in raw.iloc[header_row]]
+
+    holdings = holdings[["Ticker", "Weight"]].dropna()
+    holdings["Ticker"] = holdings["Ticker"].astype(str).str.strip()
+    holdings["Weight"] = pd.to_numeric(holdings["Weight"], errors="coerce")
+    holdings = holdings.dropna()
+    holdings = holdings[holdings["Ticker"].str.fullmatch(r"[A-Z][A-Z.]*")]
+    if holdings.empty:
+        raise ValueError("No holdings found in the SPY holdings file")
+
+    return pd.DataFrame(
+        {"Symbol": holdings["Ticker"].values, "Weight": holdings["Weight"].values / 100}
+    ).set_index("Symbol")
+
+
+def _get_sp500_weights_from_slickcharts():
+    """Scrape S&P 500 constituents and their weights from SlickCharts"""
     url = "https://www.slickcharts.com/sp500"
     headers = {"User-Agent": "Mozilla/5.0"}
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=30)
+    response.raise_for_status()
     soup = BeautifulSoup(response.text, "html.parser")
     table = soup.find("table", {"class": "table table-hover table-borderless table-sm"})
+    if table is None:
+        raise ValueError("Weights table not found on SlickCharts")
 
     symbols = []
     weights = []
@@ -95,6 +131,20 @@ def get_sp500_weights():
 
 
 @st.cache_data
+def get_sp500_weights():
+    """Get S&P 500 constituents and their weights, trying each source in order"""
+    errors = []
+    for source in (_get_sp500_weights_from_spy, _get_sp500_weights_from_slickcharts):
+        try:
+            return source()
+        except Exception as e:
+            errors.append(f"{source.__name__}: {e}")
+    raise RuntimeError(
+        "Could not retrieve S&P 500 weights from any source:\n" + "\n".join(errors)
+    )
+
+
+@st.cache_data
 def download_price_data(symbols, start_date, end_date):
     """Download historical adjusted close prices for given symbols"""
     data = yf.download(
@@ -104,7 +154,11 @@ def download_price_data(symbols, start_date, end_date):
         progress=False,
         auto_adjust=True,
     )
-    return data["Close"].dropna(how="any", axis=1)
+    prices = data["Close"]
+    # Drop dates without any prices (e.g., today's session before the close),
+    # then drop the assets that still have missing prices
+    prices = prices.dropna(how="all", axis=0)
+    return prices.dropna(how="any", axis=1)
 
 
 def plot_pie_chart(weights, title):
@@ -199,7 +253,11 @@ def main():
     st.code(TRACKING_ERROR_MODEL)
 
     # Get S&P 500 weights
-    sp500_weights = get_sp500_weights()
+    try:
+        sp500_weights = get_sp500_weights()
+    except Exception as e:
+        st.error(f"Failed to load the S&P 500 weights.\n```\n{e}\n```")
+        st.stop()
 
     # Get S&P 500 symbols
     sp500 = get_sp500_symbols()
@@ -245,6 +303,12 @@ def main():
     # spy_prices = download_price_data(
     #     ["SPY"], start_date=start_date, end_date=datetime.datetime.today()
     # )["SPY"]
+
+    if price_data.empty:
+        st.error(
+            "Historical price data is not available right now. Please try again later."
+        )
+        st.stop()
 
     diff_assets = set(sp500.index) - set(price_data.columns)
     # assert len(diff_assets) == 0, diff_assets
