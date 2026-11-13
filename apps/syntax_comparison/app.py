@@ -60,8 +60,12 @@ def column_header(tool, info, model, validation, block_names):
     if model.not_supported(tool):
         return "".join(html)
 
+    limited = model.meta.get("license_limited", {}).get(tool)
     if result.get("status") == "ok":
         html.append(badge(f"✓ same optimal objective: {result['objective']:,.2f}"))
+    elif limited:
+        html.append(badge("⚠ not validated: license-limited", ok=False))
+        html.append(f'<div style="color:#92400E;font-size:11.5px;margin:2px 0 4px 0;">{escape(limited)}</div>')
     else:
         html.append(badge("not validated", ok=False))
     html.append("<br>")
@@ -104,7 +108,13 @@ def solve_ampl(model_key, solver):
     tables = {}
     for name, caption in model.meta.get("display", {}).items():
         values = ampl.get_data(name).to_pandas().iloc[:, 0]
-        table = values.unstack() if isinstance(values.index, pd.MultiIndex) else values.to_frame(caption)
+        if isinstance(values.index, pd.MultiIndex):
+            table = values.unstack().fillna(0)
+            table = table.loc[(table.abs() > 1e-9).any(axis=1)]  # hide all-zero rows (e.g. unused lanes)
+            if isinstance(table.index, pd.MultiIndex):  # e.g. (orig, dest) lanes -> "orig → dest"
+                table.index = [" → ".join(map(str, key)) for key in table.index]
+        else:
+            table = values.to_frame(caption)
         table.index.name, table.columns.name = None, None
         tables[caption] = table.round(2)
     return {
@@ -201,7 +211,8 @@ def main():
     st.markdown(" ".join(model.meta.get("summary", "").split()))
     talking_points(model)
 
-    block_names = VIEWS[view]
+    shown = [model.implementations[t] for t in ["ampl"] + chosen if t in model.implementations]
+    block_names = [b for b in VIEWS[view] if any(b in impl.blocks for impl in shown)]
     columns = []
     for tool in ["ampl"] + chosen:
         info = tools[tool]

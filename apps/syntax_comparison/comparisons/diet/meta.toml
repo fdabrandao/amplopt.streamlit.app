@@ -1,0 +1,46 @@
+title = "Diet problem (linear program)"
+order = 1
+summary = """
+The classic diet problem: choose how much of each food to buy so that every nutrient stays
+between a minimum and a maximum, at the lowest cost. Data from the AMPL book.
+"""
+
+# Objective shared by every implementation (validated by validate.py).
+expected_objective = 90.004196
+rel_tol = 1e-6
+objective_label = "Total cost"
+
+# Solvers AMPL is validated with, using the exact same model.mod (only `option solver` changes).
+ampl_solvers = ["highs", "gurobi", "cplex", "xpress", "cbc", "scip"]
+
+# Variables shown after a live AMPL solve: name -> caption.
+[display]
+Buy = "Foods to buy (units)"
+
+# Tools that cannot express this model: tool -> reason shown on the page.
+[not_supported]
+
+# For the sales rep: what to point at, and what to say (Markdown).
+[[talking_points]]
+point = "the *Constraints* row."
+say = """`n_min[i] <= sum {j in FOOD} amt[i,j] * Buy[j] <= n_max[i]` is the textbook formula,
+written once. Each Python tool has its own way to say 'between two bounds': a list in gurobipy,
+`add_range` in docplex, `lb`/`ub` keywords in xpress, a tuple in Pyomo, two separate constraints in
+PuLP."""
+
+[[talking_points]]
+point = "the *Parameters* row, AMPL column."
+say = """The declarations carry the data rules: costs are positive, `f_max >= f_min`,
+`n_max >= n_min`. AMPL checks them every time data is loaded, so bad data is reported before
+solving. In the Python columns the same checks would be extra code."""
+
+[[talking_points]]
+point = "the *Model + data loading* toggle."
+say = """The AMPL model file contains no data and no Python. Data is loaded into the model by
+name, here from CSV files, and could come from Excel, a database or any pandas DataFrame without
+touching the model."""
+
+[[talking_points]]
+point = "the *Solver* chips and the live solve below."
+say = """The same model was validated with six solvers; switching is one line. Each solver-native
+API is tied to its own solver."""

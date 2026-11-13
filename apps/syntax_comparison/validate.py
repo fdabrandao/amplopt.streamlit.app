@@ -14,6 +14,7 @@ Set AMPLKEY_UUID to activate an AMPL license (the AMPL demo license limits model
 
 import argparse
 import datetime
+import importlib.util
 import json
 import os
 import platform
@@ -77,10 +78,22 @@ def activate_ampl_license():
     modules.activate(uuid)
 
 
+def subprocess_env():
+    """Put the open-source Ipopt binary from ampl_module_coin on PATH (used by Pyomo's ipopt plugin)."""
+    env = dict(os.environ)
+    spec = importlib.util.find_spec("ampl_module_coin")
+    if spec and spec.submodule_search_locations:
+        coin_bin = os.path.join(spec.submodule_search_locations[0], "bin")
+        env["PATH"] = coin_bin + os.pathsep + env.get("PATH", "")
+    return env
+
+
 def run_impl(path, timeout, ampl_solvers=()):
     cmd = [sys.executable, "-I", "-W", "ignore", "-c", RUNNER, str(path), ",".join(ampl_solvers)]
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=path.parent)
+        proc = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=timeout, cwd=path.parent, env=subprocess_env()
+        )
     except subprocess.TimeoutExpired:
         return {"error": f"timeout after {timeout}s"}
     lines = proc.stdout.strip().splitlines()
@@ -131,6 +144,12 @@ def main():
                 continue
             solvers = meta.get("ampl_solvers", []) if tool == "ampl" else []
             res = run_impl(script, args.timeout, solvers)
+            limited = meta.get("license_limited", {}).get(tool)
+            if limited and ("error" in res or not matches(res["objective"], expected, rel_tol)):
+                model_results[tool] = {"status": "license_limited", "reason": limited}
+                detail = res.get("error", f"objective {res.get('objective')}").splitlines()[-1]
+                print(f"   {tool:9s} license-limited (not counted as a failure): {detail}")
+                continue
             if "error" in res:
                 failures.append(f"{model}/{tool}: {res['error']}")
                 model_results[tool] = {"status": "error", "error": res["error"]}
@@ -155,7 +174,7 @@ def main():
             model_results[tool] = entry
 
     packages = sorted({pkg for info in tools.values() for pkg in info["packages"]})
-    solver_modules = [f"ampl_module_{s}" for s in ("highs", "gurobi", "cplex", "xpress", "coin", "scip")]
+    solver_modules = [f"ampl_module_{s}" for s in ("highs", "gurobi", "cplex", "xpress", "coin", "scip", "knitro")]
     output = {
         "generated": datetime.date.today().isoformat(),
         "python": platform.python_version(),

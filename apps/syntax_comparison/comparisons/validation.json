@@ -17,6 +17,7 @@
     "ampl_module_xpress": "20261029",
     "ampl_module_coin": "20261027",
     "ampl_module_scip": "20261029",
+    "ampl_module_knitro": "20261029",
     "pandas": "3.1.1"
   },
   "models": {
@@ -24,12 +25,12 @@
       "ampl": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 8.52,
+        "seconds": 8.3,
         "solvers": {
           "highs": {
             "objective": 37017.101361111105,
             "status": "solved",
-            "seconds": 10.31
+            "seconds": 10.54
           },
           "gurobi": {
             "objective": 37017.1013611111,
@@ -39,54 +40,239 @@
           "cplex": {
             "objective": 37017.1013611111,
             "status": "solved",
-            "seconds": 1.14
+            "seconds": 1.19
           },
           "xpress": {
             "objective": 37017.101361111105,
             "status": "solved",
-            "seconds": 1.1
+            "seconds": 1.12
           },
           "cbc": {
             "objective": 37017.1013611111,
             "status": "solved",
-            "seconds": 24.02
+            "seconds": 23.71
           },
           "scip": {
             "objective": 37017.10136111111,
             "status": "solved",
-            "seconds": 6.97
+            "seconds": 7.11
           }
         }
       },
       "pyomo": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 3.49
+        "seconds": 3.64
       },
       "pulp": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 3.47
+        "seconds": 3.56
       },
       "gurobipy": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 2.04
+        "seconds": 2.08
       },
       "docplex": {
         "status": "ok",
         "objective": 37017.10136111109,
-        "seconds": 1.5
+        "seconds": 1.56
       },
       "xpress": {
         "status": "ok",
         "objective": 37017.101361111134,
-        "seconds": 0.8
+        "seconds": 0.83
       },
       "highspy": {
         "status": "ok",
         "objective": 37017.10136111107,
-        "seconds": 4.04
+        "seconds": 3.68
+      }
+    },
+    "diet": {
+      "ampl": {
+        "status": "ok",
+        "objective": 90.00419580419582,
+        "seconds": 0.77,
+        "solvers": {
+          "highs": {
+            "objective": 90.00419580419579,
+            "status": "solved",
+            "seconds": 0.01
+          },
+          "gurobi": {
+            "objective": 90.00419580419579,
+            "status": "solved",
+            "seconds": 0.04
+          },
+          "cplex": {
+            "objective": 90.00419580419582,
+            "status": "solved",
+            "seconds": 0.04
+          },
+          "xpress": {
+            "objective": 90.00419580419579,
+            "status": "solved",
+            "seconds": 0.07
+          },
+          "cbc": {
+            "objective": 90.0041958041958,
+            "status": "solved",
+            "seconds": 0.08
+          },
+          "scip": {
+            "objective": 90.0041958041958,
+            "status": "solved",
+            "seconds": 0.06
+          }
+        }
+      },
+      "pyomo": {
+        "status": "ok",
+        "objective": 90.0041958041958,
+        "seconds": 0.31
+      },
+      "pulp": {
+        "status": "ok",
+        "objective": 90.0041958041958,
+        "seconds": 0.19
+      },
+      "gurobipy": {
+        "status": "ok",
+        "objective": 90.0041958041958,
+        "seconds": 0.16
+      },
+      "docplex": {
+        "status": "ok",
+        "objective": 90.00419580419612,
+        "seconds": 0.19
+      },
+      "xpress": {
+        "status": "ok",
+        "objective": 90.0041958041958,
+        "seconds": 0.18
+      },
+      "highspy": {
+        "status": "ok",
+        "objective": 90.0041958041958,
+        "seconds": 0.14
+      }
+    },
+    "logistic_regression": {
+      "ampl": {
+        "status": "ok",
+        "objective": 16.902615862615985,
+        "seconds": 0.19,
+        "solvers": {
+          "ipopt": {
+            "objective": 16.902615862615985,
+            "status": "solved",
+            "seconds": 0.01
+          },
+          "knitro": {
+            "objective": 16.902615862615985,
+            "status": "solved",
+            "seconds": 0.02
+          },
+          "gurobi": {
+            "objective": 16.902615862615995,
+            "status": "solved",
+            "seconds": 13.68
+          }
+        }
+      },
+      "pyomo": {
+        "status": "ok",
+        "objective": 16.902615862615985,
+        "seconds": 0.35
+      },
+      "pulp": {
+        "status": "not_supported"
+      },
+      "gurobipy": {
+        "status": "ok",
+        "objective": 16.902615862615985,
+        "seconds": 13.09
+      },
+      "docplex": {
+        "status": "not_supported"
+      },
+      "xpress": {
+        "status": "license_limited",
+        "reason": "Not validated: the free Xpress community license does not include Xpress-NLP and limits nonlinear formulas to 1,000 tokens. Validation needs a full Xpress license."
+      },
+      "highspy": {
+        "status": "not_supported"
+      }
+    },
+    "network_flow": {
+      "ampl": {
+        "status": "ok",
+        "objective": 52244.1,
+        "seconds": 0.19,
+        "solvers": {
+          "highs": {
+            "objective": 52244.1,
+            "status": "solved",
+            "seconds": 0.01
+          },
+          "gurobi": {
+            "objective": 52244.1,
+            "status": "solved",
+            "seconds": 0.03
+          },
+          "cplex": {
+            "objective": 52244.1,
+            "status": "solved",
+            "seconds": 0.03
+          },
+          "xpress": {
+            "objective": 52244.1,
+            "status": "solved",
+            "seconds": 0.05
+          },
+          "cbc": {
+            "objective": 52244.1,
+            "status": "solved",
+            "seconds": 0.06
+          },
+          "scip": {
+            "objective": 52244.1,
+            "status": "solved",
+            "seconds": 0.05
+          }
+        }
+      },
+      "pyomo": {
+        "status": "ok",
+        "objective": 52244.1,
+        "seconds": 0.3
+      },
+      "pulp": {
+        "status": "ok",
+        "objective": 52244.1,
+        "seconds": 0.18
+      },
+      "gurobipy": {
+        "status": "ok",
+        "objective": 52244.1,
+        "seconds": 0.15
+      },
+      "docplex": {
+        "status": "ok",
+        "objective": 52244.09999999999,
+        "seconds": 0.19
+      },
+      "xpress": {
+        "status": "ok",
+        "objective": 52244.1,
+        "seconds": 0.16
+      },
+      "highspy": {
+        "status": "ok",
+        "objective": 52244.1,
+        "seconds": 0.14
       }
     }
   }

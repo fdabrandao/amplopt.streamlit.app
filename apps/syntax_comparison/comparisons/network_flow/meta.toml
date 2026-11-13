@@ -1,0 +1,46 @@
+title = "Multi-commodity network flow (sparse sets)"
+order = 2
+summary = """
+Ship three product families (Dry, Fresh, Frozen) from 4 plants to 12 markets over a sparse network
+of 66 lanes. Frozen goods can only use refrigerated lanes, and all products share each lane's
+capacity.
+"""
+
+# Objective shared by every implementation (validated by validate.py).
+expected_objective = 52244.1
+rel_tol = 1e-6
+objective_label = "Total shipping cost"
+
+# Solvers AMPL is validated with, using the exact same model.mod (only `option solver` changes).
+ampl_solvers = ["highs", "gurobi", "cplex", "xpress", "cbc", "scip"]
+
+# Variables shown after a live AMPL solve: name -> caption.
+[display]
+Ship = "Shipments by lane (units, lanes in use)"
+
+# Tools that cannot express this model: tool -> reason shown on the page.
+[not_supported]
+
+# For the sales rep: what to point at, and what to say (Markdown).
+[[talking_points]]
+point = "the `Balance` constraint."
+say = """`sum {(i,k,p) in ROUTES}` reads 'every route arriving at city k for product p'. AMPL
+slices the sparse set directly in the model. Most Python columns first build inbound/outbound
+lookup tables (see their *Sets* row) to do the same; gurobipy has wildcards for it
+(`ship.sum('*', k, p)`)."""
+
+[[talking_points]]
+point = "`set ROUTES within {LINKS, PRODS}`."
+say = """The data is checked against the model: a route on a lane that does not exist is reported
+as soon as the data is loaded. Pyomo has the same `within` check; with the solver APIs that check
+is left to the user."""
+
+[[talking_points]]
+point = "`param supply ... default 0`."
+say = """Only plants and markets have supply data; every other city is 0 by declaration. In the
+solver APIs that becomes `supply.get((k, p), 0)` wherever supply is used."""
+
+[[talking_points]]
+point = "the *Model + data loading* toggle."
+say = """Each CSV file is loaded with one line: its index columns fill the set and its other
+columns fill the parameters with the same names."""
