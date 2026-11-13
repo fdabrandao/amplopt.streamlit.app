@@ -14,6 +14,10 @@ objective_label = "Total cost"
 # Solvers AMPL is validated with, using the exact same model.mod (only `option solver` changes).
 ampl_solvers = ["highs", "gurobi", "cplex", "xpress", "cbc", "scip"]
 
+# Variables shown after a live AMPL solve: name -> caption.
+[display]
+Make = "Production plan (units per week)"
+
 # Tools that cannot express this model: tool -> reason shown on the page.
 [not_supported]
 
@@ -21,3 +25,35 @@ ampl_solvers = ["highs", "gurobi", "cplex", "xpress", "cbc", "scip"]
 [internal_notes]
 pulp = "Solved with PuLP's HiGHS interface: the CBC 2.10.3 build bundled with PuLP 3.3.2 stops at a suboptimal plan (37,062.07) on this model."
 xpress = "The objective is set after the indicator constraints: with xp.abs()/xp.max() in the objective, xpress 10.0.0 attaches indicators added afterwards to the wrong rows."
+
+# For the sales rep: what to point at, and what to say (Markdown).
+[[talking_points]]
+point = "the *Constraints* row, AMPL column."
+say = """Each business rule is one line that reads like the rule itself: at most 4 products a week,
+Nut and Oat never in the same week, produce when stock falls below the reorder point. The other
+columns express the same rules through extra on/off variables (`run`) and linking constraints that
+someone has to design and maintain."""
+
+[[talking_points]]
+point = "the *Objective* row."
+say = """AMPL writes `abs(...)` and `max {...}` directly in the objective. gurobipy needs helper
+variables because `abs_()` and `max_()` accept variables only. Pyomo, PuLP and highspy rewrite them
+by hand as extra constraints. docplex and xpress accept them, each for its own solver."""
+
+[[talking_points]]
+point = "the `Reorder` rule."
+say = """In AMPL it is written the way the planner says it: `Inv < reorder ==> Make > 0`. In the
+other tools it is turned around into 'not producing next week means stock at or above the reorder
+point' and encoded as an indicator or a big-M constraint."""
+
+[[talking_points]]
+point = "the *Solver* chips and the live solve below."
+say = """This exact AMPL model was validated with HiGHS, Gurobi, CPLEX, Xpress, CBC and SCIP, and
+switching is one line. AMPL passes the logic to solvers that support it natively and reformulates it
+automatically for the ones that don't. Each solver-native API is tied to its own solver, so
+switching solvers means rewriting the model."""
+
+[[talking_points]]
+point = "the green badges."
+say = """Every implementation reaches the same optimal cost, so the difference is only in how the
+model is written."""

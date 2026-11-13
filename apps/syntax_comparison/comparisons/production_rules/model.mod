@@ -1,22 +1,22 @@
 # @block sets
-set PROD;                               # products made on the line
-set PERIODS ordered;                    # planning weeks
-set CONFLICTS within {PROD, PROD};      # pairs that cannot share a week (allergen cleaning)
+set PROD;  # products made on the line
+set PERIODS ordered;  # planning weeks
+set CONFLICTS within {PROD, PROD};  # pairs that cannot share a week (allergen cleaning)
 
 # @block params
 param demand {PROD, PERIODS} >= 0;
-param hours {PERIODS} >= 0;             # line hours available each week
-param rate {PROD} > 0;                  # units produced per line hour
-param min_lot {PROD} > 0;               # smallest batch worth running
+param hours {PERIODS} >= 0;  # line hours available each week
+param rate {PROD} > 0;  # units produced per line hour
+param min_lot {PROD} > 0;  # smallest batch worth running
 param max_lot {p in PROD} >= min_lot[p];
 param make_cost {PROD} >= 0;
 param hold_cost {PROD} >= 0;
 param init_inv {PROD} >= 0;
 param max_inv {PROD} >= 0;
-param reorder {PROD} >= 0;              # reorder point
-param max_products integer > 0;         # changeover limit per week
-param smooth_cost >= 0;                 # cost per unit of week-to-week change
-param peak_cost >= 0;                   # cost per hour of the busiest week
+param reorder {PROD} >= 0;  # reorder point
+param max_products integer > 0;  # changeover limit per week
+param smooth_cost >= 0;  # cost per unit of week-to-week change
+param peak_cost >= 0;  # cost per hour of the busiest week
 
 # @block vars
 var Make {p in PROD, PERIODS} >= 0, <= max_lot[p];

@@ -24,37 +24,37 @@
       "ampl": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 8.69,
+        "seconds": 8.52,
         "solvers": {
           "highs": {
             "objective": 37017.101361111105,
             "status": "solved",
-            "seconds": 10.3
+            "seconds": 10.31
           },
           "gurobi": {
             "objective": 37017.1013611111,
             "status": "solved",
-            "seconds": 1.33
+            "seconds": 1.36
           },
           "cplex": {
             "objective": 37017.1013611111,
             "status": "solved",
-            "seconds": 1.12
+            "seconds": 1.14
           },
           "xpress": {
             "objective": 37017.101361111105,
             "status": "solved",
-            "seconds": 1.08
+            "seconds": 1.1
           },
           "cbc": {
             "objective": 37017.1013611111,
             "status": "solved",
-            "seconds": 23.12
+            "seconds": 24.02
           },
           "scip": {
             "objective": 37017.10136111111,
             "status": "solved",
-            "seconds": 6.98
+            "seconds": 6.97
           }
         }
       },

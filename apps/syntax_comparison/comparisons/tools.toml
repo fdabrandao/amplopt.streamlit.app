@@ -4,11 +4,11 @@
 
 [ampl]
 name = "AMPL"
-group = "AMPL"
+group = "Algebraic modeling language"
 files = ["model.mod", "ampl_model.py"]
 language = "ampl"
 packages = ["amplpy", "ampl_module_base"]
-solver = "any (option solver)"
+solver = "any: one option switches it"
 
 [pyomo]
 name = "Pyomo"
@@ -16,7 +16,7 @@ group = "Algebraic modeling (open source)"
 files = ["pyomo_model.py"]
 language = "python"
 packages = ["pyomo", "highspy"]
-solver = "HiGHS"
+solver = "many via plugins (HiGHS here)"
 
 [pulp]
 name = "PuLP"
@@ -24,7 +24,7 @@ group = "Algebraic modeling (open source)"
 files = ["pulp_model.py"]
 language = "python"
 packages = ["pulp", "highspy"]
-solver = "HiGHS"
+solver = "many via plugins (HiGHS here)"
 
 [gurobipy]
 name = "gurobipy"

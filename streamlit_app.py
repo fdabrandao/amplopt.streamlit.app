@@ -45,6 +45,7 @@ from apps import (
     tips,
     python,
     reformulation_explorer,
+    syntax_comparison,
 )
 
 st.set_page_config(
@@ -160,6 +161,12 @@ pages = {
     "Tools & Documentation": [
         app_page(python.main, "🐍", "Python Integration"),
         app_page(reformulation_explorer.main, "🔍", "Reformulation Explorer"),
+        app_page(
+            syntax_comparison.main,
+            "⚖️",
+            "Modeling Syntax Comparison",
+            "Syntax_Comparison",
+        ),
     ],
 }
 

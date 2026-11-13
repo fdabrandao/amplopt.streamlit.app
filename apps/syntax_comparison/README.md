@@ -15,9 +15,17 @@ comparisons/
     model.mod, ampl_model.py  # AMPL model + data loading/solve with amplpy
     <tool>_model.py           # one file per tool (pyomo, pulp, gurobipy, docplex, xpress, highspy)
     data/*.csv                # shared input data, read by every implementation
+app.py                        # Streamlit page (selectors, grid, badges, live AMPL solve)
+catalog.py                    # loads tools/models/blocks/validation.json (no Streamlit)
+render.py                     # HTML for the color-banded, aligned code grid
 validate.py
 requirements-validate.txt     # pinned validation environment (not the app's requirements)
 ```
+
+The page reads everything from `comparisons/`; nothing is hard-coded per model. Only the AMPL
+implementation runs live: the page executes the `setup` and `data` blocks of `ampl_model.py`
+(exactly the code shown), sets the chosen solver and solves. URL parameters `?model=<key>&tools=a,b`
+preselect a comparison, so a demo can be bookmarked.
 
 Each file is split into blocks with `# @block <name>` comments (`setup`, `data`, `sets`, `params`,
 `vars`, `objective`, `constraints`, `solve`). The page aligns blocks by name, so their order
