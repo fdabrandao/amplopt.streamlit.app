@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 import time
 from html import escape
@@ -187,6 +188,16 @@ def live_solve(model):
         st.code(result["output"].strip() or "(no output)", language="text")
 
 
+def declaration(model, instance):
+    """The AMPL statement that declares `instance` (e.g. "No_Mix['Nut','Oat',2]"), verbatim."""
+    name = instance.split("[")[0]
+    source = "\n".join(b.code for b in model.implementations["ampl"].blocks.values() if b.language == "ampl")
+    match = re.search(
+        rf"^(?:subject to|s\.t\.|minimize|maximize)\s+{re.escape(name)}\b.*?;", source, re.MULTILINE | re.DOTALL
+    )
+    return match.group(0) if match else None
+
+
 def reformulation_view(model):
     config = model.meta.get("reformulation")
     if not config:
@@ -237,14 +248,13 @@ def reformulation_view(model):
         key=f"sc_focus_{model.key}",
     )
     if focus:
-        original, flat = match_submodel(graph, focus["pattern"], False, False)
-        written = {k.removeprefix("NL "): v for k, v in original.get_data().items()}
+        _, flat = match_submodel(graph, focus["pattern"], False, False)
         left, right = st.columns(2)
         with left:
-            st.caption("The rule as AMPL hands it to MP (`a ==> b` is shown as `!a || b`)")
-            st.html(code_panel(sections_as_code(written) or "(no match)", "ampl"))
+            st.caption("As written in model.mod")
+            st.html(code_panel(declaration(model, focus["pattern"]) or "(not found)", "ampl"))
         with right:
-            st.caption(f"Sent to {name}, generated automatically")
+            st.caption(f"What {name} receives for `{focus['pattern']}`, generated automatically")
             st.html(code_panel(sections_as_code(flat.get_data()) or "(no match)", "ampl", max_height=420))
 
     st.download_button(
