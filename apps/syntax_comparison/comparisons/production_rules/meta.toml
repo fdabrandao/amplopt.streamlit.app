@@ -1,5 +1,5 @@
 title = "Production planning with business rules"
-order = 3
+order = 1
 summary = """
 Weekly production plan for a snack-bar line (8 products, 8 weeks). On top of a classic
 lot-sizing model, the plan must follow five business rules: minimum lot sizes, at most
@@ -45,6 +45,13 @@ point = "the *Solver* chips and the live solve."
 say = """This exact AMPL model was validated with HiGHS, Gurobi, CPLEX, Xpress, CBC and SCIP, and
 switching is one line. Each solver-native API is tied to its own solver, so switching solvers means
 rewriting the model."""
+
+[[talking_points]]
+point = "the *Add a new rule* toggle."
+say = """A planner asks for a crew-rest rule: after a week of more than 50 line hours, the next week
+runs at most 45. In AMPL that is two parameters and one constraint, written the way the planner said it,
+and the data loading code does not change. The highlighted lines show what the same request costs in the other
+tool: a new binary variable, indicator or big-M constraints, and the parameter plumbing."""
 
 [[talking_points]]
 point = "the green badges."

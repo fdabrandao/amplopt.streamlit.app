@@ -21,6 +21,8 @@ BLOCK_COLORS = {
 }
 _FORMATTER = HtmlFormatter(nowrap=True, noclasses=True, style="friendly")
 _MONO = "'Source Code Pro', 'SFMono-Regular', Menlo, Consolas, monospace"
+CODE_FONT_SIZE = "13.5px"  # two columns at a booth monitor: readable from a step away
+CHANGED_COLOR = "#16A34A"  # lines added or modified by a model change
 
 
 def _tint(hex_color, alpha):
@@ -28,19 +30,27 @@ def _tint(hex_color, alpha):
     return f"rgba({r},{g},{b},{alpha})"
 
 
-def highlight_code(code, language):
-    """Highlight line by line so long lines can wrap with a hanging indent instead of scrolling."""
+def highlight_code(code, language, changed=frozenset()):
+    """Highlight line by line so long lines can wrap with a hanging indent instead of scrolling.
+
+    `changed` holds the indexes of lines to mark as added/modified.
+    """
     lexer = get_lexer_by_name(language)
     lines = []
-    for line in code.splitlines():
+    for i, line in enumerate(code.splitlines()):
         stripped = line.lstrip(" ")
         indent = len(line) - len(stripped)
         if not stripped:
             lines.append('<div style="height:1.45em;"></div>')
             continue
         html = highlight(stripped, lexer, _FORMATTER).rstrip("\n")
+        mark = (
+            f"background:{_tint(CHANGED_COLOR, 0.20)};box-shadow:-6px 0 0 {CHANGED_COLOR};"
+            if i in changed
+            else ""
+        )
         lines.append(
-            f'<div style="white-space:pre-wrap;overflow-wrap:break-word;'
+            f'<div style="white-space:pre-wrap;overflow-wrap:break-word;{mark}'
             f'padding-left:{indent + 4}ch;text-indent:-4ch;">{html}</div>'
         )
     return "".join(lines)
@@ -66,7 +76,7 @@ def info_chip(text):
     return _chip(text, "#475569")
 
 
-def _code_cell(block_name, block):
+def _code_cell(block_name, block, changed=frozenset()):
     color = BLOCK_COLORS.get(block_name, "#6B7280")
     label = (
         f'<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;'
@@ -80,8 +90,8 @@ def _code_cell(block_name, block):
         body = '<div style="color:#9CA3AF;font-size:12px;font-style:italic;">not needed</div>'
         return f'<div style="{base}opacity:.6;">{label}{body}</div>'
     pre = (
-        f'<div style="margin:0;font-family:{_MONO};font-size:12.5px;line-height:1.45;color:#1F2937;">'
-        f"{highlight_code(block.code, block.language)}</div>"
+        f'<div style="margin:0;font-family:{_MONO};font-size:{CODE_FONT_SIZE};line-height:1.45;color:#1F2937;">'
+        f"{highlight_code(block.code, block.language, changed)}</div>"
     )
     return f'<div style="{base}">{label}{pre}</div>'
 
@@ -91,6 +101,7 @@ def render_grid(columns, block_names):
     - header: HTML for the column header
     - blocks: dict block name -> Block (ignored when `not_supported` is set)
     - not_supported: optional reason (renders one card spanning all block rows)
+    - changed: optional dict block name -> indexes of lines to highlight as changed
     """
     n = len(columns)
     cells = []
@@ -111,7 +122,8 @@ def render_grid(columns, block_names):
             cells.append(
                 f'<div style="grid-column:{c};grid-row:{r};display:flex;min-width:0;">'
                 f'<div style="flex:1;min-width:0;display:flex;flex-direction:column;">'
-                f"{_code_cell(name, col['blocks'].get(name))}</div></div>"
+                f"{_code_cell(name, col['blocks'].get(name), col.get('changed', {}).get(name, frozenset()))}"
+                "</div></div>"
             )
     grid_style = (
         f"display:grid;grid-template-columns:repeat({n}, minmax(0, 1fr));"

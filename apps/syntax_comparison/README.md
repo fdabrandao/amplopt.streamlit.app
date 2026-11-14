@@ -27,6 +27,11 @@ implementation runs live: the page executes the `setup` and `data` blocks of `am
 (exactly the code shown), sets the chosen solver and solves. URL parameters `?model=<key>&tools=a,b`
 preselect a comparison, so a demo can be bookmarked.
 
+A model folder whose `meta.toml` sets `variant_of = "<model>"` and `change = "<label>"` is not listed
+on its own: it adds one change to that model (e.g. `production_rules_crew_rest` adds a crew-rest
+rule). The page shows it behind a toggle and highlights, per tool, the lines that differ from the
+base model. Variants are validated like any other model.
+
 ## Adding a tool
 
 1. Add an entry to `comparisons/tools.toml`.

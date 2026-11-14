@@ -173,13 +173,16 @@ def main():
                 }
             model_results[tool] = entry
 
+    existing = {d.name for d in model_dirs}
+    results = {name: res for name, res in results.items() if name in existing}  # drop deleted models
+
     packages = sorted({pkg for info in tools.values() for pkg in info["packages"]})
     solver_modules = [f"ampl_module_{s}" for s in ("highs", "gurobi", "cplex", "xpress", "coin", "scip", "knitro")]
     output = {
         "generated": datetime.date.today().isoformat(),
         "python": platform.python_version(),
         "versions": {pkg: package_version(pkg) for pkg in packages + solver_modules + ["pandas"]},
-        "models": results,
+        "models": dict(sorted(results.items())),
     }
     OUTPUT.write_text(json.dumps(output, indent=2) + "\n")
     print(f"\nWrote {OUTPUT.relative_to(HERE.parent.parent)}")

@@ -3,6 +3,7 @@
 No Streamlit here, so it can be reused by scripts and tested on its own.
 """
 
+import difflib
 import json
 import re
 from dataclasses import dataclass, field
@@ -57,12 +58,28 @@ class Model:
     meta: dict
     implementations: dict = field(default_factory=dict)  # tool -> Implementation
 
+    variants: list = field(default_factory=list)  # models that add one change to this one
+
     @property
     def title(self):
         return self.meta["title"]
 
+    @property
+    def variant_of(self):
+        return self.meta.get("variant_of")
+
     def not_supported(self, tool):
         return self.meta.get("not_supported", {}).get(tool)
+
+
+def changed_lines(base_code, new_code):
+    """Indexes of the lines in new_code that were added or modified with respect to base_code."""
+    base, new = base_code.splitlines(), new_code.splitlines()
+    changed = set()
+    for tag, _, _, j1, j2 in difflib.SequenceMatcher(None, base, new, autojunk=False).get_opcodes():
+        if tag in ("insert", "replace"):
+            changed.update(range(j1, j2))
+    return {i for i in changed if new[i].strip()}  # blank lines are not "changes"
 
 
 def parse_blocks(text, language, source):
@@ -112,4 +129,8 @@ def load_models(tools):
                 impl.blocks.update(parse_blocks(f.read_text(), _LANGUAGES[f.suffix], f.name))
             model.implementations[tool] = impl
         models.append(model)
+    by_key = {m.key: m for m in models}
+    for m in models:
+        if m.variant_of in by_key:
+            by_key[m.variant_of].variants.append(m)
     return sorted(models, key=lambda m: (m.meta.get("order", 99), m.title))

@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from .catalog import COMPARISONS, FULL_BLOCKS, MODEL_BLOCKS, load_models, load_tools, load_validation
+from .catalog import COMPARISONS, FULL_BLOCKS, MODEL_BLOCKS, changed_lines, load_models, load_tools, load_validation
 from .render import badge, info_chip, render_grid
 
 REPO_URL = "https://github.com/fdabrandao/amplopt.streamlit.app"
@@ -21,7 +21,6 @@ SOLVER_NAMES = {
     "knitro": "Knitro",
 }
 VIEWS = {"Model only": MODEL_BLOCKS, "Model + data loading": FULL_BLOCKS}
-MAX_TOOLS = 2
 
 
 def _fingerprint():
@@ -50,7 +49,7 @@ def widen_page():
     )
 
 
-def column_header(tool, info, model, validation, block_names):
+def column_header(tool, info, model, validation, block_names, changed_loc=None):
     result = validation.get("models", {}).get(model.key, {}).get(tool, {})
     versions = validation.get("versions", {})
     html = [
@@ -86,7 +85,10 @@ def column_header(tool, info, model, validation, block_names):
         f'<a href="{SOURCE_URL}/{model.key}/{name}" target="_blank" style="color:#6B7280;">{escape(name)}</a>'
         for name in impl.files
     )
-    html.append(f'<div style="color:#9CA3AF;font-size:11.5px;margin-top:4px;">{loc} lines of code · {links}</div>')
+    change = f" · {changed_loc} added or changed for the new rule" if changed_loc is not None else ""
+    html.append(
+        f'<div style="color:#9CA3AF;font-size:11.5px;margin-top:4px;">{loc} lines of code{change} · {links}</div>'
+    )
     return "".join(html)
 
 
@@ -189,52 +191,76 @@ def main():
         Every implementation reads the same CSV data and was checked to reach the **same optimal
         objective**, so the only difference is how the model is written.
         Each concept (sets, parameters, variables, objective, constraints) has its own color, so you
-        can match the code across columns.
+        can match the code across the two columns.
         """
     )
 
     params = st.query_params
-    keys = [m.key for m in models]
+    base_models = [m for m in models if not m.variant_of]
+    keys = [m.key for m in base_models]
     model_index = keys.index(params["model"]) if params.get("model") in keys else 0
-    model = st.selectbox("Pick a model 👇", models, index=model_index, format_func=lambda m: m.title)
+    model = st.selectbox("Pick a model 👇", base_models, index=model_index, format_func=lambda m: m.title)
 
     others = [t for t in tools if t != "ampl"]
-    default = [t for t in params.get("tools", "").split(",") if t in others][:MAX_TOOLS] or ["pyomo"]
-    chosen = st.multiselect(
-        f"Compare AMPL with (up to {MAX_TOOLS}) 👇",
+    tool = params.get("tool", params.get("tools", "").split(",")[0])
+    tool = st.selectbox(
+        "Compare AMPL with 👇",
         others,
-        default=default,
-        max_selections=MAX_TOOLS,
-        format_func=lambda t: tools[t]["name"],
-        help="Algebraic modeling (open source): Pyomo, PuLP. "
-        "Solver-native Python APIs: gurobipy, docplex (CPLEX), xpress (FICO Xpress), highspy (HiGHS).",
+        index=others.index(tool) if tool in others else others.index("pyomo"),
+        format_func=lambda t: f"{tools[t]['name']}  ({tools[t]['group']})",
     )
     view = st.radio("Show", list(VIEWS), horizontal=True, label_visibility="collapsed")
-    st.query_params.update({"model": model.key, "tools": ",".join(chosen)})
 
     st.markdown(f"#### {model.title}")
     st.markdown(" ".join(model.meta.get("summary", "").split()))
     talking_points(model)
 
-    shown = [model.implementations[t] for t in ["ampl"] + chosen if t in model.implementations]
+    variant = model.variants[0] if model.variants else None
+    show_change = False
+    if variant:
+        show_change = st.toggle(
+            f"✚ {variant.meta['change']}", value=params.get("change") == "1", key=f"sc_change_{model.key}"
+        )
+        if show_change:
+            st.success(
+                "Highlighted lines are everything that had to be added or changed in each implementation "
+                "to add this one rule. Both versions were validated to the same optimal objective."
+            )
+    st.query_params.update({"model": model.key, "tool": tool, "change": "1" if show_change else "0"})
+    shown_model = variant if show_change else model
+
+    shown = [shown_model.implementations[t] for t in ("ampl", tool) if t in shown_model.implementations]
     block_names = [b for b in VIEWS[view] if any(b in impl.blocks for impl in shown)]
     columns = []
-    for tool in ["ampl"] + chosen:
-        info = tools[tool]
-        reason = model.not_supported(tool)
-        impl = model.implementations.get(tool)
+    for t in ("ampl", tool):
+        info = tools[t]
+        impl = shown_model.implementations.get(t)
+        changed, changed_loc = {}, None
+        if show_change and impl and t in model.implementations:
+            base_blocks = model.implementations[t].blocks
+            for b in block_names:
+                if b in impl.blocks:
+                    base_code = base_blocks[b].code if b in base_blocks else ""
+                    changed[b] = changed_lines(base_code, impl.blocks[b].code)
+            changed_loc = sum(
+                1
+                for b, idx in changed.items()
+                for i, line in enumerate(impl.blocks[b].code.splitlines())
+                if i in idx and not line.strip().startswith("#")
+            )
         columns.append(
             {
                 "name": info["name"],
-                "header": column_header(tool, info, model, validation, block_names),
+                "header": column_header(t, info, shown_model, validation, block_names, changed_loc),
                 "blocks": impl.blocks if impl else {},
-                "not_supported": reason,
+                "not_supported": shown_model.not_supported(t),
+                "changed": changed,
             }
         )
     st.html(render_grid(columns, block_names))
 
     st.markdown("---")
-    live_solve(model)
+    live_solve(shown_model)
 
     with st.expander("How this comparison was validated"):
         versions = validation.get("versions", {})

@@ -1,5 +1,5 @@
 title = "Logistic regression (nonlinear)"
-order = 4
+order = 2
 summary = """
 Fit a credit-approval classifier: find the weights that minimize the regularized logistic loss
 over 50 past applicants (3 standardized features). The loss uses log and exp, so this is a
