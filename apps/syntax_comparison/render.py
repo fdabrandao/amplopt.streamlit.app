@@ -56,6 +56,19 @@ def highlight_code(code, language, changed=frozenset()):
     return "".join(lines)
 
 
+def headline_tiles(items, accent="#F63366"):
+    """Large 'value + label' facts for booth visitors (items: list of {value, label})."""
+    tiles = "".join(
+        f'<div style="flex:1 1 220px;background:#F7F8FA;border-radius:10px;border-top:4px solid {accent};'
+        'padding:14px 18px 16px 18px;">'
+        f'<div style="font-size:34px;font-weight:800;line-height:1.1;color:#111827;">{escape(item["value"])}</div>'
+        f'<div style="font-size:15px;line-height:1.35;color:#374151;margin-top:6px;">{escape(item["label"])}</div>'
+        "</div>"
+        for item in items
+    )
+    return f'<div style="display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 8px 0;">{tiles}</div>'
+
+
 def _chip(text, color, filled=False):
     style = (
         f"display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;"

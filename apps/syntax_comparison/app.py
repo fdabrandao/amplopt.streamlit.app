@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from .catalog import COMPARISONS, FULL_BLOCKS, MODEL_BLOCKS, changed_lines, load_models, load_tools, load_validation
-from .render import badge, info_chip, render_grid
+from .render import badge, headline_tiles, info_chip, render_grid
 
 REPO_URL = "https://github.com/fdabrandao/amplopt.streamlit.app"
 SOURCE_URL = f"{REPO_URL}/blob/master/apps/syntax_comparison/comparisons"
@@ -212,6 +212,8 @@ def main():
     model = base_models[
         st.selectbox("Pick a model 👇", list(base_models), key="sc_model", format_func=lambda k: base_models[k].title)
     ]
+    if model.meta.get("headline"):
+        st.html(headline_tiles(model.meta["headline"]))
     tool = st.selectbox(
         "Compare AMPL with 👇",
         others,

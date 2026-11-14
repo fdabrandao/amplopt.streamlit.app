@@ -28,6 +28,19 @@ pulp = "PuLP models linear and mixed-integer problems only."
 [license_limited]
 xpress = "Not validated: the free Xpress community license does not include Xpress-NLP and limits nonlinear formulas to 1,000 tokens. Validation needs a full Xpress license."
 
+# Booth headline: three facts shown in large type above the code.
+[[headline]]
+value = "1 formula"
+label = "the loss is written as the math: log, exp and sums"
+
+[[headline]]
+value = "3 of 6"
+label = "Python tools compared here cannot express this model"
+
+[[headline]]
+value = "3 solvers"
+label = "Ipopt, Knitro and Gurobi run the same AMPL model"
+
 # For the sales rep: what to point at, and what to say (Markdown).
 [[talking_points]]
 point = "the *Objective* row."
