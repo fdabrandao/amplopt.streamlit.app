@@ -196,17 +196,26 @@ def main():
     )
 
     params = st.query_params
-    base_models = [m for m in models if not m.variant_of]
-    keys = [m.key for m in base_models]
-    model_index = keys.index(params["model"]) if params.get("model") in keys else 0
-    model = st.selectbox("Pick a model 👇", base_models, index=model_index, format_func=lambda m: m.title)
-
+    base_models = {m.key: m for m in models if not m.variant_of}
     others = [t for t in tools if t != "ampl"]
-    tool = params.get("tool", params.get("tools", "").split(",")[0])
+    # Seed the widgets from the URL once; afterwards the widgets own their state. Passing a
+    # URL-derived `index`/`value` on every run would make Streamlit recreate the widget whenever
+    # the URL changes, discarding the user's next selection.
+    if "sc_model" not in st.session_state:
+        st.session_state.sc_model = params.get("model") if params.get("model") in base_models else next(iter(base_models))
+    if "sc_tool" not in st.session_state:
+        tool = params.get("tool", params.get("tools", "").split(",")[0])
+        st.session_state.sc_tool = tool if tool in others else "pyomo"
+    if "sc_change" not in st.session_state:
+        st.session_state.sc_change = params.get("change") == "1"
+
+    model = base_models[
+        st.selectbox("Pick a model 👇", list(base_models), key="sc_model", format_func=lambda k: base_models[k].title)
+    ]
     tool = st.selectbox(
         "Compare AMPL with 👇",
         others,
-        index=others.index(tool) if tool in others else others.index("pyomo"),
+        key="sc_tool",
         format_func=lambda t: f"{tools[t]['name']}  ({tools[t]['group']})",
     )
     view = st.radio("Show", list(VIEWS), horizontal=True, label_visibility="collapsed")
@@ -218,9 +227,7 @@ def main():
     variant = model.variants[0] if model.variants else None
     show_change = False
     if variant:
-        show_change = st.toggle(
-            f"✚ {variant.meta['change']}", value=params.get("change") == "1", key=f"sc_change_{model.key}"
-        )
+        show_change = st.toggle(f"✚ {variant.meta['change']}", key="sc_change")
         if show_change:
             st.success(
                 "Highlighted lines are everything that had to be added or changed in each implementation "
