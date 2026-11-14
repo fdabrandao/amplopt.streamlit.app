@@ -46,6 +46,16 @@ def highlight_code(code, language):
     return "".join(lines)
 
 
+def code_panel(code, language, max_height=None):
+    """A plain code box with wrapped lines (st.code in this Streamlit version cannot wrap)."""
+    scroll = f"max-height:{max_height}px;overflow-y:auto;" if max_height else ""
+    return (
+        f'<div style="background:#F8F9FB;border:1px solid #E5E7EB;border-radius:6px;padding:10px 12px;{scroll}'
+        f'font-family:{_MONO};font-size:12.5px;line-height:1.45;color:#1F2937;">'
+        f"{highlight_code(code, language)}</div>"
+    )
+
+
 def _chip(text, color, filled=False):
     style = (
         f"display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;"

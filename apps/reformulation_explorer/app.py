@@ -44,6 +44,7 @@ FLAT_CON_TYPES = {
     "_linle": "Linear \u2A7D",
     "_linrange": "Linear Range",
     "_linfunccon": "Linear Function",
+    "_linfn": "Linear Function",
     "_loga": "LogA",
     "_log": "Log",
     "_max": "Max",
@@ -324,6 +325,54 @@ def read_explorer_model(uploader):
     return mr.read_model(uploader)
 
 
+def show_sections(d, expanded=False, height=200):
+    """Render a dict of model sections (from match_submodel) as expanders; return them as text."""
+    whole = ""
+    for k, v in d.items():
+        if len(v):
+            count = v.count("\n")
+            whole += f"\n\n##  {k} ({count})\n"
+            whole += v
+            with st.expander(f"### {k} ({count})", expanded=expanded):
+                with st.container(height=height):
+                    st.code(v, language="ampl")
+    return whole
+
+
+def sections_as_code(d):
+    """Plain-text version of a dict of model sections, one commented header per section."""
+    parts = []
+    for k, v in d.items():
+        lines = [line.rstrip() for line in v.splitlines() if line.strip()]
+        if lines:
+            parts.append(f"# {k} ({len(lines)})\n" + "\n".join(lines))
+    return "\n\n".join(parts)
+
+
+def model_summary(model: Model):
+    """Counts of variables and constraints in the NL (user) model and the final solver model."""
+
+    def is_final(item):
+        return item and ("final" not in item or item["final"] == 1)
+
+    final_vars = [v for v in model._vars if is_final(v)]
+    flat_cons = {}
+    for con_type, items in model._cons_flat.items():
+        n = sum(1 for i in items if is_final(i))
+        if n:
+            label = FLAT_CON_TYPES.get(con_type, con_type)
+            flat_cons[label] = flat_cons.get(label, 0) + n
+    return {
+        "nl_variables": sum(1 for v in final_vars if v.get("is_from_nl") == 1),
+        "nl_constraints": {k: len(v) for k, v in model._cons_nl.items() if k != "All" and v},
+        "solver_variables": len(final_vars),
+        "solver_integer_variables": sum(
+            1 for v in final_vars if " binary" in v.get("printed", "") or " integer" in v.get("printed", "")
+        ),
+        "solver_constraints": flat_cons,
+    }
+
+
 def main():
     st.title("🔍 MP Reformulation Explorer")
     st.write(
@@ -397,16 +446,7 @@ def main():
     # Write dictionary of entries
     @st.cache_data
     def write_dict(d):
-        whole = ""
-        for k, v in d.items():
-            if len(v):
-                count = v.count("\n")
-                whole += f"\n\n##  {k} ({count})\n"
-                whole += v
-                with st.expander(f"### {k} ({count})"):
-                    with st.container(height=200):
-                        st.code(v, language="ampl")
-        return whole
+        return show_sections(d)
 
     filename_upl = ""
     model_nl = ""

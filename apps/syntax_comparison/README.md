@@ -27,6 +27,12 @@ implementation runs live: the page executes the `setup` and `data` blocks of `am
 (exactly the code shown), sets the chosen solver and solves. URL parameters `?model=<key>&tools=a,b`
 preselect a comparison, so a demo can be bookmarked.
 
+Models with a `[reformulation]` section in `meta.toml` also get a "What the solver receives" view:
+the page asks MP for its reformulation graph (`<solver>_options 'writegraph=... lim:time=0'`,
+`<solver>_auxfiles rc` for readable names) and shows, for each `[[reformulation.focus]]` pattern,
+the rule as written next to what the solver receives. Parsing reuses the Reformulation Explorer
+(`apps/reformulation_explorer`), and the graph can be downloaded and uploaded there.
+
 Each file is split into blocks with `# @block <name>` comments (`setup`, `data`, `sets`, `params`,
 `vars`, `objective`, `constraints`, `solve`). The page aligns blocks by name, so their order
 inside a file does not matter. Markers are stripped before display.
