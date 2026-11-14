@@ -1,6 +1,3 @@
-import os
-import re
-import tempfile
 import time
 from html import escape
 from pathlib import Path
@@ -8,9 +5,8 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from ..reformulation_explorer.app import match_submodel, model_summary, read_explorer_model, sections_as_code
 from .catalog import COMPARISONS, FULL_BLOCKS, MODEL_BLOCKS, load_models, load_tools, load_validation
-from .render import badge, code_panel, info_chip, render_grid
+from .render import badge, info_chip, render_grid
 
 REPO_URL = "https://github.com/fdabrandao/amplopt.streamlit.app"
 SOURCE_URL = f"{REPO_URL}/blob/master/apps/syntax_comparison/comparisons"
@@ -105,20 +101,6 @@ def load_ampl(model_key):
     return model, namespace["ampl"]
 
 
-@st.cache_data(show_spinner=False, max_entries=16)
-def reformulation_graph(model_key, solver):
-    """MP's reformulation graph (JSONL lines) for this model and solver; the solve is stopped at once."""
-    _, ampl = load_ampl(model_key)
-    with tempfile.TemporaryDirectory() as tmp:
-        path = os.path.join(tmp, "graph.jsonl")
-        ampl.option["solver"] = solver
-        ampl.option[f"{solver}_auxfiles"] = "rc"  # keep the model's names in the graph
-        ampl.option[f"{solver}_options"] = f"writegraph={path} lim:time=0"
-        ampl.get_output("solve;")
-        with open(path) as f:
-            return f.read().splitlines()
-
-
 @st.cache_data(show_spinner=False, max_entries=32)
 def solve_ampl(model_key, solver):
     """Run the AMPL implementation shown on the page (setup + data blocks), then solve."""
@@ -188,87 +170,6 @@ def live_solve(model):
         st.code(result["output"].strip() or "(no output)", language="text")
 
 
-def declaration(model, instance):
-    """The AMPL statement that declares `instance` (e.g. "No_Mix['Nut','Oat',2]"), verbatim."""
-    name = instance.split("[")[0]
-    source = "\n".join(b.code for b in model.implementations["ampl"].blocks.values() if b.language == "ampl")
-    match = re.search(
-        rf"^(?:subject to|s\.t\.|minimize|maximize)\s+{re.escape(name)}\b.*?;", source, re.MULTILINE | re.DOTALL
-    )
-    return match.group(0) if match else None
-
-
-def reformulation_view(model):
-    config = model.meta.get("reformulation")
-    if not config:
-        return
-    st.markdown("### 🔧 What the solver receives")
-    st.markdown(
-        """
-        The model is written once. AMPL's [MP library](https://mp.ampl.com/) rewrites it into what
-        the chosen solver accepts: native logical and indicator constraints for solvers that support
-        them, an equivalent linear model with binary variables for solvers that don't.
-        """
-    )
-    solver = st.radio(
-        "Solver",
-        config["solvers"],
-        format_func=lambda s: SOLVER_NAMES.get(s, s),
-        horizontal=True,
-        key=f"sc_reform_{model.key}",
-    )
-    name = SOLVER_NAMES.get(solver, solver)
-    with st.spinner(f"Generating the {name} model..."):
-        lines = reformulation_graph(model.key, solver)
-    graph = read_explorer_model(lines)
-    summary = model_summary(graph)
-
-    nl_cons = summary["nl_constraints"]
-    left, right = st.columns(2)
-    with left:
-        st.markdown("**In the AMPL model**")
-        st.markdown(
-            f"- Variables: **{summary['nl_variables']}**\n"
-            f"- Constraints: **{sum(nl_cons.values())}** "
-            f"({', '.join(f'{n} {kind.lower()}' for kind, n in nl_cons.items())})"
-        )
-    with right:
-        st.markdown(f"**Sent to {name}**")
-        cons = "\n".join(f"    - {label}: {n}" for label, n in sorted(summary["solver_constraints"].items()))
-        st.markdown(
-            f"- Variables: **{summary['solver_variables']}** "
-            f"({summary['solver_integer_variables']} binary or integer)\n"
-            f"- Constraints: **{sum(summary['solver_constraints'].values())}**\n{cons}"
-        )
-
-    focus = st.selectbox(
-        "Look at one rule 👇",
-        config.get("focus", []),
-        format_func=lambda f: f["label"],
-        key=f"sc_focus_{model.key}",
-    )
-    if focus:
-        _, flat = match_submodel(graph, focus["pattern"], False, False)
-        left, right = st.columns(2)
-        with left:
-            st.caption("As written in model.mod")
-            st.html(code_panel(declaration(model, focus["pattern"]) or "(not found)", "ampl"))
-        with right:
-            st.caption(f"What {name} receives for `{focus['pattern']}`, generated automatically")
-            st.html(code_panel(sections_as_code(flat.get_data()) or "(no match)", "ampl", max_height=420))
-
-    st.download_button(
-        f"Download the full {name} reformulation graph (JSONL)",
-        "\n".join(lines) + "\n",
-        file_name=f"{model.key}_{solver}_graph.jsonl",
-        key=f"sc_graph_{model.key}_{solver}",
-    )
-    st.caption(
-        "Upload it to the [Reformulation Explorer](/Reformulation_Explorer) page to browse every "
-        "variable and constraint."
-    )
-
-
 def talking_points(model):
     points = model.meta.get("talking_points", [])
     if not points:
@@ -334,9 +235,6 @@ def main():
 
     st.markdown("---")
     live_solve(model)
-    if model.meta.get("reformulation"):
-        st.markdown("---")
-        reformulation_view(model)
 
     with st.expander("How this comparison was validated"):
         versions = validation.get("versions", {})
