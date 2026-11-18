@@ -32,39 +32,72 @@ label = "run this exact model; switching is one line of code"
 
 [[headline]]
 value = "7 tools"
-label = "implement it here, all checked to reach the same optimal cost"
+label = "implement this same model on this page"
 
-# For the sales rep: what to point at, and what to say (Markdown).
-[[talking_points]]
-point = "the *Constraints* row, AMPL column."
-say = """Each business rule is one line that reads like the rule itself: at most 4 products a week,
-Nut and Oat never in the same week, produce when stock falls below the reorder point
-(`Inv < reorder ==> Make > 0`). The other columns express the same rules through extra on/off
-variables (`run`), linking constraints and, for the reorder rule, its contrapositive."""
+# Notes shown next to the code (also the presenter's script). `at` is "header" or a block name
+# (sets, params, vars, objective, constraints, data, solve); `tools` limits a note to comparisons
+# with those tools. Inline `code` is allowed.
+[[notes]]
+at = "header"
+text = """The AMPL model runs unchanged with HiGHS, Gurobi, CPLEX, Xpress, CBC or SCIP: switching
+solvers is one line (`ampl.option["solver"]`)."""
 
-[[talking_points]]
-point = "the *Objective* row."
-say = """AMPL writes `abs(...)` and `max {...}` directly in the objective. gurobipy needs helper
-variables because `abs_()` and `max_()` accept variables only. Pyomo, PuLP and highspy rewrite them
-by hand as extra constraints. docplex and xpress accept them, each for its own solver."""
+[[notes]]
+at = "header"
+tools = ["gurobipy", "docplex", "xpress", "highspy"]
+text = """Each solver-native API is tied to its own solver: using another solver means rewriting the
+model with another API."""
 
-[[talking_points]]
-point = "the *Solver* chips."
-say = """This exact AMPL model runs with HiGHS, Gurobi, CPLEX, Xpress, CBC and SCIP, and switching
-is one line. Each solver-native API is tied to its own solver, so switching solvers means rewriting
-the model."""
+[[notes]]
+at = "objective"
+text = """AMPL writes `abs(...)` (week-to-week change) and `max {...}` (busiest week) directly in the
+objective."""
 
-[[talking_points]]
-point = "*Add a new rule*: Volume discounts."
-say = """Purchasing negotiates a volume discount: units beyond 1,000 a week cost 15% less, beyond 2,500
-30% less. In AMPL it is one piecewise-linear term in the objective, written as breakpoints and prices, like
-the price sheet. A falling price makes the cost concave (harder to solve); AMPL handles that without
-any reformulation by the modeler, whichever solver is chosen.
-The highlighted lines show what the other tool needs: cost-curve points computed in Python, a
-piecewise-linear call per variable, or price segments with binaries written by hand."""
+[[notes]]
+at = "objective"
+tools = ["gurobipy"]
+text = """gurobipy's `abs_()` and `max_()` accept variables only, so the differences and weekly loads
+first get their own variables and defining constraints."""
 
-[[talking_points]]
-point = "the *Model + data loading* view."
-say = """Every implementation reads the same CSV files and reaches the same optimal plan, so the
-difference is only in how the model is written. The AMPL model file has no data-handling code at all;
+[[notes]]
+at = "objective"
+tools = ["docplex", "xpress"]
+text = """`abs` and `max` are accepted in the objective, as functions of this solver's API."""
+
+[[notes]]
+at = "objective"
+tools = ["pyomo", "pulp", "highspy"]
+text = """`abs` and `max` are rewritten by hand: extra variables and two or more constraints for each
+term."""
+
+[[notes]]
+at = "constraints"
+text = """Each business rule is one statement that reads like the rule: at most 4 products a week
+(`count ... <= max_products`), conflicting products never in the same week (`or`), produce next week
+when stock falls below the reorder point (`Inv < reorder ==> Make > 0`)."""
+
+[[notes]]
+at = "constraints"
+tools = ["gurobipy", "docplex", "xpress"]
+text = """The rules go through on/off variables (`run`) linked to the quantities. The reorder rule is
+written as an indicator constraint on its contrapositive: not running next week means stock at or
+above the reorder point."""
+
+[[notes]]
+at = "constraints"
+tools = ["highspy", "pulp"]
+text = """The rules go through on/off variables (`run`) linked to the quantities. The reorder rule is
+linearized by hand as a big-M constraint on its contrapositive: not running next week means stock at
+or above the reorder point."""
+
+[[notes]]
+at = "constraints"
+tools = ["pyomo"]
+text = """Pyomo states the rules as disjunctions (each product-week running or idle) and logical
+constraints, then reformulates them with `gdp.bigm` before solving. The reorder rule is written as
+its contrapositive."""
+
+[[notes]]
+at = "data"
+text = """Every implementation reads the same CSV files. The AMPL model file has no data-handling code;
 the data is attached with a few amplpy calls."""

@@ -11,11 +11,11 @@ comparisons/
   tools.toml                  # registry of tools (name, group, files, packages)
   validation.json             # written by validate.py: objectives, gaps, library versions (not shown)
   <model>/
-    meta.toml                 # title, summary, expected objective, AMPL solvers, not_supported
+    meta.toml                 # title, summary, headline facts, notes, expected objective, AMPL solvers
     model.mod, ampl_model.py  # AMPL model + data loading/solve with amplpy
     <tool>_model.py           # one file per tool (pyomo, pulp, gurobipy, docplex, xpress, highspy)
     data/*.csv                # shared input data, read by every implementation
-app.py                        # Streamlit page (selectors, headline facts, code grid)
+app.py                        # Streamlit page (selectors, headline facts, code grid with notes)
 catalog.py                    # loads tools/models/blocks/validation.json (no Streamlit)
 render.py                     # HTML for the color-banded, aligned code grid
 validate.py
@@ -30,6 +30,12 @@ on its own: it adds one change to that model (e.g. `production_rules_volume_disc
 discounts). The page lists a model's changes under "Add a new rule" (by `change_name`) and
 highlights, per tool, the lines that differ from the base model. Variants are validated like any
 other model.
+
+Notes (`[[notes]]` in `meta.toml`) appear as sticky notes just above the code they describe, so
+the page works both as a guided demo and on its own; "📝 Show notes" (URL `notes=0`) hides them.
+Each note has `at` ("header" or a block name) and `text`; a note without `tools` sits in the AMPL
+column, and one with `tools = [...]` sits in the other column when one of those tools is selected.
+A rule change (variant) adds its own notes to the base model's.
 
 ## Adding a tool
 

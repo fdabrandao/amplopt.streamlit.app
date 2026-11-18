@@ -19,6 +19,45 @@ ampl_solvers = ["gurobi", "cplex", "xpress", "highs", "cbc", "scip"]
 # Tools that cannot express this model: tool -> reason shown on the page.
 [not_supported]
 
+# Notes shown next to the code (also the presenter's script). `at` is "header" or a block name
+# (sets, params, vars, objective, constraints, data, solve); `tools` limits a note to comparisons
+# with those tools. Inline `code` is allowed.
+[[notes]]
+at = "objective"
+text = """Volume discount: one piecewise-linear term, `<< breakpoints; prices >> Make[p,t]`, written
+like the price sheet. A falling price makes the cost concave; AMPL handles that without any
+reformulation by the modeler, whichever solver is used."""
+
+[[notes]]
+at = "objective"
+tools = ["gurobipy"]
+text = """`setPWLObj()` takes (x, y) points, so the tiers are first turned into cost-curve points in
+Python (`cost_curve`). It is called after `setObjective()`, which would otherwise reset it."""
+
+[[notes]]
+at = "objective"
+tools = ["docplex"]
+text = """`piecewise_as_slopes()` takes (slope, breakpoint) pairs: one piecewise-linear function per
+product, applied to each quantity."""
+
+[[notes]]
+at = "objective"
+tools = ["xpress"]
+text = """`xp.pwl()` takes one linear piece per interval, so each piece's starting cost is computed in
+Python (`discounted_cost`)."""
+
+[[notes]]
+at = "objective"
+tools = ["highspy", "pulp"]
+text = """No piecewise-linear support: each lot is split into price segments by hand, with binaries
+forcing each segment to fill before the next, cheaper one is used."""
+
+[[notes]]
+at = "objective"
+tools = ["pyomo"]
+text = """A `Piecewise` component links a cost variable to `Make`. Because the cost is concave, the
+modeler picks a representation with binaries (`pw_repn`)."""
+
 # Reviewer notes explaining non-obvious choices in an implementation (not shown on the page).
 [internal_notes]
 pulp = "Solved with PuLP's HiGHS interface: the CBC 2.10.3 build bundled with PuLP 3.3.2 stops at a suboptimal plan on the base model."

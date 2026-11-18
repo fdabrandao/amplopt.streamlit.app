@@ -42,23 +42,32 @@ label = "Python tools compared here cannot express this model"
 value = "3 solvers"
 label = "Ipopt, Knitro and Gurobi run the same AMPL model"
 
-# For the sales rep: what to point at, and what to say (Markdown).
-[[talking_points]]
-point = "the *Objective* row."
-say = """The loss is written as the formula, with `log`, `exp` and sums. AMPL passes it to
-nonlinear solvers and computes the derivatives they need automatically."""
+# Notes shown next to the code (also the presenter's script). `at` is "header" or a block name
+# (sets, params, vars, objective, constraints, data, solve); `tools` limits a note to comparisons
+# with those tools. Inline `code` is allowed.
+[[notes]]
+at = "header"
+text = """The same AMPL model runs with Ipopt (open source), Knitro and Gurobi: switching solvers is
+one line."""
 
-[[talking_points]]
-point = "the docplex, highspy or PuLP columns."
-say = """These tools model linear (docplex and highspy also quadratic) problems, so this model
-cannot be written with them."""
+[[notes]]
+at = "objective"
+text = """The loss is written as the formula, with `log`, `exp` and sums. AMPL passes it to nonlinear
+solvers and computes the derivatives they need automatically."""
 
-[[talking_points]]
-point = "the gurobipy and xpress columns."
-say = """Both can express it, each for its own solver: Gurobi's global nonlinear solver, or
-Xpress with its nonlinear solver license."""
+[[notes]]
+at = "objective"
+tools = ["gurobipy"]
+text = """Gurobi's nonlinear functions come from `gurobipy.nlfunc`; the model runs on Gurobi only."""
 
-[[talking_points]]
-point = "the *Solver* chip in the AMPL column."
-say = """The same AMPL model runs on Ipopt (open source), Knitro and Gurobi; switching is one
-line."""
+[[notes]]
+at = "objective"
+tools = ["xpress"]
+text = """`xp.log` and `xp.exp` are Xpress functions; the model runs on Xpress, with its nonlinear
+solver license."""
+
+[[notes]]
+at = "objective"
+tools = ["pyomo"]
+text = """Pyomo writes the formula in a similar way, with `pyo.log` and `pyo.exp`, and passes it to a
+nonlinear solver (Ipopt here)."""

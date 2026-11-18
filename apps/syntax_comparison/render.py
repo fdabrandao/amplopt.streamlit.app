@@ -1,5 +1,6 @@
 """HTML rendering of the side-by-side, color-banded code grid (inline styles only)."""
 
+import re
 from html import escape
 
 from pygments import highlight
@@ -23,6 +24,7 @@ _FORMATTER = HtmlFormatter(nowrap=True, noclasses=True, style="friendly")
 _MONO = "'Source Code Pro', 'SFMono-Regular', Menlo, Consolas, monospace"
 CODE_FONT_SIZE = "13.5px"  # two columns at a booth monitor: readable from a step away
 CHANGED_COLOR = "#16A34A"  # lines added or modified by a model change
+NOTE_COLOR = "#D97706"
 
 
 def _tint(hex_color, alpha):
@@ -57,16 +59,38 @@ def highlight_code(code, language, changed=frozenset()):
 
 
 def headline_tiles(items, accent="#F63366"):
-    """Large 'value + label' facts for booth visitors (items: list of {value, label})."""
+    """Short 'value + label' facts shown above the code (items: list of {value, label})."""
     tiles = "".join(
-        f'<div style="flex:1 1 220px;background:#F7F8FA;border-radius:10px;border-top:4px solid {accent};'
-        'padding:14px 18px 16px 18px;">'
-        f'<div style="font-size:34px;font-weight:800;line-height:1.1;color:#111827;">{escape(item["value"])}</div>'
-        f'<div style="font-size:15px;line-height:1.35;color:#374151;margin-top:6px;">{escape(item["label"])}</div>'
+        f'<div style="flex:1 1 200px;display:flex;align-items:baseline;gap:10px;background:#F7F8FA;'
+        f'border-radius:8px;border-left:4px solid {accent};padding:8px 14px;">'
+        f'<div style="font-size:22px;font-weight:800;line-height:1.1;color:#111827;white-space:nowrap;">'
+        f'{escape(item["value"])}</div>'
+        f'<div style="font-size:13.5px;line-height:1.3;color:#374151;">{escape(item["label"])}</div>'
         "</div>"
         for item in items
     )
-    return f'<div style="display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 8px 0;">{tiles}</div>'
+    return f'<div style="display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 6px 0;">{tiles}</div>'
+
+
+def _inline(text):
+    """Escape a note and render `code` spans."""
+    html = escape(" ".join(text.split()))
+    return re.sub(
+        r"`([^`]+)`",
+        lambda m: f'<code style="font-family:{_MONO};font-size:.9em;background:rgba(120,53,15,.08);'
+        f'padding:0 3px;border-radius:3px;color:#7C2D12;">{m.group(1)}</code>',
+        html,
+    )
+
+
+def note_cell(texts):
+    """A sticky-note style cell with one paragraph per note."""
+    body = "".join(f'<div style="margin:2px 0;">{_inline(t)}</div>' for t in texts)
+    return (
+        f'<div style="background:#FFFBEB;border:1px solid {_tint(NOTE_COLOR, 0.25)};border-left:4px solid {NOTE_COLOR};'
+        'border-radius:6px;padding:6px 10px 6px 10px;font-size:13.5px;line-height:1.45;color:#451A03;'
+        f'display:flex;gap:8px;"><div>📝</div><div>{body}</div></div>'
+    )
 
 
 def _chip(text, color, filled=False):
@@ -113,33 +137,45 @@ def render_grid(columns, block_names):
     """columns: list of dicts with keys
     - header: HTML for the column header
     - blocks: dict block name -> Block (ignored when `not_supported` is set)
-    - not_supported: optional reason (renders one card spanning all block rows)
+    - not_supported: optional reason (renders one card in place of the code)
     - changed: optional dict block name -> indexes of lines to highlight as changed
+    - notes: optional dict "header" or block name -> list of note texts shown in that column,
+      just above the block (or just below the header)
     """
     n = len(columns)
+    has_notes = lambda at: any(col.get("notes", {}).get(at) for col in columns)
+    rows = [("header", None)] + ([("note", "header")] if has_notes("header") else [])
+    for name in block_names:
+        rows += ([("note", name)] if has_notes(name) else []) + [("block", name)]
+
     cells = []
     for c, col in enumerate(columns, start=1):
-        cells.append(
-            f'<div style="grid-column:{c};grid-row:1;padding:4px 2px 8px 2px;'
-            f'border-bottom:2px solid #E5E7EB;min-width:0;">{col["header"]}</div>'
-        )
-        if col.get("not_supported"):
-            cells.append(
-                f'<div style="grid-column:{c};grid-row:2 / span {len(block_names)};border:1px dashed #D1D5DB;'
-                'border-radius:6px;padding:24px 16px;color:#4B5563;background:#F9FAFB;align-self:start;">'
-                f'<div style="font-weight:700;margin-bottom:6px;">Not supported by {escape(col["name"])}</div>'
-                f'<div style="font-size:13px;">{escape(col["not_supported"])}</div></div>'
-            )
-            continue
-        for r, name in enumerate(block_names, start=2):
-            cells.append(
-                f'<div style="grid-column:{c};grid-row:{r};display:flex;min-width:0;">'
-                f'<div style="flex:1;min-width:0;display:flex;flex-direction:column;">'
-                f"{_code_cell(name, col['blocks'].get(name), col.get('changed', {}).get(name, frozenset()))}"
-                "</div></div>"
-            )
+        first_block = True
+        for r, (kind, name) in enumerate(rows, start=1):
+            place = f"grid-column:{c};grid-row:{r};min-width:0;"
+            if kind == "header":
+                cells.append(f'<div style="{place}padding:4px 2px 6px 2px;border-bottom:2px solid #E5E7EB;">{col["header"]}</div>')
+            elif kind == "note":
+                texts = col.get("notes", {}).get(name)
+                if texts:
+                    cells.append(f'<div style="{place}">{note_cell(texts)}</div>')
+            elif col.get("not_supported"):
+                if first_block:
+                    cells.append(
+                        f'<div style="{place}border:1px dashed #D1D5DB;border-radius:6px;padding:24px 16px;'
+                        'color:#4B5563;background:#F9FAFB;align-self:start;">'
+                        f'<div style="font-weight:700;margin-bottom:6px;">Not supported by {escape(col["name"])}</div>'
+                        f'<div style="font-size:13px;">{escape(col["not_supported"])}</div></div>'
+                    )
+                first_block = False
+            else:
+                cells.append(
+                    f'<div style="{place}display:flex;"><div style="flex:1;min-width:0;display:flex;flex-direction:column;">'
+                    f"{_code_cell(name, col['blocks'].get(name), col.get('changed', {}).get(name, frozenset()))}"
+                    "</div></div>"
+                )
     grid_style = (
         f"display:grid;grid-template-columns:repeat({n}, minmax(0, 1fr));"
-        "column-gap:14px;row-gap:10px;align-items:stretch;"
+        "column-gap:14px;row-gap:8px;align-items:stretch;"
     )
     return f'<div style="{grid_style}">{"".join(cells)}</div>'
