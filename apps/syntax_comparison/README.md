@@ -1,31 +1,29 @@
 # AMPL syntax comparison
 
 The same optimization models written in AMPL and in other Python modeling tools, shown side by
-side on the Streamlit page. Only AMPL runs live in the app; the other implementations are static
-files that `validate.py` checks offline.
+side on the Streamlit page. The page only shows code: nothing is solved in the app.
+`validate.py` runs every implementation offline and checks that they reach the same optimal objective.
 
 ## Layout
 
 ```
 comparisons/
   tools.toml                  # registry of tools (name, group, files, packages)
-  validation.json             # written by validate.py: objectives + library versions
+  validation.json             # written by validate.py: objectives, gaps, library versions (not shown)
   <model>/
     meta.toml                 # title, summary, expected objective, AMPL solvers, not_supported
     model.mod, ampl_model.py  # AMPL model + data loading/solve with amplpy
     <tool>_model.py           # one file per tool (pyomo, pulp, gurobipy, docplex, xpress, highspy)
     data/*.csv                # shared input data, read by every implementation
-app.py                        # Streamlit page (selectors, grid, badges, live AMPL solve)
+app.py                        # Streamlit page (selectors, headline facts, code grid)
 catalog.py                    # loads tools/models/blocks/validation.json (no Streamlit)
 render.py                     # HTML for the color-banded, aligned code grid
 validate.py
 requirements-validate.txt     # pinned validation environment (not the app's requirements)
 ```
 
-The page reads everything from `comparisons/`; nothing is hard-coded per model. Only the AMPL
-implementation runs live: the page executes the `setup` and `data` blocks of `ampl_model.py`
-(exactly the code shown), sets the chosen solver and solves. URL parameters `?model=<key>&tool=<tool>&change=<variant>`
-preselect a comparison, so a demo can be bookmarked.
+The page reads everything from `comparisons/`; nothing is hard-coded per model. URL parameters
+`?model=<key>&tool=<tool>&change=<variant>` preselect a comparison, so a demo can be bookmarked.
 
 A model folder whose `meta.toml` sets `variant_of = "<model>"` and `change = "<label>"` is not listed
 on its own: it adds one change to that model (e.g. `production_rules_volume_discount` adds volume
@@ -53,8 +51,7 @@ Options: `--model <name>` and `--tool <name>` (repeatable), `--time-limit <secon
 Each implementation, and the AMPL model with each solver in `ampl_solvers`, runs in its own
 subprocess. The time limit is applied by `validate.py` to the tool's own model object right before
 its solve block (the code on the page has none). A solve that reaches it without proving optimality
-is recorded as `unverified` with the best objective, bound and gap, and shown that way on the page;
-it is not counted as a failure.
+is recorded as `unverified` with the best objective, bound and gap; it is not counted as a failure.
 The script exits with status 1 if any implementation misses the expected objective.
 The free pip licenses of gurobipy, cplex and xpress limit model size (CPLEX Community Edition:
 1000 variables and 1000 constraints), so comparison instances stay within those limits.

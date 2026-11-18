@@ -1,25 +1,13 @@
-import time
 from html import escape
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
 
-from .catalog import COMPARISONS, FULL_BLOCKS, MODEL_BLOCKS, changed_lines, load_models, load_tools, load_validation
-from .render import badge, headline_tiles, info_chip, render_grid
+from .catalog import COMPARISONS, FULL_BLOCKS, MODEL_BLOCKS, changed_lines, load_models, load_tools
+from .render import headline_tiles, info_chip, render_grid
 
 REPO_URL = "https://github.com/fdabrandao/amplopt.streamlit.app"
 SOURCE_URL = f"{REPO_URL}/blob/master/apps/syntax_comparison/comparisons"
-SOLVER_NAMES = {
-    "highs": "HiGHS",
-    "gurobi": "Gurobi",
-    "cplex": "CPLEX",
-    "xpress": "Xpress",
-    "cbc": "CBC",
-    "scip": "SCIP",
-    "ipopt": "Ipopt",
-    "knitro": "Knitro",
-}
 VIEWS = {"Model only": MODEL_BLOCKS, "Model + data loading": FULL_BLOCKS}
 
 
@@ -32,7 +20,7 @@ def _fingerprint():
 @st.cache_resource(max_entries=1)
 def _load_catalog(fingerprint):
     tools = load_tools()
-    return tools, load_models(tools), load_validation()
+    return tools, load_models(tools)
 
 
 def get_catalog():
@@ -49,54 +37,14 @@ def widen_page():
     )
 
 
-def _gap(entry):
-    return f"gap {entry['gap']:.2%}" if "gap" in entry else "gap unknown"
-
-
-def column_header(tool, info, model, validation, block_names, changed_loc=None):
-    result = validation.get("models", {}).get(model.key, {}).get(tool, {})
-    versions = validation.get("versions", {})
-    minutes = f"{validation.get('time_limit', 600) / 60:g} min"
-    amber = "color:#92400E;font-size:11.5px;margin:2px 0 4px 0;"
+def column_header(tool, info, model, block_names, changed_loc=None):
     html = [
         f'<div style="font-weight:700;font-size:17px;color:#111827;">{escape(info["name"])}</div>',
         f'<div style="color:#6B7280;font-size:12px;margin-bottom:6px;">{escape(info["group"])}</div>',
     ]
     if model.not_supported(tool):
         return "".join(html)
-
-    limited = model.meta.get("license_limited", {}).get(tool)
-    if result.get("status") == "ok":
-        html.append(badge(f"✓ same optimal objective: {result['objective']:,.2f}"))
-    elif limited:
-        html.append(badge("⚠ not validated: license-limited", ok=False))
-        html.append(f'<div style="{amber}">{escape(limited)}</div>')
-    elif result.get("status") == "unverified":
-        html.append(badge(f"⚠ unverified: optimality not proven in {minutes}", ok=False))
-        if "objective" in result:
-            html.append(
-                f'<div style="{amber}">Best objective found: {result["objective"]:,.2f} '
-                f"({_gap(result)} when the {minutes} time limit was reached)</div>"
-            )
-    else:
-        html.append(badge("not validated", ok=False))
-    html.append("<br>")
-    package = info["packages"][0]
-    if versions.get(package):
-        html.append(info_chip(f"{package} {versions[package]}"))
     html.append(info_chip(f"Solver: {info['solver']}"))
-    solvers_ok = [SOLVER_NAMES.get(s, s) for s, r in result.get("solvers", {}).items() if r.get("status") == "solved"]
-    if solvers_ok:
-        html.append(
-            f'<div style="color:#15803D;font-size:11.5px;margin-top:2px;">'
-            f"Same model validated with {escape(', '.join(solvers_ok))}</div>"
-        )
-    solvers_open = [
-        f"{SOLVER_NAMES.get(s, s)} ({_gap(r)})" for s, r in result.get("solvers", {}).items() if r.get("status") == "unverified"
-    ]
-    if solvers_open:
-        html.append(f'<div style="{amber}">Optimality not proven in {minutes}: {escape(", ".join(solvers_open))}</div>')
-
     impl = model.implementations[tool]
     loc = sum(impl.blocks[b].lines_of_code for b in block_names if b in impl.blocks)
     links = " · ".join(
@@ -110,105 +58,6 @@ def column_header(tool, info, model, validation, block_names, changed_loc=None):
     return "".join(html)
 
 
-def load_ampl(model_key):
-    """Run the AMPL setup and data-loading blocks shown on the page; return (model, ampl)."""
-    _, models, _ = get_catalog()
-    model = next(m for m in models if m.key == model_key)
-    blocks = model.implementations["ampl"].blocks
-    script = model.path / "ampl_model.py"
-    namespace = {"__file__": str(script), "__name__": "__comparison__"}
-    exec(compile(blocks["setup"].code + "\n" + blocks["data"].code, str(script), "exec"), namespace)
-    return model, namespace["ampl"]
-
-
-@st.cache_data(show_spinner=False, max_entries=32)
-def solve_ampl(model_key, solver):
-    """Run the AMPL implementation shown on the page (setup + data blocks), then solve."""
-    model, ampl = load_ampl(model_key)
-    start = time.perf_counter()
-    output = ""
-    warm = model.meta.get("warm_start", {}).get(solver)
-    if warm:  # start from another solver's solution (meta.toml [warm_start])
-        ampl.option["solver"] = warm
-        output = ampl.get_output("solve;")
-    ampl.option["solver"] = solver
-    output += ampl.get_output("solve;")
-    seconds = time.perf_counter() - start
-    _, objective = next(iter(ampl.get_objectives()))
-    tables = {}
-    for name, caption in model.meta.get("display", {}).items():
-        values = ampl.get_data(name).to_pandas().iloc[:, 0]
-        if isinstance(values.index, pd.MultiIndex):
-            table = values.unstack().fillna(0)
-            table = table.loc[(table.abs() > 1e-9).any(axis=1)]  # hide all-zero rows (e.g. unused lanes)
-            if isinstance(table.index, pd.MultiIndex):  # e.g. (orig, dest) lanes -> "orig → dest"
-                table.index = [" → ".join(map(str, key)) for key in table.index]
-        else:
-            table = values.to_frame(caption)
-        table.index.name, table.columns.name = None, None
-        tables[caption] = table.round(2)
-    return {
-        "objective": objective.value(),
-        "status": ampl.solve_result,
-        "seconds": seconds,
-        "output": output,
-        "tables": tables,
-    }
-
-
-def live_solve(model):
-    st.markdown("### ▶️ Run the AMPL model live")
-    solvers = model.meta.get("ampl_solvers", ["highs"])
-    col1, col2 = st.columns([1, 2], vertical_alignment="bottom")
-    with col1:
-        solver = st.selectbox(
-            "Solver",
-            solvers,
-            format_func=lambda s: SOLVER_NAMES.get(s, s),
-            key=f"sc_solver_{model.key}",
-        )
-    warm = model.meta.get("warm_start", {}).get(solver)
-    with col2:
-        if warm:
-            st.code(
-                f'ampl.solve(solver="{warm}")  # starting point\nampl.solve(solver="{solver}")',
-                language="python",
-            )
-        else:
-            st.code(f'ampl.option["solver"] = "{solver}"  # the only line that changes', language="python")
-    if warm:
-        st.caption(
-            f"{SOLVER_NAMES.get(solver, solver)} starts from the {SOLVER_NAMES.get(warm, warm)} solution "
-            "and proves it is the global optimum (same as in validation)."
-        )
-    if model.meta.get("solve_note") and solver in model.meta.get("slow_solvers", []):
-        st.warning(f"⏱ {' '.join(model.meta['solve_note'].split())}")
-    if st.button(f"Solve with AMPL + {SOLVER_NAMES.get(solver, solver)}", type="primary"):
-        st.session_state["sc_solved"] = (model.key, solver)
-
-    if st.session_state.get("sc_solved") != (model.key, solver):
-        st.caption("Runs the AMPL model and data loading code shown above (only `ampl.solve()` is replaced).")
-        return
-    with st.spinner(f"Solving with {SOLVER_NAMES.get(solver, solver)}..."):
-        result = solve_ampl(model.key, solver)
-
-    expected = model.meta["expected_objective"]
-    same = abs(result["objective"] - expected) <= model.meta.get("rel_tol", 1e-6) * max(1.0, abs(expected))
-    c1, c2, c3 = st.columns(3)
-    c1.metric(model.meta.get("objective_label", "Objective"), f"{result['objective']:,.2f}")
-    c2.metric("Solve result", result["status"])
-    c3.metric("Time (incl. model generation)", f"{result['seconds']:.1f} s")
-    if result["status"] == "solved" and same:
-        st.success("✓ Same optimal objective as every other implementation on this page.")
-    else:
-        st.warning(f"Objective differs from the validated value ({expected:,.2f}).")
-    for caption, table in result["tables"].items():
-        st.markdown(f"**{caption}**")
-        st.dataframe(table, use_container_width=True)
-    with st.expander("Solver output"):
-        st.code(result["output"].strip() or "(no output)", language="text")
-
-
 def talking_points(model):
     points = model.meta.get("talking_points", [])
     if not points:
@@ -219,14 +68,14 @@ def talking_points(model):
 
 def main():
     widen_page()
-    tools, models, validation = get_catalog()
+    tools, models = get_catalog()
 
     st.title("⚖️ Modeling Syntax Comparison")
     st.markdown(
         """
         The same optimization models written in **AMPL** and in other Python modeling tools.
-        Every implementation reads the same CSV data and was checked to reach the **same optimal
-        objective**, so the only difference is how the model is written.
+        Every implementation reads the same CSV data and solves the same problem, so the only
+        difference is how the model is written.
         Each concept (sets, parameters, variables, objective, constraints) has its own color, so you
         can match the code across the two columns.
         """
@@ -282,8 +131,7 @@ def main():
         if variant:
             st.success(
                 f"**{variant.meta['change']}.** Highlighted lines are everything that had to be added or "
-                "changed in each implementation for this rule. Both versions were validated to the same "
-                "optimal objective."
+                "changed in each implementation for this rule."
             )
     st.query_params.update({"model": model.key, "tool": tool, "change": variant.key if variant else "none"})
     show_change = variant is not None
@@ -311,7 +159,7 @@ def main():
         columns.append(
             {
                 "name": info["name"],
-                "header": column_header(t, info, shown_model, validation, block_names, changed_loc),
+                "header": column_header(t, info, shown_model, block_names, changed_loc),
                 "blocks": impl.blocks if impl else {},
                 "not_supported": shown_model.not_supported(t),
                 "changed": changed,
@@ -319,26 +167,8 @@ def main():
         )
     st.html(render_grid(columns, block_names))
 
-    st.markdown("---")
-    live_solve(shown_model)
-
-    with st.expander("How this comparison was validated"):
-        versions = validation.get("versions", {})
-        st.markdown(
-            f"""
-            - Only the AMPL model runs live on this page; the other implementations are shown as static
-              files. `validate.py` runs all of them offline and checks that they reach the same
-              optimal objective (last run: {validation.get('generated', 'n/a')}, Python {validation.get('python', 'n/a')}).
-            - Each solve has a {validation.get('time_limit', 600) / 60:g}-minute time limit. A solve that reaches it
-              before proving optimality is marked *unverified*, with the remaining optimality gap.
-            - Library versions: {', '.join(f'`{k} {v}`' for k, v in versions.items() if v)}.
-            - Line counts exclude blank lines and comments, and cover the blocks currently shown.
-            """
-        )
-        for solver, warm in shown_model.meta.get("warm_start", {}).items():
-            st.markdown(
-                f"- AMPL + {SOLVER_NAMES.get(solver, solver)} starts from the {SOLVER_NAMES.get(warm, warm)} "
-                "solution, then proves global optimality."
-            )
-
+    st.caption(
+        "The implementations are run and compared offline (validate.py in the source code). "
+        "Line counts exclude blank lines and comments, and cover the blocks shown."
+    )
     st.markdown(f"#### [[App Source Code on GitHub]({REPO_URL}/tree/master/apps/syntax_comparison)]")

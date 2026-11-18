@@ -12,22 +12,9 @@ lot-sizing model, the plan must follow five business rules: minimum lot sizes, a
 # Objective shared by every implementation (validated by validate.py).
 expected_objective = 36234.3967
 rel_tol = 1e-6
-objective_label = "Total cost"
 
 # Solvers AMPL is validated with, using the exact same model.mod (only `option solver` changes).
 ampl_solvers = ["gurobi", "cplex", "xpress", "highs", "cbc", "scip"]
-
-# Live-solve warning shown when one of these solvers is selected.
-slow_solvers = ["highs", "cbc", "scip"]
-solve_note = """
-Discounts make the cost concave, which makes this model much harder to solve. In validation,
-Gurobi, CPLEX and Xpress took under 20 seconds, HiGHS about 2.5 minutes and SCIP about 7 minutes;
-CBC had not proven optimality after 10 minutes.
-"""
-
-# Variables shown after a live AMPL solve: name -> caption.
-[display]
-Make = "Production plan (units per week)"
 
 # Tools that cannot express this model: tool -> reason shown on the page.
 [not_supported]

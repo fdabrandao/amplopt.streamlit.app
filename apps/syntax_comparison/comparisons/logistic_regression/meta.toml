@@ -9,20 +9,15 @@ nonlinear model.
 # Objective shared by every implementation (validated by validate.py).
 expected_objective = 16.902616
 rel_tol = 1e-5
-objective_label = "Log-loss"
 
 # Solvers AMPL is validated with, using the exact same model.mod (only `option solver` changes).
 ampl_solvers = ["ipopt", "knitro", "gurobi"]
 
-# AMPL solver -> solver whose solution is used as its starting point (validation and live solve).
+# AMPL solver -> solver whose solution is used as its starting point (validation).
 # Gurobi's global search proves optimality in about 15 s from the Ipopt solution; from a cold start
 # the Gurobi 13.0.3 bundled with AMPL (latest module, 20261029) leaves an ~12% gap after 10 minutes.
 [warm_start]
 gurobi = "ipopt"
-
-# Variables shown after a live AMPL solve: name -> caption.
-[display]
-w = "Fitted weights"
 
 # Tools that cannot express this model: tool -> reason shown on the page.
 [not_supported]
@@ -64,6 +59,6 @@ say = """Both can express it, each for its own solver: Gurobi's global nonlinear
 Xpress with its nonlinear solver license."""
 
 [[talking_points]]
-point = "the solver selector below."
+point = "the *Solver* chip in the AMPL column."
 say = """The same AMPL model runs on Ipopt (open source), Knitro and Gurobi; switching is one
-line. The local solvers finish in well under a second; Gurobi also proves global optimality."""
+line."""

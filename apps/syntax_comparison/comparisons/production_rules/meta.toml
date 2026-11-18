@@ -9,14 +9,9 @@ lot-sizing model, the plan must follow five business rules: minimum lot sizes, a
 # Objective shared by every implementation (validated by validate.py).
 expected_objective = 37017.1014
 rel_tol = 1e-6
-objective_label = "Total cost"
 
 # Solvers AMPL is validated with, using the exact same model.mod (only `option solver` changes).
 ampl_solvers = ["highs", "gurobi", "cplex", "xpress", "cbc", "scip"]
-
-# Variables shown after a live AMPL solve: name -> caption.
-[display]
-Make = "Production plan (units per week)"
 
 # Tools that cannot express this model: tool -> reason shown on the page.
 [not_supported]
@@ -54,10 +49,10 @@ variables because `abs_()` and `max_()` accept variables only. Pyomo, PuLP and h
 by hand as extra constraints. docplex and xpress accept them, each for its own solver."""
 
 [[talking_points]]
-point = "the *Solver* chips and the live solve."
-say = """This exact AMPL model was validated with HiGHS, Gurobi, CPLEX, Xpress, CBC and SCIP, and
-switching is one line. Each solver-native API is tied to its own solver, so switching solvers means
-rewriting the model."""
+point = "the *Solver* chips."
+say = """This exact AMPL model runs with HiGHS, Gurobi, CPLEX, Xpress, CBC and SCIP, and switching
+is one line. Each solver-native API is tied to its own solver, so switching solvers means rewriting
+the model."""
 
 [[talking_points]]
 point = "*Add a new rule*: Volume discounts."
@@ -66,10 +61,10 @@ say = """Purchasing negotiates a volume discount: units beyond 1,000 a week cost
 the price sheet. A falling price makes the cost concave (harder to solve); AMPL handles that without
 any reformulation by the modeler, whichever solver is chosen.
 The highlighted lines show what the other tool needs: cost-curve points computed in Python, a
-piecewise-linear call per variable, or price segments with binaries written by hand. Crew rest is a second,
-simpler example (an if-then rule)."""
+piecewise-linear call per variable, or price segments with binaries written by hand."""
 
 [[talking_points]]
-point = "the green badges."
-say = """Every implementation reaches the same optimal cost, so the difference is only in how the
-model is written."""
+point = "the *Model + data loading* view."
+say = """Every implementation reads the same CSV files and reaches the same optimal plan, so the
+difference is only in how the model is written. The AMPL model file has no data-handling code at all;
+the data is attached with a few amplpy calls."""
