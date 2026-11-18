@@ -24,7 +24,9 @@ _FORMATTER = HtmlFormatter(nowrap=True, noclasses=True, style="friendly")
 _MONO = "'Source Code Pro', 'SFMono-Regular', Menlo, Consolas, monospace"
 CODE_FONT_SIZE = "13.5px"  # two columns at a booth monitor: readable from a step away
 CHANGED_COLOR = "#16A34A"  # lines added or modified by a model change
-NOTE_COLOR = "#D97706"
+# Notes are dark so they never look like a code block (code blocks are all light tints).
+NOTE_BG = "#1E293B"
+NOTE_ACCENT = "#F63366"  # same accent as the headline facts
 
 
 def _tint(hex_color, alpha):
@@ -77,19 +79,20 @@ def _inline(text):
     html = escape(" ".join(text.split()))
     return re.sub(
         r"`([^`]+)`",
-        lambda m: f'<code style="font-family:{_MONO};font-size:.9em;background:rgba(120,53,15,.08);'
-        f'padding:0 3px;border-radius:3px;color:#7C2D12;">{m.group(1)}</code>',
+        lambda m: f'<code style="font-family:{_MONO};font-size:.9em;background:rgba(255,255,255,.12);'
+        f'padding:0 4px;border-radius:3px;color:#FDE68A;">{m.group(1)}</code>',
         html,
     )
 
 
 def note_cell(texts):
-    """A sticky-note style cell with one paragraph per note."""
+    """A dark note card with one paragraph per note."""
     body = "".join(f'<div style="margin:2px 0;">{_inline(t)}</div>' for t in texts)
     return (
-        f'<div style="background:#FFFBEB;border:1px solid {_tint(NOTE_COLOR, 0.25)};border-left:4px solid {NOTE_COLOR};'
-        'border-radius:6px;padding:6px 10px 6px 10px;font-size:13.5px;line-height:1.45;color:#451A03;'
-        f'display:flex;gap:8px;"><div>📝</div><div>{body}</div></div>'
+        f'<div style="background:{NOTE_BG};border-left:5px solid {NOTE_ACCENT};border-radius:6px;'
+        'padding:8px 12px;font-size:13.5px;line-height:1.5;color:#F1F5F9;'
+        'box-shadow:0 1px 3px rgba(15,23,42,.25);display:flex;gap:8px;">'
+        f'<div>📝</div><div>{body}</div></div>'
     )
 
 
