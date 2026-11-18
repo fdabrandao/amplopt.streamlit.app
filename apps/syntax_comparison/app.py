@@ -125,9 +125,14 @@ def load_ampl(model_key):
 def solve_ampl(model_key, solver):
     """Run the AMPL implementation shown on the page (setup + data blocks), then solve."""
     model, ampl = load_ampl(model_key)
-    ampl.option["solver"] = solver
     start = time.perf_counter()
-    output = ampl.get_output("solve;")
+    output = ""
+    warm = model.meta.get("warm_start", {}).get(solver)
+    if warm:  # start from another solver's solution (meta.toml [warm_start])
+        ampl.option["solver"] = warm
+        output = ampl.get_output("solve;")
+    ampl.option["solver"] = solver
+    output += ampl.get_output("solve;")
     seconds = time.perf_counter() - start
     _, objective = next(iter(ampl.get_objectives()))
     tables = {}
@@ -162,8 +167,20 @@ def live_solve(model):
             format_func=lambda s: SOLVER_NAMES.get(s, s),
             key=f"sc_solver_{model.key}",
         )
+    warm = model.meta.get("warm_start", {}).get(solver)
     with col2:
-        st.code(f'ampl.option["solver"] = "{solver}"  # the only line that changes', language="python")
+        if warm:
+            st.code(
+                f'ampl.solve(solver="{warm}")  # starting point\nampl.solve(solver="{solver}")',
+                language="python",
+            )
+        else:
+            st.code(f'ampl.option["solver"] = "{solver}"  # the only line that changes', language="python")
+    if warm:
+        st.caption(
+            f"{SOLVER_NAMES.get(solver, solver)} starts from the {SOLVER_NAMES.get(warm, warm)} solution "
+            "and proves it is the global optimum (same as in validation)."
+        )
     if model.meta.get("solve_note") and solver in model.meta.get("slow_solvers", []):
         st.warning(f"⏱ {' '.join(model.meta['solve_note'].split())}")
     if st.button(f"Solve with AMPL + {SOLVER_NAMES.get(solver, solver)}", type="primary"):
@@ -318,5 +335,10 @@ def main():
             - Line counts exclude blank lines and comments, and cover the blocks currently shown.
             """
         )
+        for solver, warm in shown_model.meta.get("warm_start", {}).items():
+            st.markdown(
+                f"- AMPL + {SOLVER_NAMES.get(solver, solver)} starts from the {SOLVER_NAMES.get(warm, warm)} "
+                "solution, then proves global optimality."
+            )
 
     st.markdown(f"#### [[App Source Code on GitHub]({REPO_URL}/tree/master/apps/syntax_comparison)]")

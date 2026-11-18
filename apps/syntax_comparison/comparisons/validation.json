@@ -30,26 +30,25 @@
           "ipopt": {
             "status": "solved",
             "objective": 16.902615862615985,
-            "seconds": 0.05
+            "seconds": 0.04
           },
           "knitro": {
             "status": "solved",
             "objective": 16.902615862615992,
-            "seconds": 0.04
+            "seconds": 0.1
           },
           "gurobi": {
-            "status": "unverified",
-            "objective": 16.902615862616187,
-            "seconds": 601.91,
-            "bound": 14.9207320213509,
-            "gap": 0.11725308421926892
+            "status": "solved",
+            "objective": 16.902615862615995,
+            "seconds": 13.5,
+            "warm_start": "ipopt"
           }
         }
       },
       "pyomo": {
         "status": "ok",
         "objective": 16.902615862615985,
-        "seconds": 0.04
+        "seconds": 0.03
       },
       "pulp": {
         "status": "not_supported"
@@ -57,7 +56,7 @@
       "gurobipy": {
         "status": "ok",
         "objective": 16.902615862615985,
-        "seconds": 12.65
+        "seconds": 12.53
       },
       "docplex": {
         "status": "not_supported"

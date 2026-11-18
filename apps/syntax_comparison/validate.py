@@ -75,7 +75,7 @@ AMPL_TIME_LIMIT = {"highs", "cbc", "scip", "gurobi", "cplex", "xpress"}
 RUNNER = r"""
 import contextlib, io, json, re, sys, time
 path, tool, solver, limit = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4])
-hooks, ampl_time_limit = json.loads(sys.argv[5]), sys.argv[6].split(",")
+hooks, ampl_time_limit, warm_start = json.loads(sys.argv[5]), sys.argv[6].split(","), sys.argv[7]
 before, solve = open(path).read().split("# @block solve")
 g = {"__file__": path, "__name__": "__main__", "LIMIT": limit}
 bound = None
@@ -85,6 +85,9 @@ with contextlib.redirect_stdout(io.StringIO()):
     if tool == "ampl":
         ampl = g["ampl"]
         name, objective = next(iter(ampl.get_objectives()))  # each model has one objective
+        if warm_start:  # starting point from another solver (meta.toml [warm_start]); not timed
+            ampl.solve(solver=warm_start, verbose=False)
+            start = time.perf_counter()
         ampl.option["solver"] = solver
         if solver in ampl_time_limit:
             ampl.option[solver + "_options"] = f"timelim={limit:g}" + ("" if solver == "cbc" else " bestbound=1")
@@ -143,10 +146,10 @@ def subprocess_env():
     return env
 
 
-def run(path, tool, solver, time_limit, timeout):
+def run(path, tool, solver, time_limit, timeout, warm_start=""):
     cmd = [
         sys.executable, "-I", "-W", "ignore", "-c", RUNNER,
-        str(path), tool, solver, str(time_limit), json.dumps(HOOKS), ",".join(sorted(AMPL_TIME_LIMIT)),
+        str(path), tool, solver, str(time_limit), json.dumps(HOOKS), ",".join(sorted(AMPL_TIME_LIMIT)), warm_start,
     ]
     # Own process group, so a timeout also stops the solver processes it started
     proc = subprocess.Popen(
@@ -237,7 +240,10 @@ def main():
             if tool == "ampl":
                 by_solver = {}
                 for solver in meta.get("ampl_solvers", ["highs"]):
-                    status, entry = assess(run(script, tool, solver, args.time_limit, timeout), expected, rel_tol)
+                    warm = meta.get("warm_start", {}).get(solver, "")
+                    status, entry = assess(run(script, tool, solver, args.time_limit, timeout, warm), expected, rel_tol)
+                    if warm:
+                        entry["warm_start"] = warm
                     by_solver[solver] = {"status": status, **entry}
                     print(f"   ampl+{solver:8s} {describe(status, entry)}")
                     if status in ("mismatch", "error"):

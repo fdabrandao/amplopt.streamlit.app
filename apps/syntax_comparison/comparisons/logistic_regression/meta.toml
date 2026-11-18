@@ -14,6 +14,12 @@ objective_label = "Log-loss"
 # Solvers AMPL is validated with, using the exact same model.mod (only `option solver` changes).
 ampl_solvers = ["ipopt", "knitro", "gurobi"]
 
+# AMPL solver -> solver whose solution is used as its starting point (validation and live solve).
+# Gurobi's global search proves optimality in about 15 s from the Ipopt solution; from a cold start
+# the Gurobi 13.0.3 bundled with AMPL (latest module, 20261029) leaves an ~12% gap after 10 minutes.
+[warm_start]
+gurobi = "ipopt"
+
 # Variables shown after a live AMPL solve: name -> caption.
 [display]
 w = "Fitted weights"
