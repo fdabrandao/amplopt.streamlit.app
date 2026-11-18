@@ -60,11 +60,14 @@ switching is one line. Each solver-native API is tied to its own solver, so swit
 rewriting the model."""
 
 [[talking_points]]
-point = "the *Add a new rule* toggle."
-say = """A planner asks for a crew-rest rule: after a week of more than 50 line hours, the next week
-runs at most 45. In AMPL that is two parameters and one constraint, written the way the planner said it,
-and the data loading code does not change. The highlighted lines show what the same request costs in the other
-tool: a new binary variable, indicator or big-M constraints, and the parameter plumbing."""
+point = "*Add a new rule*: Volume discounts."
+say = """Purchasing negotiates a volume discount: units beyond 1,000 a week cost 15% less, beyond 2,500
+30% less. In AMPL it is one piecewise-linear term in the objective, written as breakpoints and prices, like
+the price sheet. A falling price makes the cost concave (harder to solve); AMPL handles that without
+any reformulation by the modeler, whichever solver is chosen.
+The highlighted lines show what the other tool needs: cost-curve points computed in Python, a
+piecewise-linear call per variable, or price segments with binaries written by hand. Crew rest is a second,
+simpler example (an if-then rule)."""
 
 [[talking_points]]
 point = "the green badges."

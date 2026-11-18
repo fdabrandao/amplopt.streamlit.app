@@ -1,7 +1,8 @@
 title = "Production planning with business rules + crew rest"
-order = 1
+order = 2
 variant_of = "production_rules"
-change = "Add a new rule: after a week of more than 50 line hours, the next week runs at most 45"
+change_name = "Crew rest"
+change = "Crew rest: after a week of more than 50 line hours, the next week runs at most 45"
 summary = """
 Weekly production plan for a snack-bar line (8 products, 8 weeks). On top of a classic
 lot-sizing model, the plan must follow five business rules: minimum lot sizes, at most

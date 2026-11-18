@@ -49,9 +49,15 @@ def widen_page():
     )
 
 
+def _gap(entry):
+    return f"gap {entry['gap']:.2%}" if "gap" in entry else "gap unknown"
+
+
 def column_header(tool, info, model, validation, block_names, changed_loc=None):
     result = validation.get("models", {}).get(model.key, {}).get(tool, {})
     versions = validation.get("versions", {})
+    minutes = f"{validation.get('time_limit', 600) / 60:g} min"
+    amber = "color:#92400E;font-size:11.5px;margin:2px 0 4px 0;"
     html = [
         f'<div style="font-weight:700;font-size:17px;color:#111827;">{escape(info["name"])}</div>',
         f'<div style="color:#6B7280;font-size:12px;margin-bottom:6px;">{escape(info["group"])}</div>',
@@ -64,7 +70,14 @@ def column_header(tool, info, model, validation, block_names, changed_loc=None):
         html.append(badge(f"✓ same optimal objective: {result['objective']:,.2f}"))
     elif limited:
         html.append(badge("⚠ not validated: license-limited", ok=False))
-        html.append(f'<div style="color:#92400E;font-size:11.5px;margin:2px 0 4px 0;">{escape(limited)}</div>')
+        html.append(f'<div style="{amber}">{escape(limited)}</div>')
+    elif result.get("status") == "unverified":
+        html.append(badge(f"⚠ unverified: optimality not proven in {minutes}", ok=False))
+        if "objective" in result:
+            html.append(
+                f'<div style="{amber}">Best objective found: {result["objective"]:,.2f} '
+                f"({_gap(result)} when the {minutes} time limit was reached)</div>"
+            )
     else:
         html.append(badge("not validated", ok=False))
     html.append("<br>")
@@ -78,6 +91,11 @@ def column_header(tool, info, model, validation, block_names, changed_loc=None):
             f'<div style="color:#15803D;font-size:11.5px;margin-top:2px;">'
             f"Same model validated with {escape(', '.join(solvers_ok))}</div>"
         )
+    solvers_open = [
+        f"{SOLVER_NAMES.get(s, s)} ({_gap(r)})" for s, r in result.get("solvers", {}).items() if r.get("status") == "unverified"
+    ]
+    if solvers_open:
+        html.append(f'<div style="{amber}">Optimality not proven in {minutes}: {escape(", ".join(solvers_open))}</div>')
 
     impl = model.implementations[tool]
     loc = sum(impl.blocks[b].lines_of_code for b in block_names if b in impl.blocks)
@@ -146,6 +164,8 @@ def live_solve(model):
         )
     with col2:
         st.code(f'ampl.option["solver"] = "{solver}"  # the only line that changes', language="python")
+    if model.meta.get("solve_note") and solver in model.meta.get("slow_solvers", []):
+        st.warning(f"⏱ {' '.join(model.meta['solve_note'].split())}")
     if st.button(f"Solve with AMPL + {SOLVER_NAMES.get(solver, solver)}", type="primary"):
         st.session_state["sc_solved"] = (model.key, solver)
 
@@ -207,7 +227,7 @@ def main():
         tool = params.get("tool", params.get("tools", "").split(",")[0])
         st.session_state.sc_tool = tool if tool in others else "pyomo"
     if "sc_change" not in st.session_state:
-        st.session_state.sc_change = params.get("change") == "1"
+        st.session_state.sc_change = params.get("change", "none")
 
     model = base_models[
         st.selectbox("Pick a model 👇", list(base_models), key="sc_model", format_func=lambda k: base_models[k].title)
@@ -226,16 +246,30 @@ def main():
     st.markdown(" ".join(model.meta.get("summary", "").split()))
     talking_points(model)
 
-    variant = model.variants[0] if model.variants else None
-    show_change = False
-    if variant:
-        show_change = st.toggle(f"✚ {variant.meta['change']}", key="sc_change")
-        if show_change:
+    variant = None
+    if model.variants:
+        variants = {v.key: v for v in model.variants}
+        options = ["none"] + list(variants)
+        if st.session_state.sc_change == "1":  # older links: first change
+            st.session_state.sc_change = options[1]
+        if st.session_state.sc_change not in options:
+            st.session_state.sc_change = "none"
+        choice = st.radio(
+            "✚ Add a new rule",
+            options,
+            key="sc_change",
+            horizontal=True,
+            format_func=lambda k: "None (base model)" if k == "none" else variants[k].meta.get("change_name", k),
+        )
+        variant = variants.get(choice)
+        if variant:
             st.success(
-                "Highlighted lines are everything that had to be added or changed in each implementation "
-                "to add this one rule. Both versions were validated to the same optimal objective."
+                f"**{variant.meta['change']}.** Highlighted lines are everything that had to be added or "
+                "changed in each implementation for this rule. Both versions were validated to the same "
+                "optimal objective."
             )
-    st.query_params.update({"model": model.key, "tool": tool, "change": "1" if show_change else "0"})
+    st.query_params.update({"model": model.key, "tool": tool, "change": variant.key if variant else "none"})
+    show_change = variant is not None
     shown_model = variant if show_change else model
 
     shown = [shown_model.implementations[t] for t in ("ampl", tool) if t in shown_model.implementations]
@@ -278,6 +312,8 @@ def main():
             - Only the AMPL model runs live on this page; the other implementations are shown as static
               files. `validate.py` runs all of them offline and checks that they reach the same
               optimal objective (last run: {validation.get('generated', 'n/a')}, Python {validation.get('python', 'n/a')}).
+            - Each solve has a {validation.get('time_limit', 600) / 60:g}-minute time limit. A solve that reaches it
+              before proving optimality is marked *unverified*, with the remaining optimality gap.
             - Library versions: {', '.join(f'`{k} {v}`' for k, v in versions.items() if v)}.
             - Line counts exclude blank lines and comments, and cover the blocks currently shown.
             """

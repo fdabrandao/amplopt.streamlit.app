@@ -24,13 +24,14 @@ requirements-validate.txt     # pinned validation environment (not the app's req
 
 The page reads everything from `comparisons/`; nothing is hard-coded per model. Only the AMPL
 implementation runs live: the page executes the `setup` and `data` blocks of `ampl_model.py`
-(exactly the code shown), sets the chosen solver and solves. URL parameters `?model=<key>&tools=a,b`
+(exactly the code shown), sets the chosen solver and solves. URL parameters `?model=<key>&tool=<tool>&change=<variant>`
 preselect a comparison, so a demo can be bookmarked.
 
 A model folder whose `meta.toml` sets `variant_of = "<model>"` and `change = "<label>"` is not listed
-on its own: it adds one change to that model (e.g. `production_rules_crew_rest` adds a crew-rest
-rule). The page shows it behind a toggle and highlights, per tool, the lines that differ from the
-base model. Variants are validated like any other model.
+on its own: it adds one change to that model (e.g. `production_rules_volume_discount` adds volume
+discounts). The page lists a model's changes under "Add a new rule" (by `change_name`) and
+highlights, per tool, the lines that differ from the base model. Variants are validated like any
+other model.
 
 ## Adding a tool
 
@@ -48,7 +49,12 @@ export AMPLKEY_UUID=<license-uuid>   # the AMPL demo license limits model size
 .venv-compare/bin/python apps/syntax_comparison/validate.py
 ```
 
-Options: `--model <name>` and `--tool <name>` (repeatable), `--timeout <seconds>`.
+Options: `--model <name>` and `--tool <name>` (repeatable), `--time-limit <seconds>` (default 600).
+Each implementation, and the AMPL model with each solver in `ampl_solvers`, runs in its own
+subprocess. The time limit is applied by `validate.py` to the tool's own model object right before
+its solve block (the code on the page has none). A solve that reaches it without proving optimality
+is recorded as `unverified` with the best objective, bound and gap, and shown that way on the page;
+it is not counted as a failure.
 The script exits with status 1 if any implementation misses the expected objective.
 The free pip licenses of gurobipy, cplex and xpress limit model size (CPLEX Community Edition:
 1000 variables and 1000 constraints), so comparison instances stay within those limits.

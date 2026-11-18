@@ -130,7 +130,8 @@ def load_models(tools):
             model.implementations[tool] = impl
         models.append(model)
     by_key = {m.key: m for m in models}
+    models.sort(key=lambda m: (m.meta.get("order", 99), m.title))
     for m in models:
         if m.variant_of in by_key:
             by_key[m.variant_of].variants.append(m)
-    return sorted(models, key=lambda m: (m.meta.get("order", 99), m.title))
+    return models

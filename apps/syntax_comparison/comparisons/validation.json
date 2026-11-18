@@ -1,6 +1,7 @@
 {
-  "generated": "2026-11-14",
+  "generated": "2026-11-18",
   "python": "3.11.9",
+  "time_limit": 600,
   "versions": {
     "ampl_module_base": "20261111",
     "amplpy": "0.18.1",
@@ -25,29 +26,30 @@
       "ampl": {
         "status": "ok",
         "objective": 16.902615862615985,
-        "seconds": 0.75,
         "solvers": {
           "ipopt": {
-            "objective": 16.902615862615985,
             "status": "solved",
-            "seconds": 0.01
+            "objective": 16.902615862615985,
+            "seconds": 0.05
           },
           "knitro": {
-            "objective": 16.902615862615985,
             "status": "solved",
+            "objective": 16.902615862615992,
             "seconds": 0.04
           },
           "gurobi": {
-            "objective": 16.902615862615995,
-            "status": "solved",
-            "seconds": 13.85
+            "status": "unverified",
+            "objective": 16.902615862616187,
+            "seconds": 601.91,
+            "bound": 14.9207320213509,
+            "gap": 0.11725308421926892
           }
         }
       },
       "pyomo": {
         "status": "ok",
         "objective": 16.902615862615985,
-        "seconds": 0.37
+        "seconds": 0.04
       },
       "pulp": {
         "status": "not_supported"
@@ -55,7 +57,7 @@
       "gurobipy": {
         "status": "ok",
         "objective": 16.902615862615985,
-        "seconds": 12.0
+        "seconds": 12.65
       },
       "docplex": {
         "status": "not_supported"
@@ -72,138 +74,208 @@
       "ampl": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 8.19,
         "solvers": {
           "highs": {
-            "objective": 37017.101361111105,
             "status": "solved",
-            "seconds": 10.34
+            "objective": 37017.101361111105,
+            "seconds": 7.98
           },
           "gurobi": {
-            "objective": 37017.1013611111,
             "status": "solved",
-            "seconds": 1.35
+            "objective": 37017.1013611111,
+            "seconds": 1.64
           },
           "cplex": {
-            "objective": 37017.1013611111,
             "status": "solved",
-            "seconds": 1.12
+            "objective": 37017.10136111109,
+            "seconds": 1.33
           },
           "xpress": {
-            "objective": 37017.101361111105,
             "status": "solved",
-            "seconds": 1.08
+            "objective": 37017.101361111105,
+            "seconds": 1.1
           },
           "cbc": {
-            "objective": 37017.1013611111,
             "status": "solved",
-            "seconds": 23.46
+            "objective": 37017.1013611111,
+            "seconds": 27.76
           },
           "scip": {
-            "objective": 37017.10136111111,
             "status": "solved",
-            "seconds": 7.09
+            "objective": 37017.10136111111,
+            "seconds": 7.12
           }
         }
       },
       "pyomo": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 3.64
+        "seconds": 3.41
       },
       "pulp": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 3.51
+        "seconds": 3.29
       },
       "gurobipy": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 2.04
+        "seconds": 1.86
       },
       "docplex": {
         "status": "ok",
         "objective": 37017.10136111109,
-        "seconds": 1.52
+        "seconds": 1.35
       },
       "xpress": {
         "status": "ok",
         "objective": 37017.101361111134,
-        "seconds": 0.8
+        "seconds": 0.61
       },
       "highspy": {
         "status": "ok",
         "objective": 37017.10136111107,
-        "seconds": 3.54
+        "seconds": 3.37
       }
     },
     "production_rules_crew_rest": {
       "ampl": {
         "status": "ok",
         "objective": 37271.95544444444,
-        "seconds": 20.0,
         "solvers": {
           "highs": {
-            "objective": 37271.95544444443,
             "status": "solved",
-            "seconds": 21.22
+            "objective": 37271.95544444444,
+            "seconds": 19.78
           },
           "gurobi": {
-            "objective": 37271.95544444443,
             "status": "solved",
-            "seconds": 1.44
+            "objective": 37271.95544444443,
+            "seconds": 1.38
           },
           "cplex": {
-            "objective": 37271.95544444443,
             "status": "solved",
-            "seconds": 1.44
+            "objective": 37271.95544444444,
+            "seconds": 1.53
           },
           "xpress": {
-            "objective": 37271.95544444445,
             "status": "solved",
-            "seconds": 2.03
+            "objective": 37271.95544444445,
+            "seconds": 2.0
           },
           "cbc": {
-            "objective": 37271.95544444444,
             "status": "solved",
-            "seconds": 25.43
+            "objective": 37271.95544444444,
+            "seconds": 47.35
           },
           "scip": {
-            "objective": 37271.95544444443,
             "status": "solved",
-            "seconds": 14.36
+            "objective": 37271.95544444443,
+            "seconds": 14.45
           }
         }
       },
       "pyomo": {
         "status": "ok",
         "objective": 37271.95544444444,
-        "seconds": 5.7
+        "seconds": 5.51
       },
       "pulp": {
         "status": "ok",
         "objective": 37271.95544444444,
-        "seconds": 6.01
+        "seconds": 5.83
       },
       "gurobipy": {
         "status": "ok",
         "objective": 37271.95544444443,
-        "seconds": 1.35
+        "seconds": 1.2
       },
       "docplex": {
         "status": "ok",
         "objective": 37271.9554444445,
-        "seconds": 1.63
+        "seconds": 1.53
       },
       "xpress": {
         "status": "ok",
         "objective": 37271.955444444444,
-        "seconds": 1.14
+        "seconds": 0.97
       },
       "highspy": {
         "status": "ok",
         "objective": 37271.955444444444,
-        "seconds": 6.1
+        "seconds": 6.02
+      }
+    },
+    "production_rules_volume_discount": {
+      "gurobipy": {
+        "status": "ok",
+        "objective": 36234.39666666667,
+        "seconds": 14.87
+      },
+      "docplex": {
+        "status": "ok",
+        "objective": 36234.39666666666,
+        "seconds": 6.85
+      },
+      "xpress": {
+        "status": "unverified",
+        "objective": 36514.40316666666,
+        "seconds": 605.53,
+        "bound": 30659.969932901182,
+        "gap": 0.160332162819243
+      },
+      "ampl": {
+        "status": "ok",
+        "objective": 36234.39666666667,
+        "solvers": {
+          "gurobi": {
+            "status": "solved",
+            "objective": 36234.39666666667,
+            "seconds": 15.71
+          },
+          "cplex": {
+            "status": "solved",
+            "objective": 36234.39666666667,
+            "seconds": 6.18
+          },
+          "xpress": {
+            "status": "solved",
+            "objective": 36234.39666666667,
+            "seconds": 14.69
+          },
+          "highs": {
+            "status": "solved",
+            "objective": 36234.39666666666,
+            "seconds": 142.21
+          },
+          "cbc": {
+            "status": "unverified",
+            "objective": 36237.46426388889,
+            "seconds": 609.86,
+            "bound": 34951.124263888894,
+            "gap": 0.03549751689667346
+          },
+          "scip": {
+            "status": "solved",
+            "objective": 36234.39666666667,
+            "seconds": 420.44
+          }
+        }
+      },
+      "pyomo": {
+        "status": "ok",
+        "objective": 36234.39666666666,
+        "seconds": 63.35
+      },
+      "pulp": {
+        "status": "ok",
+        "objective": 36234.396666666304,
+        "seconds": 71.12
+      },
+      "highspy": {
+        "status": "ok",
+        "objective": 36234.39666666666,
+        "seconds": 67.06
       }
     }
   }
