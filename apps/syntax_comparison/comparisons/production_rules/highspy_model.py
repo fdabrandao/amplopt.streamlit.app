@@ -37,19 +37,25 @@ peak_cost = float(settings["peak_cost"])
 h = highspy.Highs()
 make = h.addVariables(P, T, name_prefix="make")
 inv = h.addVariables(P, T, ub={(p, t): max_inv[p] for p in P for t in T}, name_prefix="inv")
+# @rule lot_size max_products no_mix reorder
 run = h.addBinaries(P, T, name_prefix="run")  # 1 if product p runs in week t
+# @rule end
 
 # @block objective
+# @rule smoothing
 # No abs() or max(): write both as linear epigraphs with helper variables
 change = h.addVariables(P, T[1:], name_prefix="change")
 peak = h.addVariable(name="peak")
 h.addConstrs(change[p, t] >= make[p, t] - make[p, prev[t]] for p in P for t in T[1:])
 h.addConstrs(change[p, t] >= make[p, prev[t]] - make[p, t] for p in P for t in T[1:])
 h.addConstrs(peak >= h.qsum(make[p, t] / rate[p] for p in P) for t in T)
+# @rule end
 h.setObjective(
     h.qsum(make_cost[p] * make[p, t] + hold_cost[p] * inv[p, t] for p in P for t in T)
+    # @rule smoothing
     + smooth_cost * h.qsum(change.values())
     + peak_cost * peak,
+    # @rule end
     sense=highspy.ObjSense.kMinimize,
 )
 
@@ -60,14 +66,22 @@ h.addConstrs(
     for t in T
 )
 h.addConstrs(h.qsum(make[p, t] / rate[p] for p in P) <= hours[t] for t in T)
+# @rule lot_size
 # Lot size rules are written on the run binaries: run = 0 -> make = 0, run = 1 -> lot size
 h.addConstrs(make[p, t] >= min_lot[p] * run[p, t] for p in P for t in T)
 h.addConstrs(make[p, t] <= max_lot[p] * run[p, t] for p in P for t in T)
+# @rule end
+# @rule max_products
 h.addConstrs(h.qsum(run[p, t] for p in P) <= max_products for t in T)
+# @rule end
+# @rule no_mix
 h.addConstrs(run[p, t] + run[q, t] <= 1 for p, q in CONFLICTS for t in T)
+# @rule end
+# @rule reorder
 # Reorder rule, linearized by hand (big-M = reorder point):
 # not running next week -> stock at or above reorder point
 h.addConstrs(inv[p, t] >= reorder[p] * (1 - run[p, nxt[t]]) for p in P for t in T[:-1])
+# @rule end
 
 # @block solve
 h.run()

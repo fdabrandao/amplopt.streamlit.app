@@ -19,14 +19,18 @@ param smooth_cost >= 0;  # cost per unit of week-to-week change
 param peak_cost >= 0;  # cost per hour of the busiest week
 
 # @block vars
+# @rule lot_size
 var Make {p in PROD, PERIODS} >= 0, <= max_lot[p];
+# @rule end
 var Inv {p in PROD, PERIODS} >= 0, <= max_inv[p];
 
 # @block objective
 minimize Total_Cost:
     sum {p in PROD, t in PERIODS} (make_cost[p] * Make[p,t] + hold_cost[p] * Inv[p,t])
+  # @rule smoothing
   + smooth_cost * sum {p in PROD, t in PERIODS: ord(t) > 1} abs(Make[p,t] - Make[p,prev(t)])
   + peak_cost * max {t in PERIODS} sum {p in PROD} Make[p,t] / rate[p];
+  # @rule end
 
 # @block constraints
 subject to Balance {p in PROD, t in PERIODS}:
@@ -35,14 +39,22 @@ subject to Balance {p in PROD, t in PERIODS}:
 subject to Capacity {t in PERIODS}:
     sum {p in PROD} Make[p,t] / rate[p] <= hours[t];
 
+# @rule lot_size
 subject to Min_Lot {p in PROD, t in PERIODS}:
     Make[p,t] = 0 or Make[p,t] >= min_lot[p];
+# @rule end
 
+# @rule max_products
 subject to Max_Products {t in PERIODS}:
     count {p in PROD} (Make[p,t] > 0) <= max_products;
+# @rule end
 
+# @rule no_mix
 subject to No_Mix {(p,q) in CONFLICTS, t in PERIODS}:
     Make[p,t] = 0 or Make[q,t] = 0;
+# @rule end
 
+# @rule reorder
 subject to Reorder {p in PROD, t in PERIODS: ord(t) < card(PERIODS)}:
     Inv[p,t] < reorder[p] ==> Make[p,next(t)] > 0;
+# @rule end

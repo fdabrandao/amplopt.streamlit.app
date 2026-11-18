@@ -34,10 +34,13 @@ m.smooth_cost = pyo.Param(initialize=float(settings["smooth_cost"]))
 m.peak_cost = pyo.Param(initialize=float(settings["peak_cost"]))
 
 # @block vars
+# @rule lot_size
 m.Make = pyo.Var(m.PROD, m.PERIODS, bounds=lambda m, p, t: (0, m.max_lot[p]))
+# @rule end
 m.Inv = pyo.Var(m.PROD, m.PERIODS, bounds=lambda m, p, t: (0, m.max_inv[p]))
 
 # @block objective
+# @rule smoothing
 # abs() and max() are not linearized for MIP solvers: write them as epigraphs
 m.Change = pyo.Var(m.PROD, m.PERIODS, within=pyo.NonNegativeReals)
 m.Peak = pyo.Var(within=pyo.NonNegativeReals)
@@ -60,12 +63,15 @@ def Change_Down(m, p, t):
 @m.Constraint(m.PERIODS)
 def Peak_Def(m, t):
     return m.Peak >= sum(m.Make[p, t] / m.rate[p] for p in m.PROD)
+# @rule end
 
 
 m.Total_Cost = pyo.Objective(
     expr=sum(m.make_cost[p] * m.Make[p, t] + m.hold_cost[p] * m.Inv[p, t] for p in m.PROD for t in m.PERIODS)
+    # @rule smoothing
     + m.smooth_cost * sum(m.Change[p, t] for p in m.PROD for t in m.PERIODS)
     + m.peak_cost * m.Peak,
+    # @rule end
     sense=pyo.minimize,
 )
 
@@ -81,36 +87,54 @@ def Capacity(m, t):
     return sum(m.Make[p, t] / m.rate[p] for p in m.PROD) <= m.hours[t]
 
 
+# @rule lot_size max_products no_mix reorder
 # Generalized disjunctive programming: each product-week either runs a lot or is idle
 @m.Disjunct(m.PROD, m.PERIODS)
 def running(d, p, t):
+# @rule end
+    # @rule lot_size
     d.lot_size = pyo.Constraint(expr=pyo.inequality(m.min_lot[p], m.Make[p, t], m.max_lot[p]))
+    # @rule end
 
 
+# @rule lot_size max_products no_mix reorder
 @m.Disjunct(m.PROD, m.PERIODS)
 def idle(d, p, t):
+# @rule end
+    # @rule lot_size
     d.no_make = pyo.Constraint(expr=m.Make[p, t] == 0)
+    # @rule end
+    # @rule reorder
     # Reorder rule as its contrapositive: idle this week -> last week's stock >= reorder point
     if t != m.PERIODS.first():
         d.stock_ok = pyo.Constraint(expr=m.Inv[p, m.PERIODS.prev(t)] >= m.reorder[p])
+    # @rule end
 
 
+# @rule lot_size max_products no_mix reorder
 @m.Disjunction(m.PROD, m.PERIODS)
 def run_or_idle(m, p, t):
     return [m.running[p, t], m.idle[p, t]]
+# @rule end
 
 
+# @rule max_products
 @m.LogicalConstraint(m.PERIODS)
 def Max_Products(m, t):
     return pyo.atmost(m.max_products, [m.running[p, t].indicator_var for p in m.PROD])
+# @rule end
 
 
+# @rule no_mix
 @m.LogicalConstraint(m.CONFLICTS, m.PERIODS)
 def No_Mix(m, p, q, t):
     return m.idle[p, t].indicator_var.lor(m.idle[q, t].indicator_var)
+# @rule end
 
 
 # @block solve
+# @rule lot_size max_products no_mix reorder
 pyo.TransformationFactory("gdp.bigm").apply_to(m)
+# @rule end
 pyo.SolverFactory("highs").solve(m)
 objective = pyo.value(m.Total_Cost)

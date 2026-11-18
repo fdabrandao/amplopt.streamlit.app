@@ -77,54 +77,54 @@
           "highs": {
             "status": "solved",
             "objective": 37017.101361111105,
-            "seconds": 7.98
+            "seconds": 7.75
           },
           "gurobi": {
             "status": "solved",
             "objective": 37017.1013611111,
-            "seconds": 1.64
+            "seconds": 1.57
           },
           "cplex": {
             "status": "solved",
             "objective": 37017.10136111109,
-            "seconds": 1.33
+            "seconds": 1.3
           },
           "xpress": {
             "status": "solved",
             "objective": 37017.101361111105,
-            "seconds": 1.1
+            "seconds": 1.15
           },
           "cbc": {
             "status": "solved",
             "objective": 37017.1013611111,
-            "seconds": 27.76
+            "seconds": 27.38
           },
           "scip": {
             "status": "solved",
             "objective": 37017.10136111111,
-            "seconds": 7.12
+            "seconds": 7.0
           }
         }
       },
       "pyomo": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 3.41
+        "seconds": 3.2
       },
       "pulp": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 3.29
+        "seconds": 3.27
       },
       "gurobipy": {
         "status": "ok",
         "objective": 37017.101361111105,
-        "seconds": 1.86
+        "seconds": 1.92
       },
       "docplex": {
         "status": "ok",
         "objective": 37017.10136111109,
-        "seconds": 1.35
+        "seconds": 1.34
       },
       "xpress": {
         "status": "ok",
@@ -134,7 +134,7 @@
       "highspy": {
         "status": "ok",
         "objective": 37017.10136111107,
-        "seconds": 3.37
+        "seconds": 3.39
       }
     },
     "production_rules_volume_discount": {

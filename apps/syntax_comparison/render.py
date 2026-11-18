@@ -24,6 +24,7 @@ _FORMATTER = HtmlFormatter(nowrap=True, noclasses=True, style="friendly")
 _MONO = "'Source Code Pro', 'SFMono-Regular', Menlo, Consolas, monospace"
 CODE_FONT_SIZE = "13.5px"  # two columns at a booth monitor: readable from a step away
 CHANGED_COLOR = "#16A34A"  # lines added or modified by a model change
+RULE_COLOR = "#F63366"  # lines implementing the business rule picked under "Highlight a rule"
 # Notes are dark so they never look like a code block (code blocks are all light tints).
 NOTE_BG = "#1E293B"
 NOTE_ACCENT = "#F63366"  # same accent as the headline facts
@@ -34,10 +35,11 @@ def _tint(hex_color, alpha):
     return f"rgba({r},{g},{b},{alpha})"
 
 
-def highlight_code(code, language, changed=frozenset()):
+def highlight_code(code, language, changed=frozenset(), marked=frozenset()):
     """Highlight line by line so long lines can wrap with a hanging indent instead of scrolling.
 
-    `changed` holds the indexes of lines to mark as added/modified.
+    `changed` holds the indexes of lines to mark as added/modified; `marked` the lines of the
+    business rule picked on the page.
     """
     lexer = get_lexer_by_name(language)
     lines = []
@@ -48,11 +50,8 @@ def highlight_code(code, language, changed=frozenset()):
             lines.append('<div style="height:1.45em;"></div>')
             continue
         html = highlight(stripped, lexer, _FORMATTER).rstrip("\n")
-        mark = (
-            f"background:{_tint(CHANGED_COLOR, 0.20)};box-shadow:-6px 0 0 {CHANGED_COLOR};"
-            if i in changed
-            else ""
-        )
+        color = CHANGED_COLOR if i in changed else RULE_COLOR if i in marked else None
+        mark = f"background:{_tint(color, 0.18)};box-shadow:-6px 0 0 {color};" if color else ""
         lines.append(
             f'<div style="white-space:pre-wrap;overflow-wrap:break-word;{mark}'
             f'padding-left:{indent + 4}ch;text-indent:-4ch;">{html}</div>'
@@ -116,7 +115,7 @@ def info_chip(text):
     return _chip(text, "#475569")
 
 
-def _code_cell(block_name, block, changed=frozenset()):
+def _code_cell(block_name, block, changed=frozenset(), marked=frozenset()):
     color = BLOCK_COLORS.get(block_name, "#6B7280")
     label = (
         f'<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;'
@@ -131,7 +130,7 @@ def _code_cell(block_name, block, changed=frozenset()):
         return f'<div style="{base}opacity:.6;">{label}{body}</div>'
     pre = (
         f'<div style="margin:0;font-family:{_MONO};font-size:{CODE_FONT_SIZE};line-height:1.45;color:#1F2937;">'
-        f"{highlight_code(block.code, block.language, changed)}</div>"
+        f"{highlight_code(block.code, block.language, changed, marked)}</div>"
     )
     return f'<div style="{base}">{label}{pre}</div>'
 
@@ -142,6 +141,7 @@ def render_grid(columns, block_names):
     - blocks: dict block name -> Block (ignored when `not_supported` is set)
     - not_supported: optional reason (renders one card in place of the code)
     - changed: optional dict block name -> indexes of lines to highlight as changed
+    - marked: optional dict block name -> indexes of lines of the highlighted business rule
     - notes: optional dict "header" or block name -> list of note texts shown in that column,
       just above the block (or just below the header)
     """
@@ -174,7 +174,7 @@ def render_grid(columns, block_names):
             else:
                 cells.append(
                     f'<div style="{place}display:flex;"><div style="flex:1;min-width:0;display:flex;flex-direction:column;">'
-                    f"{_code_cell(name, col['blocks'].get(name), col.get('changed', {}).get(name, frozenset()))}"
+                    f"{_code_cell(name, col['blocks'].get(name), col.get('changed', {}).get(name, frozenset()), col.get('marked', {}).get(name, frozenset()))}"
                     "</div></div>"
                 )
     grid_style = (

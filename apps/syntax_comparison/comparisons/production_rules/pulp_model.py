@@ -37,9 +37,12 @@ peak_cost = float(settings["peak_cost"])
 prob = pulp.LpProblem("production_rules", pulp.LpMinimize)
 make = pulp.LpVariable.dicts("make", (P, T), lowBound=0)
 inv = {p: {t: pulp.LpVariable(f"inv_{p}_{t}", 0, max_inv[p]) for t in T} for p in P}
+# @rule lot_size max_products no_mix reorder
 run = pulp.LpVariable.dicts("run", (P, T), cat="Binary")  # 1 if product p runs in week t
+# @rule end
 
 # @block objective
+# @rule smoothing
 # No abs() or max(): write both as linear epigraphs with helper variables
 change = pulp.LpVariable.dicts("change", (P, T[1:]), lowBound=0)
 peak = pulp.LpVariable("peak", lowBound=0)
@@ -49,29 +52,40 @@ for p in P:
         prob += change[p][t] >= make[p][prev[t]] - make[p][t]
 for t in T:
     prob += peak >= pulp.lpSum(make[p][t] / rate[p] for p in P)
+# @rule end
 prob += (
     pulp.lpSum(make_cost[p] * make[p][t] + hold_cost[p] * inv[p][t] for p in P for t in T)
+    # @rule smoothing
     + smooth_cost * pulp.lpSum(change[p][t] for p in P for t in T[1:])
     + peak_cost * peak
+    # @rule end
 )
 
 # @block constraints
 for p in P:
     for t in T:
         prob += inv[p][t] == (init_inv[p] if t == T[0] else inv[p][prev[t]]) + make[p][t] - demand[p, t]
+        # @rule lot_size
         # Lot size rules are written on the run binaries: run = 0 -> make = 0, run = 1 -> lot size
         prob += make[p][t] >= min_lot[p] * run[p][t]
         prob += make[p][t] <= max_lot[p] * run[p][t]
+        # @rule end
 for t in T:
     prob += pulp.lpSum(make[p][t] / rate[p] for p in P) <= hours[t]
+    # @rule max_products
     prob += pulp.lpSum(run[p][t] for p in P) <= max_products
+    # @rule end
+    # @rule no_mix
     for p, q in CONFLICTS:
         prob += run[p][t] + run[q][t] <= 1
+    # @rule end
+# @rule reorder
 # Reorder rule, linearized by hand (big-M = reorder point):
 # not running next week -> stock at or above reorder point
 for p in P:
     for t in T[:-1]:
         prob += inv[p][t] >= reorder[p] * (1 - run[p][nxt[t]])
+# @rule end
 
 # @block solve
 prob.solve(pulp.HiGHS(msg=False))

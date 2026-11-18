@@ -37,7 +37,9 @@ peak_cost = float(settings["peak_cost"])
 prob = xp.problem("production_rules")
 make = prob.addVariables(P, T, name="make")
 inv = {(p, t): prob.addVariable(ub=max_inv[p], name=f"inv_{p}_{t}") for p in P for t in T}
+# @rule lot_size max_products no_mix reorder
 run = prob.addVariables(P, T, vartype=xp.binary, name="run")  # 1 if product p runs in week t
+# @rule end
 
 # @block constraints
 prob.addConstraint(
@@ -46,21 +48,31 @@ prob.addConstraint(
     for t in T
 )
 prob.addConstraint(xp.Sum(make[p, t] / rate[p] for p in P) <= hours[t] for t in T)
+# @rule lot_size
 # Lot size rules are written on the run binaries: run = 0 -> make = 0, run = 1 -> lot size
 prob.addConstraint(make[p, t] >= min_lot[p] * run[p, t] for p in P for t in T)
 prob.addConstraint(make[p, t] <= max_lot[p] * run[p, t] for p in P for t in T)
+# @rule end
+# @rule max_products
 prob.addConstraint(xp.Sum(run[p, t] for p in P) <= max_products for t in T)
+# @rule end
+# @rule no_mix
 prob.addConstraint(run[p, t] + run[q, t] <= 1 for p, q in CONFLICTS for t in T)
+# @rule end
+# @rule reorder
 # Reorder rule as its contrapositive: not running next week -> stock at or above reorder point
 prob.addIndicator(
     *[(run[p, nxt[t]] == 0, inv[p, t] >= reorder[p]) for p in P for t in T[:-1]]
 )
+# @rule end
 
 # @block objective
 prob.setObjective(
     xp.Sum(make_cost[p] * make[p, t] + hold_cost[p] * inv[p, t] for p in P for t in T)
+    # @rule smoothing
     + smooth_cost * xp.Sum(xp.abs(make[p, t] - make[p, prev[t]]) for p in P for t in T[1:])
     + peak_cost * xp.max([xp.Sum(make[p, t] / rate[p] for p in P) for t in T]),
+    # @rule end
     sense=xp.minimize,
 )
 

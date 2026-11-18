@@ -37,13 +37,17 @@ peak_cost = float(settings["peak_cost"])
 m = Model("production_rules")
 make = m.continuous_var_matrix(P, T, name="make")
 inv = m.continuous_var_matrix(P, T, ub=lambda pt: max_inv[pt[0]], name="inv")
+# @rule lot_size max_products no_mix reorder
 run = m.binary_var_matrix(P, T, name="run")  # 1 if product p runs in week t
+# @rule end
 
 # @block objective
 m.minimize(
     m.sum(make_cost[p] * make[p, t] + hold_cost[p] * inv[p, t] for p in P for t in T)
+    # @rule smoothing
     + smooth_cost * m.sum(m.abs(make[p, t] - make[p, prev[t]]) for p in P for t in T[1:])
     + peak_cost * m.max(m.sum(make[p, t] / rate[p] for p in P) for t in T)
+    # @rule end
 )
 
 # @block constraints
@@ -53,15 +57,23 @@ m.add_constraints(
     for t in T
 )
 m.add_constraints(m.sum(make[p, t] / rate[p] for p in P) <= hours[t] for t in T)
+# @rule lot_size
 # Lot size rules are written on the run binaries: run = 0 -> make = 0, run = 1 -> lot size
 m.add_constraints(make[p, t] >= min_lot[p] * run[p, t] for p in P for t in T)
 m.add_constraints(make[p, t] <= max_lot[p] * run[p, t] for p in P for t in T)
+# @rule end
+# @rule max_products
 m.add_constraints(m.sum(run[p, t] for p in P) <= max_products for t in T)
+# @rule end
+# @rule no_mix
 m.add_constraints(run[p, t] + run[q, t] <= 1 for p, q in CONFLICTS for t in T)
+# @rule end
+# @rule reorder
 # Reorder rule as its contrapositive: not running next week -> stock at or above reorder point
 for p in P:
     for t in T[:-1]:
         m.add_indicator(run[p, nxt[t]], inv[p, t] >= reorder[p], active_value=0)
+# @rule end
 
 # @block solve
 solution = m.solve()

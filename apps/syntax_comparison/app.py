@@ -4,7 +4,7 @@ from pathlib import Path
 import streamlit as st
 
 from .catalog import COMPARISONS, FULL_BLOCKS, MODEL_BLOCKS, changed_lines, load_models, load_tools
-from .render import headline_tiles, info_chip, render_grid
+from .render import headline_tiles, info_chip, note_cell, render_grid
 
 REPO_URL = "https://github.com/fdabrandao/amplopt.streamlit.app"
 SOURCE_URL = f"{REPO_URL}/blob/master/apps/syntax_comparison/comparisons"
@@ -39,7 +39,7 @@ def page_style():
     )
 
 
-def column_header(tool, info, model, block_names, changed_loc=None):
+def column_header(tool, info, model, block_names, extra=None):
     html = [
         f'<div style="font-weight:700;font-size:16px;color:#111827;">{escape(info["name"])} '
         f'<span style="font-weight:400;color:#6B7280;font-size:12px;">· {escape(info["group"])}</span></div>',
@@ -53,9 +53,9 @@ def column_header(tool, info, model, block_names, changed_loc=None):
         f'<a href="{SOURCE_URL}/{model.key}/{name}" target="_blank" style="color:#6B7280;">{escape(name)}</a>'
         for name in impl.files
     )
-    change = f" · {changed_loc} added or changed for the new rule" if changed_loc is not None else ""
+    extra = f" · {escape(extra)}" if extra else ""
     html.append(
-        f'<div style="color:#9CA3AF;font-size:11.5px;margin-top:4px;">{loc} lines of code{change} · {links}</div>'
+        f'<div style="color:#9CA3AF;font-size:11.5px;margin-top:4px;">{loc} lines of code{extra} · {links}</div>'
     )
     return "".join(html)
 
@@ -70,6 +70,22 @@ def notes_for(models, tool):
             elif tool in note["tools"]:
                 other.setdefault(note["at"], []).append(note["text"])
     return ampl, other
+
+
+def _code_lines(block, indexes):
+    """How many of these lines are code (not comments)."""
+    return sum(1 for i, line in enumerate(block.code.splitlines()) if i in indexes and not line.strip().startswith("#"))
+
+
+# "Highlight a rule" and "Add a new rule" never apply together: picking one resets the other.
+def _on_rule():
+    if st.session_state.sc_rule != "none":
+        st.session_state.sc_change = "none"
+
+
+def _on_change():
+    if st.session_state.sc_change != "none":
+        st.session_state.sc_rule = "none"
 
 
 def main():
@@ -96,6 +112,8 @@ def main():
         st.session_state.sc_tool = tool if tool in others else "pyomo"
     if "sc_change" not in st.session_state:
         st.session_state.sc_change = params.get("change", "none")
+    if "sc_rule" not in st.session_state:
+        st.session_state.sc_rule = params.get("rule", "none")
     if "sc_notes" not in st.session_state:
         st.session_state.sc_notes = params.get("notes") != "0"
 
@@ -113,38 +131,65 @@ def main():
         )
     with c3:
         view = st.radio("Show", list(VIEWS), label_visibility="collapsed")
+        show_notes = st.toggle("📝 Show notes", key="sc_notes")
 
     if model.meta.get("headline"):
         st.html(headline_tiles(model.meta["headline"]))
     st.caption(" ".join(model.meta.get("summary", "").split()))
 
-    variant = None
-    c1, c2 = st.columns([4, 1], vertical_alignment="center")
-    with c2:
-        show_notes = st.toggle("📝 Show notes", key="sc_notes")
-    if model.variants:
-        variants = {v.key: v for v in model.variants}
-        options = ["none"] + list(variants)
-        if st.session_state.sc_change == "1":  # older links: first change
-            st.session_state.sc_change = options[1]
-        if st.session_state.sc_change not in options:
-            st.session_state.sc_change = "none"
+    rules = {r["key"]: r for r in model.meta.get("rules", [])}
+    variants = {v.key: v for v in model.variants}
+    for key, valid in (("sc_rule", rules), ("sc_change", variants)):
+        if st.session_state.get(key) == "1" and valid:  # older links: first change
+            st.session_state[key] = next(iter(valid))
+        if st.session_state.get(key) not in ["none", *valid]:
+            st.session_state[key] = "none"
+    if st.session_state.sc_rule != "none" and st.session_state.sc_change != "none":
+        st.session_state.sc_rule = "none"  # e.g. a link with both: the new rule wins
+
+    c1, c2 = st.columns([8, 3], vertical_alignment="center")
+    rule = variant = None
+    if rules:
         with c1:
-            choice = st.radio(
-                "✚ Add a new rule",
-                options,
-                key="sc_change",
-                horizontal=True,
-                format_func=lambda k: "None (base model)" if k == "none" else variants[k].meta.get("change_name", k),
+            rule = rules.get(
+                st.radio(
+                    "🔍 Highlight a rule",
+                    ["none", *rules],
+                    key="sc_rule",
+                    horizontal=True,
+                    on_change=_on_rule,
+                    format_func=lambda k: "None" if k == "none" else rules[k]["label"],
+                )
             )
-        variant = variants.get(choice)
-        if variant:
-            st.success(
-                f"**{variant.meta['change']}.** Highlighted lines are everything that had to be added or "
-                "changed in each implementation for this rule."
+    if variants:
+        with c2:
+            variant = variants.get(
+                st.radio(
+                    "✚ Add a new rule",
+                    ["none", *variants],
+                    key="sc_change",
+                    horizontal=True,
+                    on_change=_on_change,
+                    format_func=lambda k: "None" if k == "none" else variants[k].meta.get("change_name", k),
+                )
             )
+    if variant:
+        st.success(
+            f"**{variant.meta['change']}.** Highlighted lines are everything that had to be added or "
+            "changed in each implementation for this rule."
+        )
+    elif rule:
+        st.html(
+            note_cell([f"{rule['label']}: {rule['text']} Highlighted: the lines that implement this rule in each column."])
+        )
     st.query_params.update(
-        {"model": model.key, "tool": tool, "change": variant.key if variant else "none", "notes": "1" if show_notes else "0"}
+        {
+            "model": model.key,
+            "tool": tool,
+            "rule": rule["key"] if rule else "none",
+            "change": variant.key if variant else "none",
+            "notes": "1" if show_notes else "0",
+        }
     )
     show_change = variant is not None
     shown_model = variant if show_change else model
@@ -156,27 +201,30 @@ def main():
     for t, column_notes in zip(("ampl", tool), notes):
         info = tools[t]
         impl = shown_model.implementations.get(t)
-        changed, changed_loc = {}, None
+        changed, marked, extra = {}, {}, None
         if show_change and impl and t in model.implementations:
             base_blocks = model.implementations[t].blocks
             for b in block_names:
                 if b in impl.blocks:
                     base_code = base_blocks[b].code if b in base_blocks else ""
                     changed[b] = changed_lines(base_code, impl.blocks[b].code)
-            changed_loc = sum(
-                1
-                for b, idx in changed.items()
-                for i, line in enumerate(impl.blocks[b].code.splitlines())
-                if i in idx and not line.strip().startswith("#")
-            )
+            n = sum(_code_lines(impl.blocks[b], idx) for b, idx in changed.items())
+            extra = f"{n} added or changed for the new rule"
+        elif rule and impl:
+            for b in block_names:
+                if b in impl.blocks:
+                    marked[b] = {i for i, keys in impl.blocks[b].rules.items() if rule["key"] in keys}
+            n = sum(_code_lines(impl.blocks[b], idx) for b, idx in marked.items())
+            extra = f"{n} for this rule"
         not_supported = shown_model.not_supported(t)
         columns.append(
             {
                 "name": info["name"],
-                "header": column_header(t, info, shown_model, block_names, changed_loc),
+                "header": column_header(t, info, shown_model, block_names, extra),
                 "blocks": impl.blocks if impl else {},
                 "not_supported": not_supported,
                 "changed": changed,
+                "marked": marked,
                 "notes": {} if not_supported else column_notes,
             }
         )

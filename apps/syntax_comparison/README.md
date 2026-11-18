@@ -37,6 +37,12 @@ Each note has `at` ("header" or a block name) and `text`; a note without `tools`
 column, and one with `tools = [...]` sits in the other column when one of those tools is selected.
 A rule change (variant) adds its own notes to the base model's.
 
+"Highlight a rule" lists a model's `[[rules]]` (key, label, text). In every implementation, the
+lines of a rule are wrapped in `# @rule <key> [<key> ...]` ... `# @rule end` comments (dropped from the
+code shown); shared lines, such as on/off variables used by several rules, carry several keys. The
+page highlights the picked rule's lines in pink in both columns; it and "Add a new rule" are never
+active together.
+
 ## Adding a tool
 
 1. Add an entry to `comparisons/tools.toml`.

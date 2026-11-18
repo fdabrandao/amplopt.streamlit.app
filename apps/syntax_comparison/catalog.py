@@ -28,6 +28,9 @@ MODEL_BLOCKS = ["sets", "params", "vars", "objective", "constraints"]
 FULL_BLOCKS = ["setup"] + MODEL_BLOCKS + ["data", "solve"]
 
 _MARKER = re.compile(r"^\s*#\s*@block\s+(\w+)\s*$")
+# `# @rule <key> [<key> ...]` tags the following lines with model rules (meta.toml [[rules]]) until
+# `# @rule end` or the next block; the page highlights a rule's lines on demand. Markers are dropped.
+_RULE = re.compile(r"^\s*#\s*@rule\s+(.+?)\s*$")
 _LANGUAGES = {".mod": "ampl", ".py": "python"}
 
 
@@ -37,6 +40,7 @@ class Block:
     code: str
     language: str
     source: str  # file name the block comes from
+    rules: dict = field(default_factory=dict)  # line index -> frozenset of rule keys
 
     @property
     def lines_of_code(self):
@@ -83,25 +87,44 @@ def changed_lines(base_code, new_code):
 
 
 def parse_blocks(text, language, source):
-    """Split a file into blocks using `# @block <name>` markers (markers are dropped)."""
-    blocks, name, lines = {}, None, []
+    """Split a file into blocks using `# @block <name>` markers; `# @rule` markers tag lines.
+
+    Markers are dropped from the code shown.
+    """
+    blocks, name, lines, tags = {}, None, [], frozenset()
 
     def flush():
         if name is None:
             return
         # Same display rules for every tool: no leading/trailing blank lines, at most one blank line in a row
-        code = re.sub(r"\n\s*\n(\s*\n)+", "\n\n", "\n".join(lines)).strip("\n")
+        kept = []
+        for line, line_tags in lines:
+            if line.strip():
+                kept.append((line, line_tags))
+            elif kept and kept[-1][0]:
+                kept.append(("", frozenset()))
+        while kept and not kept[-1][0]:
+            kept.pop()
+        code = "\n".join(line for line, _ in kept)
+        rules = {i: line_tags for i, (_, line_tags) in enumerate(kept) if line_tags}
         if name in blocks:  # a block may be split in several parts of a file
-            code = blocks[name].code + "\n\n" + code
-        blocks[name] = Block(name, code, language, source)
+            previous = blocks[name]
+            offset = len(previous.code.splitlines()) + 1
+            code = previous.code + "\n\n" + code
+            rules = {**previous.rules, **{i + offset: t for i, t in rules.items()}}
+        blocks[name] = Block(name, code, language, source, rules)
 
     for line in text.splitlines():
         match = _MARKER.match(line)
         if match:
             flush()
-            name, lines = match.group(1), []
-        else:
-            lines.append(line)
+            name, lines, tags = match.group(1), [], frozenset()
+            continue
+        rule = _RULE.match(line)
+        if rule:
+            tags = frozenset() if rule.group(1) == "end" else frozenset(rule.group(1).split())
+            continue
+        lines.append((line, tags))
     flush()
     return blocks
 

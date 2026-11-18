@@ -101,3 +101,31 @@ its contrapositive."""
 at = "data"
 text = """Every implementation reads the same CSV files. The AMPL model file has no data-handling code;
 the data is attached with a few amplpy calls."""
+
+# Business rules a visitor can highlight. The lines of each rule are tagged in every implementation
+# with `# @rule <key>` ... `# @rule end` (markers are not shown on the page).
+[[rules]]
+key = "lot_size"
+label = "Lot size"
+text = "Each week, a product is either not made or made in a lot between its minimum and maximum size."
+
+[[rules]]
+key = "max_products"
+label = "Max 4 products"
+text = "At most 4 products are made in any week (changeover limit)."
+
+[[rules]]
+key = "no_mix"
+label = "Allergen conflicts"
+text = "Listed pairs of products are never made in the same week."
+
+[[rules]]
+key = "reorder"
+label = "Reorder point"
+text = "When a product's stock falls below its reorder point, it is made the following week."
+
+[[rules]]
+key = "smoothing"
+label = "Smooth & level"
+text = """The cost includes week-to-week changes in each product's output and the line hours of the
+busiest week."""
