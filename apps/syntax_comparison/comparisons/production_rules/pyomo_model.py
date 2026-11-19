@@ -132,9 +132,11 @@ def No_Mix(m, p, q, t):
 # @rule end
 
 
-# @block solve
 # @rule lot_size max_products no_mix reorder
+# Reformulate the disjunctions and logical constraints for a MIP solver
 pyo.TransformationFactory("gdp.bigm").apply_to(m)
 # @rule end
+
+# @block solve
 pyo.SolverFactory("highs").solve(m)
 objective = pyo.value(m.Total_Cost)

@@ -1,9 +1,11 @@
 title = "Production planning with business rules"
 order = 1
-summary = """
-Weekly production plan for a snack-bar line (8 products, 8 weeks). On top of a classic
-lot-sizing model, the plan must follow five business rules: minimum lot sizes, at most
-4 products per week, allergen conflicts, a reorder-point rule, and smooth/level production.
+# Business context shown above the code; the rules below are listed after it.
+context = """
+A food plant makes 8 snack bars on one production line. Each week, the planner decides how many units
+of each bar to make over the next 8 weeks, so that demand is met from production and stock without
+exceeding the line hours (week 7 has half the usual hours). The plan keeps production and storage
+costs as low as possible, and it must follow five business rules:
 """
 
 # Objective shared by every implementation (validated by validate.py).
@@ -21,26 +23,15 @@ ampl_solvers = ["highs", "gurobi", "cplex", "xpress", "cbc", "scip"]
 pulp = "Solved with PuLP's HiGHS interface: the CBC 2.10.3 build bundled with PuLP 3.3.2 stops at a suboptimal plan (37,062.07) on this model."
 xpress = "The objective is set after the indicator constraints: with xp.abs()/xp.max() in the objective, xpress 10.0.0 attaches indicators added afterwards to the wrong rows."
 
-# Booth headline: three facts shown in large type above the code.
-[[headline]]
-value = "1 statement"
-label = "per business rule in AMPL, written the way the planner states it"
-
-[[headline]]
-value = "6 solvers"
-label = "run this exact model; switching is one line of code"
-
-[[headline]]
-value = "7 tools"
-label = "implement this same model on this page"
-
-# Notes shown next to the code (also the presenter's script). `at` is "header" or a block name
-# (sets, params, vars, objective, constraints, data, solve); `tools` limits a note to comparisons
-# with those tools. Inline `code` is allowed.
+# Notes shown next to the code (also the presenter's script). `at` is "header", a block name
+# (sets, params, vars, objective, constraints) or "python" (the amplpy section at the end of the
+# page); `tools` limits a note to comparisons with those tools. Inline `code` is allowed.
 [[notes]]
 at = "header"
-text = """The AMPL model runs unchanged with HiGHS, Gurobi, CPLEX, Xpress, CBC or SCIP: switching
-solvers is one line (`ampl.option["solver"]`)."""
+text = """AMPL states the model in its own algebraic language, close to how it is written on paper:
+sets, parameters, variables, an objective and constraints, with no solver calls. The same `model.mod`
+runs unchanged with HiGHS, Gurobi, CPLEX, Xpress, CBC or SCIP: switching is one option
+(`ampl.option["solver"]`)."""
 
 [[notes]]
 at = "header"
@@ -49,9 +40,44 @@ text = """Each solver-native API is tied to its own solver: using another solver
 model with another API."""
 
 [[notes]]
+at = "sets"
+text = """Sets are declared, not computed: `PERIODS` is `ordered`, so the model steps between weeks with
+`prev(t)` and `next(t)`, and `CONFLICTS within {PROD, PROD}` only accepts pairs of known products."""
+
+[[notes]]
+at = "sets"
+tools = ["gurobipy", "docplex", "xpress", "highspy", "pulp"]
+text = """Sets are Python lists; `prev` and `nxt` are dictionaries built by hand to step between
+weeks."""
+
+[[notes]]
+at = "params"
+text = """Each parameter declares its index set and its valid values (`>= 0`, `> 0`,
+`max_lot[p] >= min_lot[p]`). AMPL checks the data against them before sending the model to the
+solver."""
+
+[[notes]]
+at = "params"
+tools = ["gurobipy", "docplex", "xpress", "highspy", "pulp"]
+text = """Parameters are Python dictionaries taken from the DataFrames; checks on their values would
+be separate Python code."""
+
+[[notes]]
+at = "vars"
+text = """Only the planner's decisions are declared: how much to make and how much to keep (`Make`,
+`Inv`). The on/off variables that the rules need are created by AMPL when it sends the model to the
+solver."""
+
+[[notes]]
+at = "vars"
+tools = ["gurobipy", "docplex", "xpress", "highspy", "pulp"]
+text = """A binary variable `run` (product made or not in a week) is added so that the rules can be
+written as constraints on it."""
+
+[[notes]]
 at = "objective"
-text = """AMPL writes `abs(...)` (week-to-week change) and `max {...}` (busiest week) directly in the
-objective."""
+text = """`abs(...)` (week-to-week change) and `max {...}` (busiest week) are written directly in the
+objective. AMPL turns them into the linear form a MIP solver needs."""
 
 [[notes]]
 at = "objective"
@@ -72,21 +98,27 @@ term."""
 
 [[notes]]
 at = "constraints"
-text = """Each business rule is one statement that reads like the rule: at most 4 products a week
-(`count ... <= max_products`), conflicting products never in the same week (`or`), produce next week
-when stock falls below the reorder point (`Inv < reorder ==> Make > 0`)."""
+text = """Each business rule is one statement that reads like the rule: a lot is zero or at least the
+minimum (`Make = 0 or Make >= min_lot`), at most 4 products a week (`count ... <= max_products`),
+conflicting products never in the same week (`or`), produce next week when stock falls below the
+reorder point (`Inv < reorder ==> Make > 0`)."""
+
+[[notes]]
+at = "constraints"
+text = """AMPL converts this logic for the chosen solver (indicator constraints where the solver has
+them, linear constraints otherwise), so the rules stay the same when the solver changes."""
 
 [[notes]]
 at = "constraints"
 tools = ["gurobipy", "docplex", "xpress"]
-text = """The rules go through on/off variables (`run`) linked to the quantities. The reorder rule is
-written as an indicator constraint on its contrapositive: not running next week means stock at or
-above the reorder point."""
+text = """The rules are written on the `run` variables, linked to the quantities. The reorder rule is
+an indicator constraint on its contrapositive: not running next week means stock at or above the
+reorder point."""
 
 [[notes]]
 at = "constraints"
 tools = ["highspy", "pulp"]
-text = """The rules go through on/off variables (`run`) linked to the quantities. The reorder rule is
+text = """The rules are written on the `run` variables, linked to the quantities. The reorder rule is
 linearized by hand as a big-M constraint on its contrapositive: not running next week means stock at
 or above the reorder point."""
 
@@ -94,13 +126,19 @@ or above the reorder point."""
 at = "constraints"
 tools = ["pyomo"]
 text = """Pyomo states the rules as disjunctions (each product-week running or idle) and logical
-constraints, then reformulates them with `gdp.bigm` before solving. The reorder rule is written as
-its contrapositive."""
+constraints, then reformulates them with `gdp.bigm`. The reorder rule is written as its
+contrapositive."""
 
 [[notes]]
-at = "data"
-text = """Every implementation reads the same CSV files. The AMPL model file has no data-handling code;
-the data is attached with a few amplpy calls."""
+at = "python"
+text = """This is all the Python the AMPL version needs: read the model file, load the data, pick a
+solver and solve. The model stays in `model.mod`, so the data loading can change without touching
+the model, and the model can be reused with other data or another solver without editing it."""
+
+[[notes]]
+at = "python"
+text = """In the other tools on this page, the Python program builds the model as it runs: reading the
+data, preparing it and stating the model happen in the same script."""
 
 # Business rules a visitor can highlight. The lines of each rule are tagged in every implementation
 # with `# @rule <key>` ... `# @rule end` (markers are not shown on the page).

@@ -140,7 +140,9 @@ def No_Mix(m, p, q, t):
     return m.idle[p, t].indicator_var.lor(m.idle[q, t].indicator_var)
 
 
-# @block solve
+# Reformulate the disjunctions and logical constraints for a MIP solver
 pyo.TransformationFactory("gdp.bigm").apply_to(m)
+
+# @block solve
 pyo.SolverFactory("highs").solve(m)
 objective = pyo.value(m.Total_Cost)

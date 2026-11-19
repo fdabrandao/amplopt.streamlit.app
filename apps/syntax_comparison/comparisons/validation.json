@@ -22,53 +22,6 @@
     "pandas": "3.1.1"
   },
   "models": {
-    "logistic_regression": {
-      "ampl": {
-        "status": "ok",
-        "objective": 16.902615862615985,
-        "solvers": {
-          "ipopt": {
-            "status": "solved",
-            "objective": 16.902615862615985,
-            "seconds": 0.04
-          },
-          "knitro": {
-            "status": "solved",
-            "objective": 16.902615862615992,
-            "seconds": 0.1
-          },
-          "gurobi": {
-            "status": "solved",
-            "objective": 16.902615862615995,
-            "seconds": 13.5,
-            "warm_start": "ipopt"
-          }
-        }
-      },
-      "pyomo": {
-        "status": "ok",
-        "objective": 16.902615862615985,
-        "seconds": 0.03
-      },
-      "pulp": {
-        "status": "not_supported"
-      },
-      "gurobipy": {
-        "status": "ok",
-        "objective": 16.902615862615985,
-        "seconds": 12.53
-      },
-      "docplex": {
-        "status": "not_supported"
-      },
-      "xpress": {
-        "status": "license_limited",
-        "reason": "Not validated: the free Xpress community license does not include Xpress-NLP and limits nonlinear formulas to 1,000 tokens. Validation needs a full Xpress license."
-      },
-      "highspy": {
-        "status": "not_supported"
-      }
-    },
     "production_rules": {
       "ampl": {
         "status": "ok",

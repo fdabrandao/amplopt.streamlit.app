@@ -1,6 +1,6 @@
 # AMPL syntax comparison
 
-The same optimization models written in AMPL and in other Python modeling tools, shown side by
+The same optimization model written in AMPL and in other Python modeling tools, shown side by
 side on the Streamlit page. The page only shows code: nothing is solved in the app.
 `validate.py` runs every implementation offline and checks that they reach the same optimal objective.
 
@@ -11,21 +11,25 @@ comparisons/
   tools.toml                  # registry of tools (name, group, files, packages)
   validation.json             # written by validate.py: objectives, gaps, library versions (not shown)
   <model>/
-    meta.toml                 # title, summary, headline facts, notes, expected objective, AMPL solvers
+    meta.toml                 # title, business context, rules, notes, expected objective, AMPL solvers
     model.mod, ampl_model.py  # AMPL model + data loading/solve with amplpy
     <tool>_model.py           # one file per tool (pyomo, pulp, gurobipy, docplex, xpress, highspy)
     data/*.csv                # shared input data, read by every implementation
-app.py                        # Streamlit page (selectors, headline facts, code grid with notes)
+app.py                        # Streamlit page (context, selectors, code grid with notes, amplpy section)
 catalog.py                    # loads tools/models/blocks/validation.json (no Streamlit)
 render.py                     # HTML for the color-banded, aligned code grid
 validate.py
 requirements-validate.txt     # pinned validation environment (not the app's requirements)
 ```
 
-The page reads everything from `comparisons/`; nothing is hard-coded per model. URL parameters
-`?model=<key>&tool=<tool>&change=<variant>` preselect a comparison, so a demo can be bookmarked.
+The page reads everything from `comparisons/`; nothing is hard-coded per model (the model picker only
+appears when there is more than one). The page opens with the model's business `context` and its
+rules, then shows the model blocks (sets to constraints) side by side. Imports, data reading and the
+solve call are not in the grid: the AMPL version of that part (`ampl_model.py`) is shown once below
+it. URL parameters `?model=<key>&tool=<tool>&rule=<rule>&change=<variant>&notes=0` preselect a
+comparison, so a demo can be bookmarked.
 
-A model folder whose `meta.toml` sets `variant_of = "<model>"` and `change = "<label>"` is not listed
+A model folder whose `meta.toml` sets `variant_of = "<model>"`, `change_name` and `change` is not listed
 on its own: it adds one change to that model (e.g. `production_rules_volume_discount` adds volume
 discounts). The page lists a model's changes under "Add a new rule" (by `change_name`) and
 highlights, per tool, the lines that differ from the base model. Variants are validated like any
@@ -33,7 +37,7 @@ other model.
 
 Notes (`[[notes]]` in `meta.toml`) appear as sticky notes just above the code they describe, so
 the page works both as a guided demo and on its own; "📝 Show notes" (URL `notes=0`) hides them.
-Each note has `at` ("header" or a block name) and `text`; a note without `tools` sits in the AMPL
+Each note has `at` ("header", a block name, or "python" for the amplpy section) and `text`; a note without `tools` sits in the AMPL
 column, and one with `tools = [...]` sits in the other column when one of those tools is selected.
 A rule change (variant) adds its own notes to the base model's.
 

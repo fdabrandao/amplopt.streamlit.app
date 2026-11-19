@@ -2,12 +2,8 @@ title = "Production planning with business rules + volume discounts"
 order = 1
 variant_of = "production_rules"
 change_name = "Volume discounts"
-change = "Volume discount: units beyond 1,000 a week cost 15% less, units beyond 2,500 cost 30% less"
-summary = """
-Weekly production plan for a snack-bar line (8 products, 8 weeks). On top of a classic
-lot-sizing model, the plan must follow five business rules: minimum lot sizes, at most
-4 products per week, allergen conflicts, a reorder-point rule, and smooth/level production.
-"""
+# Shown in the business context: what the new rule says.
+change = "Units beyond 1,000 a week cost 15% less, and units beyond 2,500 cost 30% less."
 
 # Objective shared by every implementation (validated by validate.py).
 expected_objective = 36234.3967
@@ -20,7 +16,7 @@ ampl_solvers = ["gurobi", "cplex", "xpress", "highs", "cbc", "scip"]
 [not_supported]
 
 # Notes shown next to the code (also the presenter's script). `at` is "header" or a block name
-# (sets, params, vars, objective, constraints, data, solve); `tools` limits a note to comparisons
+# (sets, params, vars, objective, constraints) or "python"; `tools` limits a note to comparisons
 # with those tools. Inline `code` is allowed.
 [[notes]]
 at = "objective"
@@ -57,6 +53,11 @@ at = "objective"
 tools = ["pyomo"]
 text = """A `Piecewise` component links a cost variable to `Make`. Because the cost is concave, the
 modeler picks a representation with binaries (`pw_repn`)."""
+
+[[notes]]
+at = "python"
+text = """The new rule needs one more table: `discounts.csv` is loaded with one line, and the model
+reads it as the `TIERS` set and its parameters."""
 
 # Reviewer notes explaining non-obvious choices in an implementation (not shown on the page).
 [internal_notes]

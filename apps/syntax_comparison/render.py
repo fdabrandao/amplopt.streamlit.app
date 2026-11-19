@@ -27,7 +27,7 @@ CHANGED_COLOR = "#16A34A"  # lines added or modified by a model change
 RULE_COLOR = "#F63366"  # lines implementing the business rule picked under "Highlight a rule"
 # Notes are dark so they never look like a code block (code blocks are all light tints).
 NOTE_BG = "#1E293B"
-NOTE_ACCENT = "#F63366"  # same accent as the headline facts
+ACCENT = "#F63366"  # notes and the business context card
 
 
 def _tint(hex_color, alpha):
@@ -59,18 +59,24 @@ def highlight_code(code, language, changed=frozenset(), marked=frozenset()):
     return "".join(lines)
 
 
-def headline_tiles(items, accent="#F63366"):
-    """Short 'value + label' facts shown above the code (items: list of {value, label})."""
-    tiles = "".join(
-        f'<div style="flex:1 1 200px;display:flex;align-items:baseline;gap:10px;background:#F7F8FA;'
-        f'border-radius:8px;border-left:4px solid {accent};padding:8px 14px;">'
-        f'<div style="font-size:22px;font-weight:800;line-height:1.1;color:#111827;white-space:nowrap;">'
-        f'{escape(item["value"])}</div>'
-        f'<div style="font-size:13.5px;line-height:1.3;color:#374151;">{escape(item["label"])}</div>'
-        "</div>"
-        for item in items
+def context_card(text, rules, optional=()):
+    """The business problem: a short paragraph, then the rules (lists of {label, text}).
+
+    `optional` rules are the ones added under "Add a new rule".
+    """
+    item = lambda r, tag="": (
+        f'<li style="margin:2px 0;"><b>{escape(r["label"])}</b>{tag}: {escape(" ".join(r["text"].split()))}</li>'
     )
-    return f'<div style="display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 6px 0;">{tiles}</div>'
+    tag = ' <span style="color:#6B7280;">(optional, under “Add a new rule”)</span>'
+    items = "".join(item(r) for r in rules) + "".join(item(r, tag) for r in optional)
+    return (
+        f'<div style="display:flex;flex-wrap:wrap;gap:6px 28px;background:#F7F8FA;border-radius:8px;'
+        f'border-left:4px solid {ACCENT};padding:10px 16px;margin:2px 0 8px 0;font-size:14px;'
+        'line-height:1.5;color:#1F2937;">'
+        f'<div style="flex:1 1 340px;">{escape(" ".join(text.split()))}</div>'
+        f'<div style="flex:1.4 1 420px;"><ul style="margin:0;padding-left:18px;">{items}</ul></div>'
+        "</div>"
+    )
 
 
 def _inline(text):
@@ -88,7 +94,7 @@ def note_cell(texts):
     """A dark note card with one paragraph per note."""
     body = "".join(f'<div style="margin:2px 0;">{_inline(t)}</div>' for t in texts)
     return (
-        f'<div style="background:{NOTE_BG};border-left:5px solid {NOTE_ACCENT};border-radius:6px;'
+        f'<div style="background:{NOTE_BG};border-left:5px solid {ACCENT};border-radius:6px;'
         'padding:8px 12px;font-size:13.5px;line-height:1.5;color:#F1F5F9;'
         'box-shadow:0 1px 3px rgba(15,23,42,.25);display:flex;gap:8px;">'
         f'<div>📝</div><div>{body}</div></div>'
@@ -105,10 +111,6 @@ def _chip(text, color, filled=False):
     else:
         style += f"background:{_tint(color, 0.10)};color:{color};border:1px solid {_tint(color, 0.35)};"
     return f'<span style="{style}">{escape(text)}</span>'
-
-
-def badge(text, ok=True):
-    return _chip(text, "#15803D" if ok else "#B45309")
 
 
 def info_chip(text):
