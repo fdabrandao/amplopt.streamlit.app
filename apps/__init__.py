@@ -20,8 +20,13 @@ def badge(url_path=""):
     """
 
 
-def common_header(url_path):
+def common_header(url_path, compact=False):
     # Logo
+    if compact:  # pages that need the vertical space get a small logo next to the links
+        left, right = st.columns([1, 2], vertical_alignment="center")
+        left.image("https://portal.ampl.com/dl/ads/python_ecosystem_badge.png", width=260)
+        right.write(badge(url_path), unsafe_allow_html=True)
+        return
     st.image("https://portal.ampl.com/dl/ads/python_ecosystem_badge.png")
 
     st.write(badge(url_path), unsafe_allow_html=True)

@@ -1,0 +1,59 @@
+# Registry of the tools shown on the comparison page.
+# Adding a tool = add an entry here + a `<file>` in each model folder
+# (or list the tool under `not_supported` in that model's meta.toml).
+
+[ampl]
+name = "AMPL"
+group = "Algebraic modeling language"
+files = ["model.mod", "ampl_model.py"]
+language = "ampl"
+packages = ["amplpy", "ampl_module_base"]
+solver = "any: one option switches it"
+
+[pyomo]
+name = "Pyomo"
+group = "Algebraic modeling (open source)"
+files = ["pyomo_model.py"]
+language = "python"
+packages = ["pyomo", "highspy"]
+solver = "many via plugins (HiGHS here)"
+
+[pulp]
+name = "PuLP"
+group = "Algebraic modeling (open source)"
+files = ["pulp_model.py"]
+language = "python"
+packages = ["pulp", "highspy"]
+solver = "many via plugins (HiGHS here)"
+
+[gurobipy]
+name = "gurobipy"
+group = "Solver-native Python APIs"
+files = ["gurobipy_model.py"]
+language = "python"
+packages = ["gurobipy"]
+solver = "Gurobi only"
+
+[docplex]
+name = "docplex"
+group = "Solver-native Python APIs"
+files = ["docplex_model.py"]
+language = "python"
+packages = ["docplex", "cplex"]
+solver = "CPLEX only"
+
+[xpress]
+name = "xpress"
+group = "Solver-native Python APIs"
+files = ["xpress_model.py"]
+language = "python"
+packages = ["xpress"]
+solver = "FICO Xpress only"
+
+[highspy]
+name = "highspy"
+group = "Solver-native Python APIs"
+files = ["highspy_model.py"]
+language = "python"
+packages = ["highspy"]
+solver = "HiGHS only"
