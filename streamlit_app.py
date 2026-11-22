@@ -45,6 +45,7 @@ from apps import (
     tips,
     python,
     reformulation_explorer,
+    syntax_comparison,
 )
 
 st.set_page_config(
@@ -110,7 +111,7 @@ def home():
     )
 
 
-def app_page(app, icon, title, url_path=None):
+def app_page(app, icon, title, url_path=None, compact_header=False):
     if url_path is None:
         url_path = title.replace(" ", "_")
     if title == "Home":
@@ -118,7 +119,7 @@ def app_page(app, icon, title, url_path=None):
 
     def page():
         redirect_link()
-        common_header(url_path)
+        common_header(url_path, compact=compact_header)
         app()
         st.markdown(
             "[AMPL Website](https://ampl.com) | [Follow us on LinkedIn](https://www.linkedin.com/company/ampl) | [Documentation](https://dev.ampl.com) | [Colab Notebooks](https://ampl.com/colab) | [MO-Book](https://ampl.com/mo-book)"
@@ -160,6 +161,13 @@ pages = {
     "Tools & Documentation": [
         app_page(python.main, "🐍", "Python Integration"),
         app_page(reformulation_explorer.main, "🔍", "Reformulation Explorer"),
+        app_page(
+            syntax_comparison.main,
+            "⚖️",
+            "Modeling Syntax Comparison",
+            "Syntax_Comparison",
+            compact_header=True,
+        ),
     ],
 }
 

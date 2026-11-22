@@ -44,6 +44,7 @@ FLAT_CON_TYPES = {
     "_linle": "Linear \u2A7D",
     "_linrange": "Linear Range",
     "_linfunccon": "Linear Function",
+    "_linfn": "Linear Function",
     "_loga": "LogA",
     "_log": "Log",
     "_max": "Max",

@@ -1,0 +1,32 @@
+# Pinned environment for validate.py (NOT used by the deployed app).
+#   python -m venv .venv-compare
+#   .venv-compare/bin/pip install -r apps/syntax_comparison/requirements-validate.txt
+--index-url https://pypi.ampl.com
+--extra-index-url https://pypi.org/simple
+
+# AMPL
+amplpy==0.18.1
+ampl_module_base==20261111
+ampl_module_highs==20261029
+ampl_module_gurobi==20261029
+ampl_module_cplex==20261029
+ampl_module_xpress==20261029
+ampl_module_coin==20261027
+ampl_module_scip==20261029
+ampl_module_knitro==20261029
+
+# Algebraic modeling (open source)
+pyomo==6.10.1
+pulp==3.3.2
+
+# Solver-native Python APIs
+gurobipy==14.0.0
+docplex==2.32.264
+cplex==22.2.0.1
+xpress==10.0.0
+highspy==1.16.0
+
+# Shared
+pandas==3.1.1
+numpy==2.4.6
+packaging==26.3

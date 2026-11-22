@@ -1,0 +1,166 @@
+{
+  "generated": "2026-11-18",
+  "python": "3.11.9",
+  "time_limit": 600,
+  "versions": {
+    "ampl_module_base": "20261111",
+    "amplpy": "0.18.1",
+    "cplex": "22.2.0.1",
+    "docplex": "2.32.264",
+    "gurobipy": "14.0.0",
+    "highspy": "1.16.0",
+    "pulp": "3.3.2",
+    "pyomo": "6.10.1",
+    "xpress": "10.0.0",
+    "ampl_module_highs": "20261029",
+    "ampl_module_gurobi": "20261029",
+    "ampl_module_cplex": "20261029",
+    "ampl_module_xpress": "20261029",
+    "ampl_module_coin": "20261027",
+    "ampl_module_scip": "20261029",
+    "ampl_module_knitro": "20261029",
+    "pandas": "3.1.1"
+  },
+  "models": {
+    "production_rules": {
+      "ampl": {
+        "status": "ok",
+        "objective": 37017.101361111105,
+        "solvers": {
+          "highs": {
+            "status": "solved",
+            "objective": 37017.101361111105,
+            "seconds": 7.75
+          },
+          "gurobi": {
+            "status": "solved",
+            "objective": 37017.1013611111,
+            "seconds": 1.57
+          },
+          "cplex": {
+            "status": "solved",
+            "objective": 37017.10136111109,
+            "seconds": 1.3
+          },
+          "xpress": {
+            "status": "solved",
+            "objective": 37017.101361111105,
+            "seconds": 1.15
+          },
+          "cbc": {
+            "status": "solved",
+            "objective": 37017.1013611111,
+            "seconds": 27.38
+          },
+          "scip": {
+            "status": "solved",
+            "objective": 37017.10136111111,
+            "seconds": 7.0
+          }
+        }
+      },
+      "pyomo": {
+        "status": "ok",
+        "objective": 37017.101361111105,
+        "seconds": 3.2
+      },
+      "pulp": {
+        "status": "ok",
+        "objective": 37017.101361111105,
+        "seconds": 3.27
+      },
+      "gurobipy": {
+        "status": "ok",
+        "objective": 37017.101361111105,
+        "seconds": 1.92
+      },
+      "docplex": {
+        "status": "ok",
+        "objective": 37017.10136111109,
+        "seconds": 1.34
+      },
+      "xpress": {
+        "status": "ok",
+        "objective": 37017.101361111134,
+        "seconds": 0.61
+      },
+      "highspy": {
+        "status": "ok",
+        "objective": 37017.10136111107,
+        "seconds": 3.39
+      }
+    },
+    "production_rules_volume_discount": {
+      "gurobipy": {
+        "status": "ok",
+        "objective": 36234.39666666667,
+        "seconds": 14.87
+      },
+      "docplex": {
+        "status": "ok",
+        "objective": 36234.39666666666,
+        "seconds": 6.85
+      },
+      "xpress": {
+        "status": "unverified",
+        "objective": 36514.40316666666,
+        "seconds": 605.53,
+        "bound": 30659.969932901182,
+        "gap": 0.160332162819243
+      },
+      "ampl": {
+        "status": "ok",
+        "objective": 36234.39666666667,
+        "solvers": {
+          "gurobi": {
+            "status": "solved",
+            "objective": 36234.39666666667,
+            "seconds": 15.71
+          },
+          "cplex": {
+            "status": "solved",
+            "objective": 36234.39666666667,
+            "seconds": 6.18
+          },
+          "xpress": {
+            "status": "solved",
+            "objective": 36234.39666666667,
+            "seconds": 14.69
+          },
+          "highs": {
+            "status": "solved",
+            "objective": 36234.39666666666,
+            "seconds": 142.21
+          },
+          "cbc": {
+            "status": "unverified",
+            "objective": 36237.46426388889,
+            "seconds": 609.86,
+            "bound": 34951.124263888894,
+            "gap": 0.03549751689667346
+          },
+          "scip": {
+            "status": "solved",
+            "objective": 36234.39666666667,
+            "seconds": 420.44
+          }
+        }
+      },
+      "pyomo": {
+        "status": "ok",
+        "objective": 36234.39666666666,
+        "seconds": 63.35
+      },
+      "pulp": {
+        "status": "ok",
+        "objective": 36234.396666666304,
+        "seconds": 71.12
+      },
+      "highspy": {
+        "status": "ok",
+        "objective": 36234.39666666666,
+        "seconds": 67.06
+      }
+    }
+  }
+}
